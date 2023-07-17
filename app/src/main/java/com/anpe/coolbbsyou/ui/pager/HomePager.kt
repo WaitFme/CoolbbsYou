@@ -78,6 +78,7 @@ fun HomePager(navController: NavHostController, viewModel: MainViewModel) {
         mutableStateOf(-1)
     }
 
+    // TEST
     LaunchedEffect(key1 = true, block = {
         viewModel.channel.send(MainIntent.GetIndex)
 
