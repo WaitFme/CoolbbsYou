@@ -6,21 +6,23 @@ import java.net.IDN
 class ApiRepository {
     private val api = ApiService.getSerVice()
 
-    // first item 47536152
-    // install time 1689225425939
     suspend fun getIndex(
-        page: Int = 1,
-        firstLauncher: Int = 0,
-        installTime: String? = "1689225425939",
-        firstItem: Int,
-        token: String
+            deviceCode: String,
+            token: String,
+            page: Int = 0,
+            firstLauncher: Int,
+            installTime: String,
+            firstItem: Int,
+            ids: String = ""
     ) = api.getIndex(
-        token = token,
-        page = page,
-        firstLaunch = firstLauncher,
-        installTime = installTime,
-        firstItem = firstItem
+            device = deviceCode,
+            token = token,
+            page = page,
+            firstLaunch = firstLauncher,
+            installTime = installTime,
+            firstItem = firstItem,
+            ids = ids
     )
 
-    suspend fun getDetails(token: String, id: Int) = api.getDetails(token = token, id = id)
+    suspend fun getDetails(deviceCode: String, token: String, id: Int) = api.getDetails(deviceCode = deviceCode, token = token, id = id)
 }

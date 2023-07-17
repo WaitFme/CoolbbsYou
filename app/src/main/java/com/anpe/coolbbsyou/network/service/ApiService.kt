@@ -37,24 +37,24 @@ interface ApiService {
 
     @GET("/v6/main/indexV8")
     suspend fun getIndex(
-        @Header("User-Agent") userAgent: String = Constants.USER_AGENT,
         @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
         @Header("X-App-Id") appId: String = Constants.APP_ID,
-        @Header("X-App-Device") device: String = Constants.DEVICE_CODE,
+        @Header("X-App-Device") device: String,
         @Header("X-App-Token") token: String,
-        @Header("Host") host: String = "api2.coolapk.com",
+//        @Header("User-Agent") userAgent: String = Constants.USER_AGENT,
+//        @Header("Host") host: String = "api2.coolapk.com",
         @Query("page") page: Int,
         @Query("firstLaunch") firstLaunch: Int,
-        @Query("installTime") installTime: String? = null,
+        @Query("installTime") installTime: String,
         @Query("firstItem") firstItem: Int,
-        @Query("ids") ids: String ?= null
+        @Query("ids") ids: String
     ): IndexEntity
 
     @GET("/v6/feed/detail")
     suspend fun getDetails(
         @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
         @Header("X-App-Id") appId: String = Constants.APP_ID,
-        @Header("X-App-Device") deviceCode: String = Constants.DEVICE_CODE,
+        @Header("X-App-Device") deviceCode: String,
         @Header("X-App-Token") token: String,
         @Query("id") id: Int
     ): DetailsEntity

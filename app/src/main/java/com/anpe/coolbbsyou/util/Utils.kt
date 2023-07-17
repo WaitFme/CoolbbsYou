@@ -1,5 +1,8 @@
 package com.anpe.coolbbsyou.util
 
+import android.content.Context
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
@@ -13,22 +16,12 @@ import java.text.SimpleDateFormat
 import java.util.Base64
 import java.util.Date
 import java.util.Locale
+import java.util.Random
+
 
 class Utils {
     companion object {
-        fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = composed {
-            clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                onClick()
-            }
-        }
-
-        fun Int.secondToDateString(pattern: String = "yyyy-MM-dd HH:mm:ss"): String {
-            val date = Date(this.toLong() * 1000)
-            return SimpleDateFormat(pattern, Locale.CHINA).format(date)
-        }
+        private val TAG = "Utils"
 
         private fun String.getBase64(isRaw: Boolean = true): String {
             var result = Base64.getEncoder().encodeToString(this.toByteArray())
@@ -67,8 +60,41 @@ class Utils {
             return sb.toString().replace("-", "")
         }
 
-        fun DeviceInfo.createDeviceCode(isRaw: Boolean = true) =
-            "$aid; ; ; $mac; $manufactor; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
+        private fun DeviceInfo.createDeviceCode(isRaw: Boolean = true) =
+                "$aid; ; ; $mac; $manuFactor; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
+
+        private fun randomMacAddress(): String {
+            val random = Random()
+            val sb = StringBuilder()
+
+            for (i in 0..5) {
+                if (sb.isNotEmpty()) {
+                    sb.append(":")
+                }
+                val value = random.nextInt(256)
+                val element = Integer.toHexString(value)
+                if (element.length < 2) {
+                    sb.append(0)
+                }
+                sb.append(element)
+            }
+
+            return sb.toString().uppercase()
+        }
+
+        fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier = composed {
+            clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+            ) {
+                onClick()
+            }
+        }
+
+        fun Int.secondToDateString(pattern: String = "yyyy-MM-dd HH:mm:ss"): String {
+            val date = Date(this.toLong() * 1000)
+            return SimpleDateFormat(pattern, Locale.CHINA).format(date)
+        }
 
         fun String.getDeviceInfo(isRaw: Boolean = true): String = this.reversed().getReBase64(isRaw)
 
@@ -90,10 +116,18 @@ class Utils {
             return "v2${bcryptResult.getBase64()}"
         }
 
-        fun String.htmlToString(htmlCompat: Int = HtmlCompat.FROM_HTML_MODE_LEGACY) =
-            HtmlCompat.fromHtml(this, htmlCompat).toString()
-
         fun String.richToString(htmlCompat: Int = HtmlCompat.FROM_HTML_MODE_LEGACY) =
-            HtmlCompat.fromHtml(this, htmlCompat)
+                HtmlCompat.fromHtml(this, htmlCompat).toString()
+
+        fun getDeviceCode(context: Context): String {
+            val aid = Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            val mac = randomMacAddress()
+            val manuFactor = Build.MANUFACTURER
+            val brand = Build.BRAND
+            val model = Build.MODEL
+            val buildNumber = "CoolbbsYou ${Build.VERSION.RELEASE}"
+
+            return DeviceInfo(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
+        }
     }
 }
