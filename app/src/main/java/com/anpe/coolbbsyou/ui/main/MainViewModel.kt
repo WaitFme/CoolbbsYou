@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.repository.ApiRepository
 import com.anpe.coolbbsyou.network.data.state.DetailsState
+import com.anpe.coolbbsyou.network.data.state.IndexImageState
 import com.anpe.coolbbsyou.network.data.state.IndexState
 import com.anpe.coolbbsyou.util.Utils.Companion.getDeviceCode
 import com.anpe.coolbbsyou.util.Utils.Companion.getTokenV2
@@ -35,6 +36,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _detailsState = MutableStateFlow<DetailsState>(DetailsState.Idle)
     val detailsState: StateFlow<DetailsState> = _detailsState
 
+    private val _indexImageState = MutableStateFlow<IndexImageState>(IndexImageState.ImageRow)
+    val indexImageState: StateFlow<IndexImageState> = _indexImageState
+
     private val deviceCode: String
 
     private val token: String
@@ -43,9 +47,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var firstItem: Int
 
-    private var isFirstLauncher = 1
+    private var isFirstLauncher = 0
 
-    private var pager = 5
+    private var pager = 6
 
     init {
         sp = application.getSharedPreferences(application.packageName, Context.MODE_PRIVATE)
@@ -73,12 +77,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
+        isNineGrid(sp.getBoolean("IS_NINE_GRID", false))
+
         token = deviceCode.getTokenV2()
+
+        getIndexState()
 
         viewModelScope.launch {
             channel.consumeAsFlow().collect {
                 when (it) {
                     is MainIntent.GetDetails -> getDetailsState(it.id)
+                    is MainIntent.OpenNineGrid -> isNineGrid(it.isNineGrid)
                     MainIntent.GetIndex -> getIndexState()
                 }
             }
@@ -106,6 +115,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 IndexState.Error(e.localizedMessage ?: "error")
             }
+        }
+    }
+
+    private fun isNineGrid(isNineGrid: Boolean) {
+        viewModelScope.launch {
+            if (isNineGrid) {
+                _indexImageState.emit(IndexImageState.NineGrid)
+            } else {
+                _indexImageState.emit(IndexImageState.ImageRow)
+            }
+            sp.edit().putBoolean("IS_NINE_GRID", isNineGrid).apply()
         }
     }
 

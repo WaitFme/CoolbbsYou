@@ -96,13 +96,10 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
             startDestination = PagerManager.HomePager.route,
             builder = {
                 composable(PagerManager.HomePager.route) {
-                    HomePager(
-                        navControllerScreen,
-                        viewModel
-                    )
+                    HomePager(navControllerScreen, viewModel)
                 }
                 composable(PagerManager.MessagePager.route) { MessagePager() }
-                composable(PagerManager.SettingsPager.route) { SettingsPager() }
+                composable(PagerManager.SettingsPager.route) { SettingsPager(viewModel) }
             }
         )
     }
