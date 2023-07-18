@@ -1,12 +1,12 @@
 <resources>
-    <string name="app_name">CoolbbsYou</string>
+    <string name="app_name">酷你基哇</string>
 
     <string name="splash_screen">Splash</string>
     <string name="main_screen">Main</string>
     <string name="details_screen">Details</string>
 
-    <string name="home_pager">Home</string>
-    <string name="message_pager">Message</string>
-    <string name="settings_pager">Settings</string>
+    <string name="home_pager">主页</string>
+    <string name="message_pager">消息</string>
+    <string name="settings_pager">设置</string>
 
 </resources>

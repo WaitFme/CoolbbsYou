@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -115,7 +114,7 @@ fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity, viewModel
                     NineImageGrid(
                         modifier = Modifier
                             .padding(13.dp, 10.dp, 13.dp, 0.dp)
-                            .fillMaxWidth(0.7f)
+                            .width(500.dp)
                             .clip(RoundedCornerShape(10.dp)),
                         list = entity.data.picArr,
                         itemPadding = PaddingValues(2.dp),

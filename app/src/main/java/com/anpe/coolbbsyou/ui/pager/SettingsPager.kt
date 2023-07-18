@@ -21,10 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.anpe.coolbbsyou.ui.main.MainViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.state.IndexImageState
+import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,36 +44,36 @@ fun SettingsPager(viewModel: MainViewModel = viewModel()) {
         }
 
         SettingsSwitchItem(
-                title = "首页瀑九宫格图片展示",
-                tip = "首页图片内容是否开启九宫格排版",
-                checked = checked,
-                onCheckedChange = {
-                    checked = it
+            title = "首页图片九宫格",
+            tip = "首页图片内容是否开启九宫格排版",
+            checked = checked,
+            onCheckedChange = {
+                checked = it
 
-                    scope.launch {
-                        viewModel.channel.send(MainIntent.OpenNineGrid(checked))
-                    }
+                scope.launch {
+                    viewModel.channel.send(MainIntent.OpenNineGrid(checked))
                 }
+            }
         )
     }
 }
 
 @Composable
 private fun SettingsSwitchItem(
-        modifier: Modifier = Modifier,
-        title: String,
-        tip: String? = null,
-        checked: Boolean,
-        onCheckedChange: ((Boolean) -> Unit)
+    modifier: Modifier = Modifier,
+    title: String,
+    tip: String? = null,
+    checked: Boolean,
+    onCheckedChange: ((Boolean) -> Unit)
 ) {
     Box(
-            modifier = modifier
-                    .clickable {
-                        onCheckedChange(!checked)
-                    }
-                    .fillMaxWidth()
-                    .padding(15.dp)
-                    .height(50.dp)
+        modifier = modifier
+            .clickable {
+                onCheckedChange(!checked)
+            }
+            .fillMaxWidth()
+            .padding(15.dp)
+            .height(50.dp)
     ) {
         Column(modifier = Modifier.align(Alignment.CenterStart)) {
             Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -82,12 +82,12 @@ private fun SettingsSwitchItem(
             }
         }
         Switch(
-                modifier = Modifier
-                        .align(Alignment.CenterEnd),
-                checked = checked,
-                onCheckedChange = {
-                    onCheckedChange(it)
-                }
+            modifier = Modifier
+                .align(Alignment.CenterEnd),
+            checked = checked,
+            onCheckedChange = {
+                onCheckedChange(it)
+            }
         )
     }
 }

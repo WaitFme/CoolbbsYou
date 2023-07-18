@@ -10,6 +10,9 @@ retrofit = "2.9.0"
 converter-gson = "2.9.0"
 richtext = "3.0.7"
 richtext-ui-material3 = "0.16.0"
+paging-runtime = "3.1.1"
+paging-compose = "1.0.0-alpha18"
+jbcrypt = "0.4"
 
 # Default version
 agp = "8.2.0-alpha12"
@@ -35,6 +38,10 @@ converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", ve
 richtext = { group = "com.zzhoujay.richtext", name = "richtext", version.ref = "richtext" }
 # implementation "com.halilibo.compose-richtext:richtext-ui-material3:${richtext_version}"
 richtext-ui-material3 = { group = "com.halilibo.compose-richtext", name = "richtext-ui-material3", version.ref = "richtext-ui-material3" }
+material = { group = "androidx.compose.material", name = "material" }
+paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging-runtime"}
+paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging-compose"}
+jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt"}
 
 # Default libraries
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }

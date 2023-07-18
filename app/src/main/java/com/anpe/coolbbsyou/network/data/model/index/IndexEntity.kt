@@ -461,16 +461,34 @@ data class Entity(
 )
 
 data class ExtraDataArr(
+    @SerializedName("breakLine")
+    val breakLine: Int,
     @SerializedName("cardDividerBottom")
     val cardDividerBottom: Int,
     @SerializedName("cardDividerBottomVX")
     val cardDividerBottomVX: String,
+    @SerializedName("cardDividerTopVX")
+    val cardDividerTopVX: String,
     @SerializedName("cardId")
     val cardId: Int,
     @SerializedName("cardPageName")
     val cardPageName: String,
+    @SerializedName("column")
+    val column: String,
+    @SerializedName("delayTime")
+    val delayTime: Int,
+    @SerializedName("info")
+    val info: String,
+    @SerializedName("pagination")
+    val pagination: String,
     @SerializedName("recommendPos")
-    val recommendPos: String
+    val recommendPos: String,
+    @SerializedName("row")
+    val row: String,
+    @SerializedName("showToast")
+    val showToast: Int,
+    @SerializedName("viewBackgroundStyle")
+    val viewBackgroundStyle: String
 )
 
 data class ReplyRow(
@@ -514,6 +532,8 @@ data class ReplyRow(
     val likenum: Int,
     @SerializedName("message")
     val message: String,
+    @SerializedName("message_sp")
+    val messageSp: String,
     @SerializedName("message_status")
     val messageStatus: Int,
     @SerializedName("pic")

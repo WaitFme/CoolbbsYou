@@ -1,7 +1,6 @@
 package com.anpe.coolbbsyou.network.data.repository
 
 import com.anpe.coolbbsyou.network.service.ApiService
-import java.net.IDN
 
 class ApiRepository {
     private val api = ApiService.getSerVice()

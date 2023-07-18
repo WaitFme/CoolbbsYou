@@ -77,4 +77,8 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.richtext.ui.material3)
+    implementation(libs.material)
+    implementation(libs.paging.runtime)
+    implementation(libs.paging.compose)
+    implementation(libs.jbcrypt)
 }

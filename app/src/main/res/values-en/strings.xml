@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">CoolbbsYou</string>
+
+    <string name="splash_screen">Splash</string>
+    <string name="main_screen">Main</string>
+    <string name="details_screen">Details</string>
+
+    <string name="home_pager">Home</string>
+    <string name="message_pager">Message</string>
+    <string name="settings_pager">Settings</string>
+
+</resources>

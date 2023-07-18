@@ -3,23 +3,25 @@ package com.anpe.coolbbsyou.ui.main
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.repository.ApiRepository
+import com.anpe.coolbbsyou.network.data.source.IndexSource
 import com.anpe.coolbbsyou.network.data.state.DetailsState
 import com.anpe.coolbbsyou.network.data.state.IndexImageState
 import com.anpe.coolbbsyou.network.data.state.IndexState
-import com.anpe.coolbbsyou.util.Utils.Companion.getDeviceCode
-import com.anpe.coolbbsyou.util.Utils.Companion.getTokenV2
+import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getDeviceCode
+import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getTokenV2
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
-class MainViewModel(application: Application) : AndroidViewModel(application) {
+class MainViewModel(private val application: Application) : AndroidViewModel(application) {
     companion object {
         private val TAG = this::class.java.simpleName
     }
@@ -27,6 +29,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = ApiRepository()
 
     private val sp: SharedPreferences
+
+//    private val context: Context
 
     val channel = Channel<MainIntent>(Channel.UNLIMITED)
 
@@ -47,9 +51,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var firstItem: Int
 
-    private var isFirstLauncher = 0
+    private var isFirstLauncher = 1
 
-    private var pager = 6
+    private var pager = 0
 
     init {
         sp = application.getSharedPreferences(application.packageName, Context.MODE_PRIVATE)
@@ -58,7 +62,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             deviceCode = if (this == null) {
                 val code = getDeviceCode(application)
                 sp.edit().putString("DEVICE_CODE", code).apply()
-                Log.d(TAG, "init: sdadasdasdas")
                 code
             } else {
                 this
@@ -88,6 +91,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 when (it) {
                     is MainIntent.GetDetails -> getDetailsState(it.id)
                     is MainIntent.OpenNineGrid -> isNineGrid(it.isNineGrid)
+                    is MainIntent.LoadIndex -> {
+                        pager++
+                        getIndexState()
+                    }
                     MainIntent.GetIndex -> getIndexState()
                 }
             }
@@ -97,6 +104,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun getIndexState() {
         viewModelScope.launch {
             _indexState.emit(IndexState.Loading)
+            _indexState.value = try {
+                val success = IndexState.Success(repository.getIndex(
+                        deviceCode = deviceCode,
+                        token = token,
+                        page = pager,
+                        firstLauncher = isFirstLauncher,
+                        firstItem = firstItem,
+                        installTime = installTime
+                ))
+                firstItem++
+                sp.edit().putInt("FIRST_ITEM", firstItem).apply()
+                if (isFirstLauncher == 1) {
+                    isFirstLauncher = 0
+                }
+                success
+            } catch (e: Exception) {
+                IndexState.Error(e.localizedMessage ?: "error")
+            }
+        }
+    }
+
+    fun getData() = Pager(PagingConfig(pageSize = 1)) {
+        IndexSource(application)
+    }.flow
+
+    private fun getLoadIndexState() {
+        viewModelScope.launch {
+            _indexState.emit(IndexState.Loading)
+            _indexState.tryEmit(IndexState.Loading)
             _indexState.value = try {
                 val success = IndexState.Success(repository.getIndex(
                         deviceCode = deviceCode,
