@@ -1,4 +1,4 @@
-package com.anpe.bilibiliandyou.network.cookieManager
+package com.anpe.coolbbsyou.network.data.cookie
 
 import okhttp3.Cookie
 import java.io.IOException

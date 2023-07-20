@@ -1,7 +1,7 @@
 package com.anpe.coolbbsyou.network.service
 
 import android.content.Context
-import com.anpe.bilibiliandyou.network.cookieManager.CookieManger
+import com.anpe.coolbbsyou.network.data.cookie.CookieManger
 import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
 import com.anpe.coolbbsyou.network.data.model.index.IndexEntity

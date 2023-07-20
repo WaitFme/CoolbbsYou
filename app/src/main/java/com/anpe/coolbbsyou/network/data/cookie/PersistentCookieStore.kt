@@ -1,4 +1,4 @@
-package com.anpe.bilibiliandyou.network.cookieManager
+package com.anpe.coolbbsyou.network.data.cookie
 
 import android.content.Context
 import android.content.SharedPreferences
