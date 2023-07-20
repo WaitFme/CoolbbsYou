@@ -51,7 +51,7 @@ class IndexSource(context: Context): PagingSource<Int, Data>() {
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Data> {
         return try {
             val currentPage = params.key ?: 1
-            val index = ApiRepository().getIndex(deviceCode, token, currentPage, 1, installTime, firstItem)
+            val index = ApiRepository().getIndex(currentPage, 1, firstItem)
             val nextPage = currentPage + 1
             LoadResult.Page(index.data, null, nextPage)
         } catch (e: Exception) {

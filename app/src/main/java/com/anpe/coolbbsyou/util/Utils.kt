@@ -1,5 +1,6 @@
 package com.anpe.coolbbsyou.util
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
@@ -17,6 +18,8 @@ import java.util.Random
 class Utils {
     companion object {
         private val TAG = this::class.simpleName
+
+        fun Configuration.isTable() = this.screenWidthDp >= 800
 
         fun String.getBase64(isRaw: Boolean = true): String {
             var result = Base64.getEncoder().encodeToString(this.toByteArray())

@@ -12,4 +12,10 @@ sealed class MainIntent {
 
     // 图片视图
     data class OpenNineGrid(val isNineGrid: Boolean): MainIntent()
+
+    // 获取搜索推荐词
+    data class GetSuggestSearch(val keyword: String): MainIntent()
+
+    // 获取每日酷安
+    data class GetTodayCool(val page: Int, val url: String): MainIntent()
 }
