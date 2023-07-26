@@ -80,7 +80,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         getLoginStatus()
 
-//        getIndexState()
+        getIndexState()
 
         channelHandler(channel)
     }
