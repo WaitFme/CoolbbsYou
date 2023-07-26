@@ -9,4 +9,8 @@
     <string name="message_pager">消息</string>
     <string name="settings_pager">设置</string>
 
+    <string name="follow">关注</string>
+    <string name="fans">粉丝</string>
+    <string name="feed">动态</string>
+    <string name="search_tip">酷你基哇</string>
 </resources>

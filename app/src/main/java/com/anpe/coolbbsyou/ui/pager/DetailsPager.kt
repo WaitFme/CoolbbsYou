@@ -41,7 +41,6 @@ fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity) {
     val context = LocalContext.current
 
     Surface {
-
         Row {
             Spacer(
                 modifier = Modifier

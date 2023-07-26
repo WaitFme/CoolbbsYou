@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.anpe.coolbbsyou.ui.screen.DetailsScreen
+import com.anpe.coolbbsyou.ui.screen.LoginScreen
 import com.anpe.coolbbsyou.ui.screen.MainScreen
 import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.theme.CoolbbsYouTheme
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
                                     id = it.arguments?.getInt("id")
                                 )
                             }
+                            composable(ScreenManager.LoginScreen.route) { LoginScreen(navController) }
                         }
                     )
                 }

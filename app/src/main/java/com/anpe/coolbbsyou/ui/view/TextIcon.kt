@@ -1,6 +1,7 @@
 package com.anpe.bilibiliandyou.ui.view
 
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,7 +17,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 fun TextIcon(
     modifier: Modifier = Modifier,
     iconId: Int,
-    iconTint: Color,
+    iconTint: Color = MaterialTheme.colorScheme.surfaceTint,
     textDirection: TextDirection = TextDirection.Bottom,
     text: String? = null,
     fontSize: TextUnit = 10.sp,

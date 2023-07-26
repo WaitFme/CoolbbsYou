@@ -1,17 +1,25 @@
 package com.anpe.coolbbsyou.network.service
 
 import android.content.Context
-import com.anpe.coolbbsyou.network.data.cookie.CookieManger
 import com.anpe.coolbbsyou.constant.Constants
+import com.anpe.coolbbsyou.network.data.cookie.CookieManger
 import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
 import com.anpe.coolbbsyou.network.data.model.index.IndexEntity
+import com.anpe.coolbbsyou.network.data.model.login.LoginEntity
+import com.anpe.coolbbsyou.network.data.model.loginState.LoginStateEntity
+import com.anpe.coolbbsyou.network.data.model.nofitication.NotificationEntity
+import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
 import com.anpe.coolbbsyou.network.data.model.suggest.SuggestSearchEntity
 import com.anpe.coolbbsyou.network.data.model.today.TodayCoolEntity
+import com.anpe.coolbbsyou.util.LoginUtils
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Field
+import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.POST
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
 
@@ -19,6 +27,7 @@ interface ApiService {
     companion object {
         private const val API_URL = "https://api.coolapk.com"
         private const val API2_URL = "https://api2.coolapk.com"
+        private const val ACCOUNT_URL = "https://account.coolapk.com"
 
         private var service: ApiService? = null
 
@@ -84,4 +93,43 @@ interface ApiService {
         @Query("type") type: String = "app",
         @Query("searchValue") searchValue: String
     ): SuggestSearchEntity
+
+    @FormUrlEncoded
+    @POST("$ACCOUNT_URL/auth/loginByCoolApk")
+    suspend fun postAccount(
+        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
+        @Field("submit") submit: Int = 1,
+        @Field("randomNumber") randomNumber: String = LoginUtils.createRandomNumber(),
+        @Field("requestHash") requestHash: String,
+        @Field("login") login: String,
+        @Field("password") password: String,
+        @Field("captcha") captcha: String = "",
+        @Field("code") code: String = "",
+    ): LoginEntity
+
+    @GET("$API_URL/v6/notification/list")
+    suspend fun getNotification(
+        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
+        @Header("X-App-Id") appId: String = "com.coolapk.market",
+        @Header("X-App-Device") device: String,
+        @Header("X-App-Token") token: String,
+        @Query("page") page: Int = 1
+    ): NotificationEntity
+
+    @GET("$API_URL/v6/account/checkLoginInfo")
+    suspend fun getLoginState(
+        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
+        @Header("X-App-Id") appId: String = "com.coolapk.market",
+        @Header("X-App-Device") device: String,
+        @Header("X-App-Token") token: String,
+    ): LoginStateEntity
+
+    @GET("$API_URL/v6/user/profile")
+    suspend fun getProfile(
+        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
+        @Header("X-App-Id") appId: String = "com.coolapk.market",
+        @Header("X-App-Device") device: String,
+        @Header("X-App-Token") token: String,
+        @Query("uid") uid: Int
+    ): ProfileEntity
 }

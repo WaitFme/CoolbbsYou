@@ -9,4 +9,8 @@
     <string name="message_pager">Message</string>
     <string name="settings_pager">Settings</string>
 
+    <string name="follow">follow</string>
+    <string name="fans">fans</string>
+    <string name="feed">feed</string>
+    <string name="search_tip">CoolbbsYou</string>
 </resources>

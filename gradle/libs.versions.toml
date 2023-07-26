@@ -13,9 +13,10 @@ richtext-ui-material3 = "0.16.0"
 paging-runtime = "3.1.1"
 paging-compose = "1.0.0-alpha18"
 jbcrypt = "0.4"
+jsoup = "1.16.1"
 
 # Default version
-agp = "8.2.0-alpha12"
+agp = "8.2.0-alpha13"
 kotlin = "1.8.10"
 core-ktx = "1.10.1"
 junit = "4.13.2"
@@ -42,6 +43,8 @@ material = { group = "androidx.compose.material", name = "material" }
 paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging-runtime"}
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging-compose"}
 jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt"}
+jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+
 
 # Default libraries
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }

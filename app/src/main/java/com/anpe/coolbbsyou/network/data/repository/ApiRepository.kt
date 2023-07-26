@@ -2,12 +2,14 @@ package com.anpe.coolbbsyou.network.data.repository
 
 import android.content.Context
 import com.anpe.coolbbsyou.network.service.ApiService
+import com.anpe.coolbbsyou.network.service.ApiServiceTwo
 import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.TokenDeviceUtils
 import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getTokenV2
 
 class ApiRepository(val context: Context = MyApplication.context) {
     private val api = ApiService.getSerVice(context)
+    private val apiCall = ApiServiceTwo.getSerVice(context)
 
     private val sp = context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
 
@@ -29,6 +31,9 @@ class ApiRepository(val context: Context = MyApplication.context) {
         }
 
         token = deviceCode.getTokenV2()
+
+//        println(deviceCode)
+//        println(token)
 
         sp.getString("INSTALL_TIME", null).apply {
             installTime = if (this == null) {
@@ -59,4 +64,26 @@ class ApiRepository(val context: Context = MyApplication.context) {
 
     suspend fun getSuggestSearch(keyword: String) =
         api.getSuggestSearch(deviceCode = deviceCode, token = token, searchValue = keyword)
+
+    fun getRequestHash() = apiCall.getRequestHash()
+
+    suspend fun postAccount(
+        requestHash: String,
+        login: String,
+        password: String,
+        captcha: String = "",
+        code: String = "",
+    ) = api.postAccount(
+        requestHash = requestHash,
+        login = login,
+        password = password,
+        captcha = captcha,
+        code = code
+    )
+
+    suspend fun getNotification() = api.getNotification(device = deviceCode, token = token)
+
+    suspend fun getLoginState() = api.getLoginState(device = deviceCode, token = token)
+
+    suspend fun getProfile(uid: Int) = api.getProfile(device = deviceCode, token = token, uid = uid)
 }

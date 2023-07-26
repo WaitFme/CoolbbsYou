@@ -166,7 +166,7 @@ private fun IndexItem(
 
     Card(
         modifier = modifier
-            .clickableNoRipple { onClick() }
+            .clickableNoRipple {  }
             .fillMaxWidth(),
         shape = RoundedCornerShape(15.dp)
     ) {

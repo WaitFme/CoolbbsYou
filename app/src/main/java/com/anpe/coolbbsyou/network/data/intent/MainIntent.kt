@@ -18,4 +18,16 @@ sealed class MainIntent {
 
     // 获取每日酷安
     data class GetTodayCool(val page: Int, val url: String): MainIntent()
+
+    // 登陆
+    data class LoginAccount(val requestHash: String, val account: String, val passwd: String, val captcha: String): MainIntent()
+
+    // 登陆状态查询
+    object LoginState: MainIntent()
+
+    // 主页信息
+    data class GetProfile(val uid: Int): MainIntent()
+
+    // 获取消息
+    object GetNotification: MainIntent()
 }

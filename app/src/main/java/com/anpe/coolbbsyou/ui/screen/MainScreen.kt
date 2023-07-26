@@ -1,24 +1,29 @@
 package com.anpe.coolbbsyou.ui.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -30,8 +35,10 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,13 +50,21 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -59,11 +74,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
-import com.anpe.coolbbsyou.network.data.model.suggest.Data
 import com.anpe.coolbbsyou.network.data.state.DetailsState
+import com.anpe.coolbbsyou.network.data.state.LoginStatusState
 import com.anpe.coolbbsyou.network.data.state.SuggestState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.pager.DetailsPager
@@ -72,7 +88,13 @@ import com.anpe.coolbbsyou.ui.pager.MessagePager
 import com.anpe.coolbbsyou.ui.pager.SettingsPager
 import com.anpe.coolbbsyou.ui.pager.TodayCoolPager
 import com.anpe.coolbbsyou.ui.pager.manager.PagerManager
+import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.ui.view.CustomProgress
 import com.anpe.coolbbsyou.ui.view.MyScaffoldWithDetails
+import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getBoolean
+import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getInt
+import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getString
+import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
 @Composable
@@ -83,6 +105,7 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
     var detailsEntity by remember {
         mutableStateOf(details)
     }
+
     val items = listOf(
         PagerManager.HomePager,
         PagerManager.MessagePager,
@@ -90,7 +113,6 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
     )
 
     LaunchedEffect(key1 = true, block = {
-        viewModel.channel.send(MainIntent.GetIndex)
         viewModel.detailsState.collect {
             when (it) {
                 is DetailsState.Error -> {}
@@ -103,17 +125,24 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
 
     MyScaffoldWithDetails(
         detailsBlock = { DetailsBlock(detailsEntity = detailsEntity) },
-        topBar = { TopBar() },
+        topBar = { TopBar(navControllerScreen) },
         floatingActionButton = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                FloatingActionButton(onClick = {  }) {
+                FloatingActionButton(onClick = { }) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = null)
                 }
             }
         },
-        railBar = { RailBar(navController = navController, items) },
+        railBar = {
+            RailBar(
+                navControllerScreen = navControllerScreen,
+                navController = navController,
+                items = items,
+                viewModel = viewModel
+            )
+        },
         bottomBar = { BottomBar(navController = navController, items) },
         changeValue = 800.dp
     ) {
@@ -125,9 +154,14 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
                 composable(PagerManager.HomePager.route) {
                     HomePager(navControllerScreen, navController, viewModel)
                 }
-                composable(PagerManager.MessagePager.route) { MessagePager() }
+                composable(PagerManager.MessagePager.route) { MessagePager(viewModel) }
                 composable(PagerManager.SettingsPager.route) { SettingsPager(viewModel) }
-                composable(PagerManager.TodayCoolPager.route) { TodayCoolPager(navControllerScreen, viewModel) }
+                composable(PagerManager.TodayCoolPager.route) {
+                    TodayCoolPager(
+                        navControllerScreen,
+                        viewModel
+                    )
+                }
             }
         )
     }
@@ -173,9 +207,13 @@ private fun DetailsBlock(detailsEntity: DetailsEntity?) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(viewModel: MainViewModel = viewModel()) {
+private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewModel = viewModel()) {
     val configuration = LocalConfiguration.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+
+    val loginStatusState by viewModel.loginStatusState.collectAsState()
+    val suggestState by viewModel.suggestState.collectAsState()
 
     var query by remember {
         mutableStateOf("")
@@ -185,21 +223,9 @@ private fun TopBar(viewModel: MainViewModel = viewModel()) {
         mutableStateOf(false)
     }
 
-    val data: List<Data> = listOf()
-    var list by remember {
-        mutableStateOf(data)
+    var dialog by remember {
+        mutableStateOf(false)
     }
-
-    LaunchedEffect(key1 = true, block = {
-        viewModel.suggestState.collect {
-            when (it) {
-                is SuggestState.Error -> {}
-                SuggestState.Idle -> {}
-                SuggestState.Loading -> {}
-                is SuggestState.Success -> list = it.suggestSearchEntity.data
-            }
-        }
-    })
 
     Column {
         SearchBar(
@@ -221,7 +247,7 @@ private fun TopBar(viewModel: MainViewModel = viewModel()) {
             onSearch = {},
             active = false,
             onActiveChange = {},
-            placeholder = { Text(text = "你热爱的就是你的生活.jpg", color = Color.Gray) },
+            placeholder = { Text(text = stringResource(id = R.string.search_tip), color = Color.Gray) },
             leadingIcon = {
                 Icon(imageVector = Icons.Default.Search, contentDescription = null)
             },
@@ -236,16 +262,31 @@ private fun TopBar(viewModel: MainViewModel = viewModel()) {
                         }
                     }
                     if (configuration.screenWidthDp < 800) {
-
                         IconButton(
-                            onClick = { /*TODO*/ },
+                            onClick = {
+                                if (loginStatusState is LoginStatusState.Success) {
+                                    val uid =
+                                        (loginStatusState as LoginStatusState.Success).loginStateEntity.data.uid
+
+                                    scope.launch {
+                                        viewModel.sendIntent(MainIntent.GetProfile(uid.toInt()))
+                                    }
+                                    dialog = !dialog
+                                }
+                            },
                             modifier = Modifier
                                 .clip(RoundedCornerShape(10.dp)),
                         ) {
                             AsyncImage(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp)),
-                                model = "http://avatar.coolapk.com/data/001/18/61/29_avatar_middle.jpg?1652501380",
+                                model = ImageRequest.Builder(context)
+                                    .data(
+                                        getString("userAvatar")
+                                            ?: R.drawable.baseline_supervised_user_circle_24
+                                    )
+                                    .crossfade(true)
+                                    .build(),
                                 contentDescription = null
                             )
                         }
@@ -254,15 +295,46 @@ private fun TopBar(viewModel: MainViewModel = viewModel()) {
             },
             shape = RoundedCornerShape(15.dp)
         ) {
-            LazyColumn(content = {
-                if (query.isNotEmpty()) {
-                    items(list) {
-                        if (it.entityType == "searchWord" && it.url.indexOf("searchTab://apk?keyword=") == -1) {
-                            Text(text = it.title)
-                        }
+            Box {
+                when (suggestState) {
+                    is SuggestState.Error -> {
+                        Text(
+                            modifier = Modifier.align(
+                                Alignment.Center
+                            ), text = (suggestState as SuggestState.Error).e
+                        )
+                    }
+
+                    SuggestState.Idle -> {
+                        Text(
+                            modifier = Modifier.align(
+                                Alignment.Center
+                            ), text = "Idle"
+                        )
+                    }
+
+                    SuggestState.Loading -> CircularProgressIndicator(
+                        modifier = Modifier.align(
+                            Alignment.Center
+                        )
+                    )
+
+                    is SuggestState.Success -> {
+                        val dataList =
+                            (suggestState as SuggestState.Success).suggestSearchEntity.data
+
+                        LazyColumn(content = {
+                            if (query.isNotEmpty()) {
+                                items(dataList) {
+                                    if (it.entityType == "searchWord" && it.url.indexOf("searchTab://apk?keyword=") == -1) {
+                                        Text(text = it.title)
+                                    }
+                                }
+                            }
+                        })
                     }
                 }
-            })
+            }
         }
 
         AnimatedVisibility(visible = status) {
@@ -277,41 +349,102 @@ private fun TopBar(viewModel: MainViewModel = viewModel()) {
                         .padding(start = 15.dp, end = 15.dp),
                     shape = RoundedCornerShape(15.dp)
                 ) {
-                    LazyColumn(content = {
-                        if (query.isNotEmpty()) {
-                            items(list) {
-                                if (
-                                    it.entityType == "searchWord" &&
-                                    it.url.indexOf("searchTab://apk?keyword=") == -1
-                                ) {
-                                    Text(
-                                        modifier = Modifier
-                                            .padding(
-                                                start = 15.dp,
-                                                end = 15.dp,
-                                                top = 10.dp,
-                                                bottom = 10.dp
-                                            )
-                                            .fillMaxWidth(),
-                                        text = it.title
-                                    )
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        when (suggestState) {
+                            is SuggestState.Error -> {
+                                Text(
+                                    modifier = Modifier.align(
+                                        Alignment.Center
+                                    ), text = (suggestState as SuggestState.Error).e
+                                )
+                            }
+
+                            SuggestState.Idle -> {
+                                Text(
+                                    modifier = Modifier.align(
+                                        Alignment.Center
+                                    ), text = "Idle"
+                                )
+                            }
+
+                            SuggestState.Loading -> CircularProgressIndicator(
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .align(Alignment.Center)
+                            )
+
+                            is SuggestState.Success -> {
+                                var dataList =
+                                    (suggestState as SuggestState.Success).suggestSearchEntity.data
+
+                                if (dataList.size >= 10) {
+                                    dataList = dataList.subList(0, 9)
                                 }
+
+                                LazyColumn(content = {
+                                    if (query.isNotEmpty()) {
+                                        items(dataList) {
+                                            if (
+                                                it.entityType == "searchWord" &&
+                                                it.url.indexOf("searchTab://apk?keyword=") == -1
+                                            ) {
+                                                Text(
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            start = 15.dp,
+                                                            end = 15.dp,
+                                                            top = 10.dp,
+                                                            bottom = 10.dp
+                                                        )
+                                                        .fillMaxWidth(),
+                                                    text = it.title
+                                                )
+                                            }
+                                        }
+                                    }
+                                })
                             }
                         }
-                    })
+                    }
                 }
             }
+        }
+
+        if (dialog) {
+            BackHandler {
+                dialog = false
+            }
+        }
+
+        if (dialog) {
+            CustomDialog(
+                onDismissRequest = { dialog = false },
+                navControllerScreen = navControllerScreen
+            )
         }
     }
 }
 
 @Composable
-private fun RailBar(navController: NavHostController, items: List<PagerManager>) {
+private fun RailBar(
+    navControllerScreen: NavHostController,
+    navController: NavHostController,
+    items: List<PagerManager>,
+    viewModel: MainViewModel
+) {
+    var dialog by remember {
+        mutableStateOf(false)
+    }
+
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         content = {
+            val context = LocalContext.current
+
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
+
+            val loginStatusState by viewModel.loginStatusState.collectAsState()
 
             Text(
                 modifier = Modifier
@@ -326,10 +459,18 @@ private fun RailBar(navController: NavHostController, items: List<PagerManager>)
 
             AsyncImage(
                 modifier = Modifier
+                    .clickableNoRipple {
+                        dialog = !dialog
+                    }
                     .padding(top = 10.dp, bottom = 30.dp)
                     .size(45.dp)
                     .clip(RoundedCornerShape(10.dp)),
-                model = "http://avatar.coolapk.com/data/001/18/61/29_avatar_middle.jpg?1652501380",
+                model = ImageRequest.Builder(context)
+                    .data(
+                        getString("userAvatar")
+                            ?: R.drawable.baseline_supervised_user_circle_24
+                    )
+                    .crossfade(true),
                 contentDescription = null
             )
 
@@ -369,6 +510,19 @@ private fun RailBar(navController: NavHostController, items: List<PagerManager>)
             }
         }
     )
+
+    if (dialog) {
+        BackHandler {
+            dialog = false
+        }
+    }
+
+    if (dialog) {
+        CustomDialog(
+            onDismissRequest = { dialog = false },
+            navControllerScreen = navControllerScreen
+        )
+    }
 }
 
 @Composable
@@ -409,5 +563,240 @@ private fun BottomBar(navController: NavHostController, items: List<PagerManager
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun CustomDialog(
+    onDismissRequest: () -> Unit,
+    navControllerScreen: NavHostController
+) {
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        Column(
+            modifier = Modifier
+                .width(400.dp)
+                .clip(RoundedCornerShape(30.dp))
+                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(15.dp)),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            val context = LocalContext.current
+
+            Text(
+                modifier = Modifier
+                    .padding(top = 10.dp, bottom = 10.dp),
+                text = stringResource(id = R.string.app_name),
+                fontSize = 25.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            ConstraintLayout(
+                modifier = Modifier
+                    .padding(start = 10.dp, end = 10.dp)
+                    .clip(RoundedCornerShape(25.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+            ) {
+                val (
+                    avatarRef,
+                    usernameRef,
+                    userLevelRef,
+                    experienceRef,
+                    experienceSeekRef,
+                    flowRef,
+                    fansRef,
+                    feedRef,
+                    spacerRef,
+                    itemRef
+                ) = createRefs()
+
+                AsyncImage(
+                    modifier = Modifier
+                        .size(35.dp)
+                        .clip(CircleShape)
+                        .constrainAs(avatarRef) {
+                            start.linkTo(parent.start, 15.dp)
+                            top.linkTo(parent.top, 15.dp)
+                        }
+                        .clickableNoRipple {
+                            if (!getBoolean("isLogin")) {
+                                onDismissRequest()
+                                navControllerScreen.navigate(ScreenManager.LoginScreen.route)
+                            }
+                        },
+                    model = ImageRequest.Builder(context)
+                        .data(
+                            getString("userAvatar")
+                                ?: R.drawable.baseline_supervised_user_circle_24
+                        )
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "avatar"
+                )
+
+                Text(
+                    modifier = Modifier
+                        .constrainAs(usernameRef) {
+                            start.linkTo(avatarRef.end, 10.dp)
+                            top.linkTo(avatarRef.top)
+                        },
+                    text = getString("username") ?: "游客",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    modifier = Modifier
+                        .constrainAs(userLevelRef) {
+                            start.linkTo(avatarRef.end, 10.dp)
+                            top.linkTo(usernameRef.bottom, 5.dp)
+                        },
+                    text = "Lv.${getInt("level")}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    modifier = Modifier
+                        .constrainAs(experienceRef) {
+                            start.linkTo(userLevelRef.end, 25.dp)
+                            top.linkTo(userLevelRef.top)
+                        },
+                    text = "${getInt("experience")}/${getInt("next_level_experience")}",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                CustomProgress(
+                    modifier = Modifier
+                        .constrainAs(experienceSeekRef) {
+                            start.linkTo(avatarRef.end, 10.dp)
+                            top.linkTo(userLevelRef.bottom, 5.dp)
+                            end.linkTo(experienceRef.end)
+                            width = Dimension.fillToConstraints
+                        },
+                    currentValue = getInt("experience"),
+                    strokeWidth = 10f,
+                    maxValue = getInt("next_level_experience"),
+                    primaryColor = MaterialTheme.colorScheme.primary,
+                    secondaryColor = MaterialTheme.colorScheme.primaryContainer
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .constrainAs(flowRef) {
+                            start.linkTo(parent.start)
+                            top.linkTo(experienceSeekRef.bottom, 20.dp)
+                            end.linkTo(parent.end)
+                        },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val follow = buildAnnotatedString {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(getInt("follow").toString())
+                        }
+                        append("\n${stringResource(id = R.string.follow)}")
+                    }
+                    val fans = buildAnnotatedString {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(getInt("fans").toString())
+                        }
+                        append("\n${stringResource(id = R.string.fans)}")
+                    }
+                    val feed = buildAnnotatedString {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(getInt("feed").toString())
+                        }
+                        append("\n${stringResource(id = R.string.feed)}")
+                    }
+
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = follow,
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = fans,
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = feed,
+                        textAlign = TextAlign.Center,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .constrainAs(spacerRef) {
+                            top.linkTo(flowRef.bottom, 15.dp)
+                        }
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .constrainAs(itemRef) {
+                            top.linkTo(spacerRef.bottom, 10.dp)
+                            bottom.linkTo(parent.bottom, 10.dp)
+                        }
+                ) {
+                    IconText(text = "我的常去", icon = R.drawable.baseline_hdr_strong_24)
+                    IconText(text = "我的话题", icon = R.drawable.baseline_label_24)
+                    IconText(text = "浏览历史", icon = R.drawable.baseline_history_24)
+                    IconText(text = "我的收藏", icon = R.drawable.baseline_star_24)
+                    if (getBoolean("isLogin")) {
+                        IconText(text = "退出登陆", icon = R.drawable.baseline_exit_to_app_24)
+                    }
+                }
+            }
+
+            IconText(
+                modifier = Modifier
+                    .padding(start = 10.dp, bottom = 10.dp),
+                text = "关于", icon = R.drawable.baseline_error_24
+            )
+        }
+    }
+}
+
+@Composable
+private fun IconText(modifier: Modifier = Modifier, text: String, icon: Int? = null) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(60.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        icon?.let {
+            Icon(
+                modifier = Modifier
+                    .padding(start = 30.dp)
+                    .size(20.dp),
+                painter = painterResource(id = icon),
+                contentDescription = "icon"
+            )
+        }
+
+        Text(
+            modifier = Modifier
+                .padding(start = if (icon == null) 30.dp else 15.dp),
+            text = text, fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
