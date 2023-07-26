@@ -21,6 +21,41 @@ class Utils {
 
         fun Configuration.isTable() = this.screenWidthDp >= 800
 
+        /**
+         * 二进制数组转十六进制字符串
+         *
+         * @param bytes byte array to be converted
+         * @return string containing hex values
+         */
+        fun ByteArray.byteArrayToHexString(): String {
+            val sb = StringBuilder(size * 2)
+            for (element in this) {
+                val v = element.toInt() and 0xff
+                if (v < 16) {
+                    sb.append('0')
+                }
+                sb.append(Integer.toHexString(v))
+            }
+            return sb.toString().uppercase(Locale.US)
+        }
+
+        /**
+         * 十六进制字符串转二进制数组
+         *
+         * @param hexString string of hex-encoded values
+         * @return decoded byte array
+         */
+        fun String.hexStringToByteArray(): ByteArray {
+            val data = ByteArray(length / 2)
+            for (index in indices step 2) {
+                data[index / 2] = (
+                    (Character.digit(this[index], 16) shl 4) +
+                        Character.digit(this[index + 1], 16)
+                    ).toByte()
+            }
+            return data
+        }
+
         fun String.getBase64(isRaw: Boolean = true): String {
             var result = Base64.getEncoder().encodeToString(this.toByteArray())
             if (isRaw) {

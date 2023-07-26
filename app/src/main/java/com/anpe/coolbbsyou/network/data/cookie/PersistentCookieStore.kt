@@ -5,6 +5,8 @@ import android.content.SharedPreferences
 import android.text.TextUtils
 import android.util.Log
 import com.anpe.coolbbsyou.constant.Constants
+import com.anpe.coolbbsyou.util.Utils.Companion.byteArrayToHexString
+import com.anpe.coolbbsyou.util.Utils.Companion.hexStringToByteArray
 import okhttp3.Cookie
 import okhttp3.HttpUrl
 import java.io.ByteArrayInputStream
@@ -12,7 +14,6 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 open class PersistentCookieStore(context: Context) {
@@ -31,7 +32,6 @@ open class PersistentCookieStore(context: Context) {
         for ((key, value) in prefsMap) {
             val cookieNames = TextUtils.split(value as String, ",")
             for (name in cookieNames) {
-                Log.d(TAG, "names: $name")
                 val encodedCookie = cookiePrefs.getString(name, null)
                 encodedCookie?.apply {
                     val decodeCookie = this.decodeCookie()
@@ -168,40 +168,5 @@ open class PersistentCookieStore(context: Context) {
             Log.d(TAG, "ClassNotFoundException in decodeCookie", e)
         }
         return cookie
-    }
-
-    /**
-     * 二进制数组转十六进制字符串
-     *
-     * @param bytes byte array to be converted
-     * @return string containing hex values
-     */
-    private fun ByteArray.byteArrayToHexString(): String {
-        val sb = StringBuilder(size * 2)
-        for (element in this) {
-            val v = element.toInt() and 0xff
-            if (v < 16) {
-                sb.append('0')
-            }
-            sb.append(Integer.toHexString(v))
-        }
-        return sb.toString().uppercase(Locale.US)
-    }
-
-    /**
-     * 十六进制字符串转二进制数组
-     *
-     * @param hexString string of hex-encoded values
-     * @return decoded byte array
-     */
-    private fun String.hexStringToByteArray(): ByteArray {
-        val data = ByteArray(length / 2)
-        for (index in indices step 2) {
-            data[index / 2] = (
-                    (Character.digit(this[index], 16) shl 4) +
-                            Character.digit(this[index + 1], 16)
-                    ).toByte()
-        }
-        return data
     }
 }
