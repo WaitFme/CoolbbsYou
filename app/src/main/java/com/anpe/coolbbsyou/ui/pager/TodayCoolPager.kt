@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,11 +17,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,16 +62,17 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TodayCoolPager(navControllerScreen: NavHostController, viewModel: MainViewModel) {
+fun TodayCoolPager(navControllerScreen: NavHostController, navController: NavHostController, url: String?, viewModel: MainViewModel) {
     val scope = rememberCoroutineScope()
-
     val configuration = LocalConfiguration.current
 
     val todayState by viewModel.todayState.collectAsState()
 
-    LaunchedEffect(key1 = true, block = {
-        viewModel.channel.send(MainIntent.GetTodayCool(url = "V8_JINRI_20230720", page = 1))
-    })
+    LaunchedEffect(key1 = true) {
+        url?.apply {
+            viewModel.channel.send(MainIntent.GetTodayCool(url = this, page = 1))
+        }
+    }
 
     var refreshing by remember {
         mutableStateOf(false)
@@ -74,7 +80,9 @@ fun TodayCoolPager(navControllerScreen: NavHostController, viewModel: MainViewMo
     val refreshState = rememberPullRefreshState(refreshing = refreshing, onRefresh = {
         scope.launch {
             refreshing = true
-            viewModel.channel.send(MainIntent.GetTodayCool(url = "V8_JINRI_20230720", page = 1))
+            url?.apply {
+                viewModel.channel.send(MainIntent.GetTodayCool(url = this, page = 1))
+            }
         }
     })
 
@@ -105,30 +113,53 @@ fun TodayCoolPager(navControllerScreen: NavHostController, viewModel: MainViewMo
             }
         }
 
-        LazyColumn(
-            modifier = Modifier
-                .pullRefresh(refreshState)
-                .fillMaxHeight(),
-            contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
-            content = {
-                items(items = dataList) {
-                    IndexItems(
-                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                        data = it,
-                        onClick = {
-                            scope.launch {
-                                if (!configuration.isTable()) {
-                                    navControllerScreen.navigate("${ScreenManager.DetailsScreen.route}/${it.id}")
-                                } else {
-                                    println(it.id)
-                                    viewModel.channel.send(MainIntent.GetDetails(it.id))
-                                }
-                            }
-                        }
+        Column {
+            Row {
+                IconButton(onClick = {
+                    navController.popBackStack()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "ArrowBack"
                     )
                 }
+
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 5.dp),
+                    text = "今日酷安",
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontStyle = FontStyle.Italic,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-        )
+            LazyColumn(
+                modifier = Modifier
+                    .pullRefresh(refreshState)
+                    .fillMaxHeight(),
+                contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
+                content = {
+                    items(items = dataList) {
+                        IndexItems(
+                            modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                            data = it,
+                            onClick = {
+                                scope.launch {
+                                    if (!configuration.isTable()) {
+                                        navControllerScreen.navigate("${ScreenManager.DetailsScreen.route}/${it.id}")
+                                    } else {
+                                        println(it.id)
+                                        viewModel.channel.send(MainIntent.GetDetails(it.id))
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+            )
+        }
 
         PullRefreshIndicator(
             modifier = Modifier.align(Alignment.TopCenter),
@@ -166,7 +197,7 @@ private fun IndexItem(
 
     Card(
         modifier = modifier
-            .clickableNoRipple {  }
+            .clickableNoRipple { }
             .fillMaxWidth(),
         shape = RoundedCornerShape(15.dp)
     ) {
@@ -219,16 +250,6 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
     val context = LocalContext.current
 
     Column(modifier = modifier) {
-        Text(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 5.dp),
-            text = "今日酷安",
-            fontSize = 25.sp,
-            fontWeight = FontWeight.Bold,
-            fontStyle = FontStyle.Italic
-        )
-
         LazyRow(content = {
             items(data.entities) {
                 Column(
@@ -260,6 +281,7 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
                         text = it.title,
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
+                        minLines = 2,
                         fontSize = 15.sp
                     )
                 }

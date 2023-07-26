@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
@@ -16,7 +15,7 @@ import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.pager.DetailsPager
 
 @Composable
-fun DetailsScreen(navControllerScreen: NavController, id: Int?, viewModel: MainViewModel = viewModel()) {
+fun DetailsScreen(navControllerScreen: NavController, id: Int?, viewModel: MainViewModel) {
     val details: DetailsEntity? = null
     var detailsEntity by remember {
         mutableStateOf(details)

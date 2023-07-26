@@ -43,7 +43,7 @@ import retrofit2.Response
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel = viewModel()) {
+fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(title = { Text(text = "登陆") }, navigationIcon = {

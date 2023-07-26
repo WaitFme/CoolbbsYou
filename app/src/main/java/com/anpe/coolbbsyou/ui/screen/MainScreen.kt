@@ -69,10 +69,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
@@ -98,7 +100,7 @@ import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel = viewModel()) {
+fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel) {
     val navController = rememberNavController()
 
     val details: DetailsEntity? = null
@@ -145,9 +147,9 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
         },
         bottomBar = { BottomBar(navController = navController, items) },
         changeValue = 800.dp
-    ) {
+    ) {pv->
         NavHost(
-            modifier = Modifier.padding(it),
+            modifier = Modifier.padding(pv),
             navController = navController,
             startDestination = PagerManager.HomePager.route,
             builder = {
@@ -156,10 +158,15 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel 
                 }
                 composable(PagerManager.MessagePager.route) { MessagePager(viewModel) }
                 composable(PagerManager.SettingsPager.route) { SettingsPager(viewModel) }
-                composable(PagerManager.TodayCoolPager.route) {
+                composable(
+                    route = "${PagerManager.TodayCoolPager.route}/{url}",
+                    arguments = listOf(navArgument("url") { type = NavType.StringType })
+                ) {
                     TodayCoolPager(
-                        navControllerScreen,
-                        viewModel
+                        navControllerScreen = navControllerScreen,
+                        navController = navController,
+                        url = it.arguments?.getString("url"),
+                        viewModel = viewModel
                     )
                 }
             }
@@ -432,6 +439,8 @@ private fun RailBar(
     items: List<PagerManager>,
     viewModel: MainViewModel
 ) {
+    val scope = rememberCoroutineScope()
+
     var dialog by remember {
         mutableStateOf(false)
     }
@@ -460,7 +469,15 @@ private fun RailBar(
             AsyncImage(
                 modifier = Modifier
                     .clickableNoRipple {
-                        dialog = !dialog
+                        if (loginStatusState is LoginStatusState.Success) {
+                            val uid =
+                                (loginStatusState as LoginStatusState.Success).loginStateEntity.data.uid
+
+                            scope.launch {
+                                viewModel.sendIntent(MainIntent.GetProfile(uid.toInt()))
+                            }
+                            dialog = !dialog
+                        }
                     }
                     .padding(top = 10.dp, bottom = 30.dp)
                     .size(45.dp)
@@ -470,7 +487,8 @@ private fun RailBar(
                         getString("userAvatar")
                             ?: R.drawable.baseline_supervised_user_circle_24
                     )
-                    .crossfade(true),
+                    .crossfade(true)
+                    .build(),
                 contentDescription = null
             )
 

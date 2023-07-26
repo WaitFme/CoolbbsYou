@@ -70,11 +70,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var pager = 0
 
-    private var _isLogin = false
-    val isLogin = _isLogin
-
-    var uid = -1
-
     init {
         isNineGrid(sp.getBoolean("IS_NINE_GRID", false))
 

@@ -142,7 +142,9 @@ fun HomePager(
                             id = it.id
                             when (it.entityType) {
                                 "imageCarouselCard_1" -> {
-                                    navController.navigate(PagerManager.TodayCoolPager.route)
+                                    val url = it.entities[0].url
+                                    val substring = url.substring(url.indexOf("url=") + 4)
+                                    navController.navigate("${PagerManager.TodayCoolPager.route}/$substring")
                                 }
 
                                 "feed" -> {
