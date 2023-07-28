@@ -1,13 +1,14 @@
 package com.anpe.coolbbsyou.network.data.state
 
-import com.anpe.coolbbsyou.network.data.model.index.IndexEntity
+import androidx.paging.Pager
+import com.anpe.coolbbsyou.network.data.model.index.Data
 
 sealed class IndexState {
     object Idle: IndexState()
 
     object Loading: IndexState()
 
-    data class Success(val indexEntity: IndexEntity): IndexState()
+    data class Success(val pager: Pager<Int, Data>): IndexState()
 
     data class Error(val error: String): IndexState()
 }

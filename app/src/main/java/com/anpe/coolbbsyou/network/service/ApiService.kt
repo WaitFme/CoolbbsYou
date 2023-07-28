@@ -9,9 +9,13 @@ import com.anpe.coolbbsyou.network.data.model.login.LoginEntity
 import com.anpe.coolbbsyou.network.data.model.loginState.LoginStateEntity
 import com.anpe.coolbbsyou.network.data.model.nofitication.NotificationEntity
 import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
+import com.anpe.coolbbsyou.network.data.model.reply.ReplyEntity
 import com.anpe.coolbbsyou.network.data.model.suggest.SuggestSearchEntity
 import com.anpe.coolbbsyou.network.data.model.today.TodayCoolEntity
 import com.anpe.coolbbsyou.util.LoginUtils
+import com.anpe.coolbbsyou.util.MyApplication
+import com.anpe.coolbbsyou.util.TokenDeviceUtils
+import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getTokenV2
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -28,6 +32,9 @@ interface ApiService {
         private const val API_URL = "https://api.coolapk.com"
         private const val API2_URL = "https://api2.coolapk.com"
         private const val ACCOUNT_URL = "https://account.coolapk.com"
+
+        private val deviceCode = TokenDeviceUtils.getLastingDeviceCode(MyApplication.context)
+        private val deviceToken = deviceCode.getTokenV2()
 
         private var service: ApiService? = null
 
@@ -55,11 +62,11 @@ interface ApiService {
     suspend fun getIndex(
         @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
         @Header("X-App-Id") appId: String = Constants.APP_ID,
-        @Header("X-App-Device") device: String,
-        @Header("X-App-Token") token: String,
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
         @Query("ids") ids: String = "",
         @Query("installTime") installTime: String,
-        @Query("firstItem") firstItem: Int,
+        @Query("lastItem") lastItem: Int?,
         @Query("page") page: Int,
         @Query("firstLaunch") firstLaunch: Int
 
@@ -69,8 +76,8 @@ interface ApiService {
     suspend fun getDetails(
         @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
         @Header("X-App-Id") appId: String = Constants.APP_ID,
-        @Header("X-App-Device") deviceCode: String,
-        @Header("X-App-Token") token: String,
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
         @Query("id") id: Int
     ): DetailsEntity
 
@@ -78,8 +85,8 @@ interface ApiService {
     suspend fun getTodayCool(
         @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
         @Header("X-App-Id") appId: String = Constants.APP_ID,
-        @Header("X-App-Device") deviceCode: String,
-        @Header("X-App-Token") token: String,
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
         @Query("page") page: Int = 1,
         @Query("url") url: String
     ): TodayCoolEntity
@@ -88,8 +95,8 @@ interface ApiService {
     suspend fun getSuggestSearch(
         @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
         @Header("X-App-Id") appId: String = Constants.APP_ID,
-        @Header("X-App-Device") deviceCode: String,
-        @Header("X-App-Token") token: String,
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
         @Query("type") type: String = "app",
         @Query("searchValue") searchValue: String
     ): SuggestSearchEntity
@@ -111,25 +118,36 @@ interface ApiService {
     suspend fun getNotification(
         @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
         @Header("X-App-Id") appId: String = "com.coolapk.market",
-        @Header("X-App-Device") device: String,
-        @Header("X-App-Token") token: String,
-        @Query("page") page: Int = 1
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
+        @Query("page") page: Int
     ): NotificationEntity
 
     @GET("$API_URL/v6/account/checkLoginInfo")
     suspend fun getLoginState(
         @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
         @Header("X-App-Id") appId: String = "com.coolapk.market",
-        @Header("X-App-Device") device: String,
-        @Header("X-App-Token") token: String,
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
     ): LoginStateEntity
 
     @GET("$API_URL/v6/user/profile")
     suspend fun getProfile(
         @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
         @Header("X-App-Id") appId: String = "com.coolapk.market",
-        @Header("X-App-Device") device: String,
-        @Header("X-App-Token") token: String,
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
         @Query("uid") uid: Int
     ): ProfileEntity
+
+    @GET("/v6/feed/replyList")
+    suspend fun getReply(
+        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
+        @Header("X-App-Id") appId: String = "com.coolapk.market",
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
+        @Query("id") id: Int,
+        @Query("listType") listType: String,
+        @Query("page") page: Int
+    ): ReplyEntity
 }

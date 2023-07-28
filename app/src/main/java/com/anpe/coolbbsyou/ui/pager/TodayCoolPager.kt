@@ -58,6 +58,7 @@ import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.richToString
+import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -195,6 +196,8 @@ private fun IndexItem(
 ) {
     val context = LocalContext.current
 
+    val timeMillis = System.currentTimeMillis()
+
     Card(
         modifier = modifier
             .clickableNoRipple { }
@@ -239,8 +242,8 @@ private fun IndexItem(
         Text(
             modifier = Modifier
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
-            text = "${data.username} ${data.replynum}评论 ${data.createTime}",
-            fontSize = 15.sp
+            text = "${data.username} ${data.replynum}评论 ${data.createTime.timeStampInterval(timeMillis)}",
+            fontSize = 13.sp
         )
     }
 }

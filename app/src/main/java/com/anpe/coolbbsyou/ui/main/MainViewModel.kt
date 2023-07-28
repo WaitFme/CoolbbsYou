@@ -6,17 +6,22 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.model.loginState.LoginStateEntity
 import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
 import com.anpe.coolbbsyou.network.data.repository.ApiRepository
+import com.anpe.coolbbsyou.network.data.source.IndexSource
+import com.anpe.coolbbsyou.network.data.source.NotificationSource
+import com.anpe.coolbbsyou.network.data.source.ReplySource
 import com.anpe.coolbbsyou.network.data.state.DetailsState
 import com.anpe.coolbbsyou.network.data.state.IndexImageState
 import com.anpe.coolbbsyou.network.data.state.IndexState
+import com.anpe.coolbbsyou.network.data.state.LoginInfoState
 import com.anpe.coolbbsyou.network.data.state.LoginState
-import com.anpe.coolbbsyou.network.data.state.LoginStatusState
 import com.anpe.coolbbsyou.network.data.state.NotificationState
 import com.anpe.coolbbsyou.network.data.state.ProfileState
+import com.anpe.coolbbsyou.network.data.state.ReplyState
 import com.anpe.coolbbsyou.network.data.state.SuggestState
 import com.anpe.coolbbsyou.network.data.state.TodayState
 import kotlinx.coroutines.channels.Channel
@@ -55,8 +60,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> = _loginState
 
-    private val _loginStatusState = MutableStateFlow<LoginStatusState>(LoginStatusState.Idle)
-    val loginStatusState: StateFlow<LoginStatusState> = _loginStatusState
+    private val _loginInfoState = MutableStateFlow<LoginInfoState>(LoginInfoState.Idle)
+    val loginInfoState: StateFlow<LoginInfoState> = _loginInfoState
 
     private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Idle)
     val profileState: StateFlow<ProfileState> = _profileState
@@ -64,16 +69,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _notificationState = MutableStateFlow<NotificationState>(NotificationState.Idle)
     val notificationState: StateFlow<NotificationState> = _notificationState
 
-    private var firstItem: Int = sp.getInt("FIRST_ITEM", 0)
+    private val _replyState = MutableStateFlow<ReplyState>(ReplyState.Idle)
+    val replyState: StateFlow<ReplyState> = _replyState
 
-    private var isFirstLauncher = 1
-
-    private var pager = 0
+    private var isLogin = false
 
     init {
         isNineGrid(sp.getBoolean("IS_NINE_GRID", false))
 
-        getLoginStatus()
+//        getLoginInfo()
 
         getIndexState()
 
@@ -91,136 +95,173 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             channel.consumeAsFlow().collect {
                 when (it) {
                     is MainIntent.GetIndex -> getIndexState()
-                    is MainIntent.LoadIndex -> { }
                     is MainIntent.GetDetails -> getDetailsState(it.id)
                     is MainIntent.OpenNineGrid -> isNineGrid(it.isNineGrid)
                     is MainIntent.GetSuggestSearch -> getSuggestSearch(it.keyword)
                     is MainIntent.GetTodayCool -> getTodayCool(it.url, it.page)
                     is MainIntent.LoginAccount -> postAccount(it.account, it.passwd, it.requestHash)
-                    is MainIntent.LoginState -> getLoginStatus()
+                    is MainIntent.LoginState -> getLoginInfo()
                     is MainIntent.GetProfile -> getProfile(it.uid)
                     is MainIntent.GetNotification -> getNotification()
+                    is MainIntent.GetReply -> getReply(it.id)
                 }
             }
         }
     }
 
+    /**
+     * 更新获取首页推荐状态流
+     */
     private fun getIndexState() {
         viewModelScope.launch {
             _indexState.emit(IndexState.Loading)
-            _indexState.value = try {
-                val success = IndexState.Success(repository.getIndex(
-                        page = pager,
-                        firstLauncher = isFirstLauncher,
-                        firstItem = firstItem
-                ))
-                firstItem++
-                sp.edit().putInt("FIRST_ITEM", firstItem).apply()
-                if (isFirstLauncher == 1) {
-                    isFirstLauncher = 0
+            _indexState.emit(
+                try {
+                    IndexState.Success(Pager(
+                        PagingConfig(pageSize = 1),
+                        pagingSourceFactory = {
+                            IndexSource(repository)
+                        }
+                    ))
+                } catch (e: Exception) {
+                    Log.e(TAG, "getIndexState: $e")
+                    IndexState.Error(e.localizedMessage ?: "error")
                 }
-                success
-            } catch (e: Exception) {
-                Log.e(TAG, "getIndexState: $e")
-                println(e)
-                IndexState.Error(e.localizedMessage ?: "error")
-            }
+            )
         }
     }
 
+    /**
+     * 首页推荐信息流图片排列方式
+     * @param isNineGrid true: 九宫格排列; false: 横向列表排列
+     */
     private fun isNineGrid(isNineGrid: Boolean) {
         viewModelScope.launch {
-            if (isNineGrid) {
-                _indexImageState.emit(IndexImageState.NineGrid)
-            } else {
-                _indexImageState.emit(IndexImageState.ImageRow)
-            }
+            _indexImageState.emit(
+                if (isNineGrid) {
+                    IndexImageState.NineGrid
+                } else {
+                    IndexImageState.ImageRow
+                }
+            )
             sp.edit().putBoolean("IS_NINE_GRID", isNineGrid).apply()
         }
     }
 
+    /**
+     * 信息流详情页状态流
+     * @param id 信息流ID
+     */
     private fun getDetailsState(id: Int) {
         viewModelScope.launch {
             _detailsState.emit(DetailsState.Loading)
-            _detailsState.value = try {
-                DetailsState.Success(repository.getDetails(id = id))
-            } catch (e: Exception) {
-                DetailsState.Error(e.localizedMessage ?: "error")
-            }
+            _detailsState.emit(
+                try {
+                    DetailsState.Success(repository.getDetails(id = id))
+                } catch (e: Exception) {
+                    DetailsState.Error(e.localizedMessage ?: "error")
+                }
+            )
         }
     }
 
+    /**
+     * 搜索推荐状态流
+     * @param keyword 搜索关键字
+     */
     private fun getSuggestSearch(keyword: String) {
         viewModelScope.launch {
             _suggestState.emit(SuggestState.Loading)
-            _suggestState.value = try {
+            _suggestState.emit(try {
                 SuggestState.Success(repository.getSuggestSearch(keyword = keyword))
             } catch (e: Exception) {
                 SuggestState.Error(e.localizedMessage ?: "UNKNOWN ERROR")
-            }
+            })
         }
     }
 
+    /**
+     * 今日酷安状态流
+     * @param url 今日酷安路由地址
+     * @param page 分页
+     */
     private fun getTodayCool(url: String, page: Int) {
         viewModelScope.launch {
             _todayState.emit(TodayState.Loading)
-            _todayState.value = try {
+            _todayState.emit(try {
                 TodayState.Success(repository.getTodayCool(page, url))
             } catch (e: Exception) {
                 TodayState.Error(e.localizedMessage ?: "UNKNOWN")
-            }
+            })
         }
     }
 
+    /**
+     * 登陆账户状态流
+     * @param account 账号
+     * @param passwd 密码
+     * @param requestHash 盐值
+     */
     private fun postAccount(account: String, passwd: String, requestHash: String) {
         viewModelScope.launch {
             _loginState.emit(LoginState.LoggingIn)
-            _loginState.value = try {
+            _loginState.emit(try {
                 LoginState.Success(repository.postAccount(requestHash, account, passwd))
             } catch (e: Exception) {
                 LoginState.Error(e.localizedMessage ?: "UNKNOWN")
-            }
+            })
         }
     }
 
-    private fun getLoginStatus() {
+    /**
+     * 登陆信息状态流
+     */
+    private fun getLoginInfo() {
         viewModelScope.launch {
-            _loginStatusState.emit(LoginStatusState.Loading)
-            _loginStatusState.value = try {
+            _loginInfoState.emit(LoginInfoState.Loading)
+            _loginInfoState.emit(try {
                 val loginStateEntity = repository.getLoginState()
                 if (loginStateEntity.error == -1) {
-                    sp.edit().putBoolean("isLogin", false).apply()
-                    LoginStatusState.Error("请登陆")
+                    isLogin = false
+                    sp.edit().putBoolean("isLogin", isLogin).apply()
+                    LoginInfoState.Error("请登陆")
                 } else {
-                    saveLoginStatus(loginStateEntity)
-                    LoginStatusState.Success(loginStateEntity)
+                    isLogin = true
+                    sp.edit().putInt("uid", loginStateEntity.data.uid.toInt()).apply()
+                    sp.edit().putBoolean("isLogin", isLogin).apply()
+                    LoginInfoState.Success(loginStateEntity)
                 }
             } catch (e: Exception) {
-                LoginStatusState.Error(e.localizedMessage ?: "UNKNOWN")
-            }
+                LoginInfoState.Error(e.localizedMessage ?: "UNKNOWN")
+            })
         }
     }
 
-    private fun saveLoginStatus(loginStateEntity: LoginStateEntity) {
-        loginStateEntity.data.apply {
-            sp.edit().putInt("uid", uid.toInt()).apply()
-            sp.edit().putBoolean("isLogin", true).apply()
-        }
-    }
-
+    /**
+     * 个人主页信息状态流
+     * @param uid 账户ID
+     */
     private fun getProfile(uid: Int) {
         viewModelScope.launch {
             _profileState.emit(ProfileState.Loading)
-            _profileState.value = try {
-                val profileEntity = repository.getProfile(uid)
-                saveProfile(profileEntity)
-                ProfileState.Success(profileEntity)
+            _profileState.emit(try {
+                if (isLogin) {
+                    val profileEntity = repository.getProfile(uid)
+                    saveProfile(profileEntity)
+                    ProfileState.Success(profileEntity)
+                } else {
+                    ProfileState.Error("UN LOGIN")
+                }
             } catch (e: Exception) {
                 ProfileState.Error(e.localizedMessage ?: "UNKNOWN")
-            }
+            })
         }
     }
 
+    /**
+     * 保存个人主页信息
+     * @param profileEntity 个人主页信息实体
+     */
     private fun saveProfile(profileEntity: ProfileEntity) {
         profileEntity.data.apply {
             sp.edit().putInt("uid", uid).apply()
@@ -236,14 +277,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * 账户消息状态流
+     */
     private fun getNotification() {
         viewModelScope.launch {
             _notificationState.emit(NotificationState.Loading)
-            _notificationState.value = try {
-                NotificationState.Success(repository.getNotification())
-            } catch (e: Exception) {
-                NotificationState.Error(e.localizedMessage ?: "UNKNOWN")
-            }
+            _notificationState.emit(
+                try {
+                    if (isLogin) {
+                        val page = Pager(
+                            PagingConfig(pageSize = 1),
+                            pagingSourceFactory = { NotificationSource(repository) })
+                        NotificationState.Success(page)
+                    } else {
+                        NotificationState.Error("UN LOGIN")
+                    }
+                } catch (e: Exception) {
+                    NotificationState.Error(e.localizedMessage ?: "UNKNOWN")
+                }
+            )
+        }
+    }
+
+    /**
+     * 信息流评论区状态流
+     * @param id 信息流ID
+     */
+    private fun getReply(id: Int) {
+        viewModelScope.launch {
+            _replyState.emit(ReplyState.Idle)
+            _replyState.emit(
+                try {
+                    ReplyState.Success(Pager(
+                        PagingConfig(pageSize = 1),
+                        pagingSourceFactory = { ReplySource(repository, id) }
+                    ))
+                } catch (e: Exception) {
+                    ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
+                }
+            )
         }
     }
 }

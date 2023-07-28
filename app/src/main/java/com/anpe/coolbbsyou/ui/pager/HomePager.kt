@@ -44,6 +44,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavHostController
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
@@ -93,13 +96,13 @@ fun HomePager(
         scope.launch {
             refreshing = true
             viewModel.channel.send(MainIntent.GetIndex)
+            println("refresh")
         }
     })
 
     Box(Modifier.fillMaxSize()) {
-        val list: List<Data> = listOf()
         var dataList by remember {
-            mutableStateOf(list)
+            mutableStateOf<LazyPagingItems<Data>?>(null)
         }
 
         when (indexState) {
@@ -115,14 +118,14 @@ fun HomePager(
             }
 
             is IndexState.Loading -> {
-                if (dataList.isEmpty()) {
+                if (dataList == null) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
             }
 
             is IndexState.Success -> {
                 refreshing = false
-                dataList = (indexState as IndexState.Success).indexEntity.data
+                dataList = (indexState as IndexState.Success).pager.flow.collectAsLazyPagingItems()
             }
 
         }
@@ -133,35 +136,40 @@ fun HomePager(
                 .fillMaxHeight(),
             contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
             content = {
-                items(items = dataList) {
-                    IndexItems(
-                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                        data = it,
-                        isNineGrid = isNineGrid,
-                        onClick = {
-                            id = it.id
-                            when (it.entityType) {
-                                "imageCarouselCard_1" -> {
-                                    val url = it.entities[0].url
-                                    val substring = url.substring(url.indexOf("url=") + 4)
-                                    navController.navigate("${PagerManager.TodayCoolPager.route}/$substring")
-                                }
+                dataList?.apply {
+                    items(items = this) {
+                        if (it != null) {
+                            IndexItems(
+                                modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                data = it,
+                                isNineGrid = isNineGrid,
+                                onClick = {
+                                    id = it.id
+                                    when (it.entityType) {
+                                        "imageCarouselCard_1" -> {
+                                            val url = it.entities[0].url
+                                            val substring = url.substring(url.indexOf("url=") + 4)
+                                            navController.navigate("${PagerManager.TodayCoolPager.route}/$substring")
+                                        }
 
-                                "feed" -> {
-                                    scope.launch {
-                                        if (!configuration.isTable()) {
-                                            navControllerScreen.navigate("${ScreenManager.DetailsScreen.route}/$id")
-                                        } else {
-                                            viewModel.channel.send(MainIntent.GetDetails(id))
+                                        "feed" -> {
+                                            scope.launch {
+//                                                id = 47999706
+                                                if (!configuration.isTable()) {
+                                                    navControllerScreen.navigate("${ScreenManager.DetailsScreen.route}/$id")
+                                                } else {
+                                                    viewModel.channel.send(MainIntent.GetDetails(id))
+                                                }
+                                            }
+                                        }
+
+                                        "imageTextScrollCard" -> {
                                         }
                                     }
                                 }
-
-                                "imageTextScrollCard" -> {
-                                }
-                            }
+                            )
                         }
-                    )
+                    }
                 }
             }
         )
@@ -199,19 +207,23 @@ private fun IndexItems(
 private fun BannerItem(modifier: Modifier = Modifier, data: Data, onClick: () -> Unit) {
     val context = LocalContext.current
 
-    AsyncImage(
-        modifier = modifier
-            .padding(bottom = 5.dp)
-            .clip(RoundedCornerShape(15.dp))
-            .clickableNoRipple {
-                onClick()
-            },
-        model = ImageRequest.Builder(context)
-            .data(data.entities[0].pic)
-            .build(),
-        contentScale = ContentScale.Crop,
-        contentDescription = "image"
-    )
+    data.entities.forEach {
+        if (it.title == "今日酷安") {
+            AsyncImage(
+                modifier = modifier
+                    .padding(bottom = 5.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .clickableNoRipple {
+                        onClick()
+                    },
+                model = ImageRequest.Builder(context)
+                    .data(data.entities[0].pic)
+                    .build(),
+                contentScale = ContentScale.Crop,
+                contentDescription = "image"
+            )
+        }
+    }
 }
 
 @Composable
@@ -247,12 +259,12 @@ private fun IndexItem(
 
             AsyncImage(
                 modifier = Modifier
-                    .padding(10.dp)
+//                    .padding(10.dp)
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .constrainAs(proPicRef) {
-                        start.linkTo(parent.start)
-                        top.linkTo(parent.top)
+                        start.linkTo(parent.start, 10.dp)
+                        top.linkTo(parent.top, 10.dp)
                     },
                 model = ImageRequest.Builder(context)
                     .data(data.userAvatar)
@@ -264,9 +276,8 @@ private fun IndexItem(
 
             Text(
                 modifier = Modifier
-                    .padding(top = 10.dp)
                     .constrainAs(nameRef) {
-                        start.linkTo(proPicRef.end)
+                        start.linkTo(proPicRef.end, 10.dp)
                         top.linkTo(proPicRef.top)
                     },
                 text = data.username,
@@ -279,27 +290,25 @@ private fun IndexItem(
                     top.linkTo(nameRef.bottom)
                 },
                 text = data.infoHtml.richToString(),
-                fontSize = 13.sp
+                fontSize = 11.sp
             )
 
             Text(
                 modifier = Modifier
-                    .padding(start = 5.dp)
                     .constrainAs(deviceRef) {
-                        start.linkTo(infoHtmlRef.end)
-                        top.linkTo(nameRef.bottom)
+                        start.linkTo(infoHtmlRef.end, 5.dp)
+                        top.linkTo(infoHtmlRef.top)
                     },
                 text = data.deviceTitle,
-                fontSize = 13.sp
+                fontSize = 11.sp
             )
 
             Text(
                 modifier = Modifier
-                    .padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
                     .constrainAs(messageRef) {
-                        start.linkTo(parent.start)
-                        top.linkTo(proPicRef.bottom)
-                        end.linkTo(parent.end)
+                        start.linkTo(parent.start, 10.dp)
+                        top.linkTo(proPicRef.bottom, 10.dp)
+                        end.linkTo(parent.end, 10.dp)
                         this.width = Dimension.matchParent
                     },
                 text = data.message.richToString()
@@ -309,11 +318,10 @@ private fun IndexItem(
                 if (!isNineGrid) {
                     LazyRow(
                         modifier = Modifier
-                            .padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
                             .constrainAs(picRef) {
-                                start.linkTo(parent.start)
-                                top.linkTo(messageRef.bottom)
-                                end.linkTo(parent.end)
+                                start.linkTo(parent.start, 10.dp)
+                                top.linkTo(messageRef.bottom, 10.dp)
+                                end.linkTo(parent.end, 10.dp)
                                 width = Dimension.matchParent
                             },
                         content = {
@@ -321,8 +329,8 @@ private fun IndexItem(
                                 AsyncImage(
                                     modifier = Modifier
                                         .size(100.dp)
-                                        .padding(3.dp)
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .padding(end = 5.dp)
+                                        .clip(RoundedCornerShape(10.dp))
                                         .aspectRatio(1f),
                                     model = ImageRequest.Builder(context)
                                         .data(it)
@@ -336,13 +344,12 @@ private fun IndexItem(
                 } else {
                     NineImageGrid(
                         modifier = Modifier
-                            .padding(start = 10.dp, top = 0.dp, end = 10.dp, bottom = 10.dp)
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .constrainAs(picRef) {
-                                start.linkTo(parent.start)
-                                top.linkTo(messageRef.bottom)
-                                end.linkTo(parent.end)
+                                start.linkTo(parent.start, 10.dp)
+                                top.linkTo(messageRef.bottom, 10.dp)
+                                end.linkTo(parent.end, 10.dp)
                                 width = Dimension.matchParent
                             },
                         list = data.picArr
@@ -356,25 +363,31 @@ private fun IndexItem(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(10.dp, 0.dp, 10.dp, 0.dp)
+                        .padding(start = 10.dp, end = 10.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(MaterialTheme.colorScheme.surface)
                         .constrainAs(hotReplyRef) {
                             start.linkTo(parent.start)
-                            top.linkTo(if (data.picArr.isNotEmpty()) picRef.bottom else messageRef.bottom)
+                            top.linkTo(
+                                if (data.picArr.isNotEmpty()) picRef.bottom else messageRef.bottom,
+                                10.dp
+                            )
                             end.linkTo(parent.end)
                         }
                 ) {
                     Text(
                         modifier = Modifier.padding(10.dp),
-                        text = "${replyRow.username}: ${replyRow.message}"
+                        text = "${replyRow.username}: ${replyRow.message}",
+                        maxLines = 3,
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
             Row(
                 modifier = Modifier
-                    .padding(0.dp, 5.dp, 0.dp, 10.dp)
                     .constrainAs(likeRef) {
                         start.linkTo(parent.start)
                         top.linkTo(
@@ -384,9 +397,11 @@ private fun IndexItem(
                                 picRef.bottom
                             } else {
                                 messageRef.bottom
-                            }
+                            },
+                            0.dp
                         )
                         end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom, 10.dp)
                     }
             ) {
                 TextIcon(
@@ -423,7 +438,7 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
         Text(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp, end = 5.dp),
+                .padding(top = 10.dp, bottom = 5.dp),
             text = "新鲜图文"
         )
 
@@ -432,7 +447,7 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
                 Column(
                     modifier = Modifier
                         .width(200.dp)
-                        .padding(5.dp)
+                        .padding(end = 5.dp)
                         .clip(RoundedCornerShape(15.dp))
                         .clickableNoRipple {
                             onClick()

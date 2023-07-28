@@ -37,7 +37,6 @@ import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,9 +78,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
 import com.anpe.coolbbsyou.network.data.state.DetailsState
-import com.anpe.coolbbsyou.network.data.state.LoginStatusState
 import com.anpe.coolbbsyou.network.data.state.SuggestState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.pager.DetailsPager
@@ -102,11 +99,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel) {
     val navController = rememberNavController()
-
-    val details: DetailsEntity? = null
-    var detailsEntity by remember {
-        mutableStateOf(details)
-    }
+    val scope = rememberCoroutineScope()
 
     val items = listOf(
         PagerManager.HomePager,
@@ -114,20 +107,9 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
         PagerManager.SettingsPager,
     )
 
-    LaunchedEffect(key1 = true, block = {
-        viewModel.detailsState.collect {
-            when (it) {
-                is DetailsState.Error -> {}
-                is DetailsState.Idle -> {}
-                is DetailsState.Loading -> {}
-                is DetailsState.Success -> detailsEntity = it.detailsEntity
-            }
-        }
-    })
-
     MyScaffoldWithDetails(
-        detailsBlock = { DetailsBlock(detailsEntity = detailsEntity) },
-        topBar = { TopBar(navControllerScreen) },
+        detailsBlock = { DetailsBlock(viewModel) },
+        topBar = { TopBar(navControllerScreen, viewModel) },
         floatingActionButton = {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
@@ -142,12 +124,19 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                 navControllerScreen = navControllerScreen,
                 navController = navController,
                 items = items,
-                viewModel = viewModel
+                avatarClick = {
+                    val uid = getInt("uid")
+                    if (uid != -1) {
+                        scope.launch {
+                            viewModel.sendIntent(MainIntent.GetProfile(uid))
+                        }
+                    }
+                }
             )
         },
         bottomBar = { BottomBar(navController = navController, items) },
         changeValue = 800.dp
-    ) {pv->
+    ) { pv ->
         NavHost(
             modifier = Modifier.padding(pv),
             navController = navController,
@@ -175,37 +164,58 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
 }
 
 @Composable
-private fun DetailsBlock(detailsEntity: DetailsEntity?) {
-    if (detailsEntity != null) {
-        DetailsPager(
-            modifier = Modifier.fillMaxWidth(),
-            entity = detailsEntity
-        )
-    } else {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color(if (isSystemInDarkTheme()) 0xff0d0d0d else 0xfff5f5f5))
-        ) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .size(100.dp),
-                    painter = painterResource(id = R.drawable.coolapk),
-                    contentDescription = "icon",
-                    tint = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1)
-                )
+private fun DetailsBlock(viewModel: MainViewModel) {
+    val detailsState by viewModel.detailsState.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(if (isSystemInDarkTheme()) 0xff0d0d0d else 0xfff5f5f5))
+    ) {
+        when (detailsState) {
+            is DetailsState.Error -> {
                 Text(
-                    text = "Coolbbs",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 55.sp,
-                    color = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1),
-                    fontStyle = FontStyle.Italic
+                    modifier = Modifier.align(Alignment.Center),
+                    text = (detailsState as DetailsState.Error).e
+                )
+            }
+
+            is DetailsState.Idle -> {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(100.dp),
+                        painter = painterResource(id = R.drawable.coolapk),
+                        contentDescription = "icon",
+                        tint = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1)
+                    )
+                    Text(
+                        text = "Coolbbs",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 55.sp,
+                        color = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1),
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            }
+
+            is DetailsState.Loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
+            is DetailsState.Success -> {
+                val detailsEntity = (detailsState as DetailsState.Success).detailsEntity
+
+                DetailsPager(
+                    modifier = Modifier.fillMaxWidth(),
+                    entity = detailsEntity
                 )
             }
         }
@@ -219,7 +229,6 @@ private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewMo
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val loginStatusState by viewModel.loginStatusState.collectAsState()
     val suggestState by viewModel.suggestState.collectAsState()
 
     var query by remember {
@@ -254,7 +263,12 @@ private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewMo
             onSearch = {},
             active = false,
             onActiveChange = {},
-            placeholder = { Text(text = stringResource(id = R.string.search_tip), color = Color.Gray) },
+            placeholder = {
+                Text(
+                    text = stringResource(id = R.string.search_tip),
+                    color = Color.Gray
+                )
+            },
             leadingIcon = {
                 Icon(imageVector = Icons.Default.Search, contentDescription = null)
             },
@@ -270,19 +284,16 @@ private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewMo
                     }
                     if (configuration.screenWidthDp < 800) {
                         IconButton(
+                            modifier = Modifier.clip(RoundedCornerShape(10.dp)),
                             onClick = {
-                                if (loginStatusState is LoginStatusState.Success) {
-                                    val uid =
-                                        (loginStatusState as LoginStatusState.Success).loginStateEntity.data.uid
-
+                                val uid = getInt("uid")
+                                if (uid != -1) {
                                     scope.launch {
-                                        viewModel.sendIntent(MainIntent.GetProfile(uid.toInt()))
+                                        viewModel.sendIntent(MainIntent.GetProfile(uid))
                                     }
-                                    dialog = !dialog
                                 }
-                            },
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp)),
+                                dialog = !dialog
+                            }
                         ) {
                             AsyncImage(
                                 modifier = Modifier
@@ -437,10 +448,8 @@ private fun RailBar(
     navControllerScreen: NavHostController,
     navController: NavHostController,
     items: List<PagerManager>,
-    viewModel: MainViewModel
+    avatarClick: () -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-
     var dialog by remember {
         mutableStateOf(false)
     }
@@ -452,8 +461,6 @@ private fun RailBar(
 
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
-
-            val loginStatusState by viewModel.loginStatusState.collectAsState()
 
             Text(
                 modifier = Modifier
@@ -469,15 +476,8 @@ private fun RailBar(
             AsyncImage(
                 modifier = Modifier
                     .clickableNoRipple {
-                        if (loginStatusState is LoginStatusState.Success) {
-                            val uid =
-                                (loginStatusState as LoginStatusState.Success).loginStateEntity.data.uid
-
-                            scope.launch {
-                                viewModel.sendIntent(MainIntent.GetProfile(uid.toInt()))
-                            }
-                            dialog = !dialog
-                        }
+                        avatarClick()
+                        dialog = !dialog
                     }
                     .padding(top = 10.dp, bottom = 30.dp)
                     .size(45.dp)

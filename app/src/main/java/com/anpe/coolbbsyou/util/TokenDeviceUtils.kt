@@ -11,7 +11,6 @@ import com.anpe.coolbbsyou.util.Utils.Companion.getReBase64
 
 class TokenDeviceUtils {
     companion object {
-
         fun String.getDeviceInfo(isRaw: Boolean = true): String = this.reversed().getReBase64(isRaw)
 
         fun String.getTokenV2(): String {
@@ -45,6 +44,24 @@ class TokenDeviceUtils {
             val buildNumber = "CoolbbsYou ${Build.VERSION.RELEASE}"
 
             return DeviceInfo(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
+        }
+
+        fun getLastingDeviceCode(context: Context): String {
+            val sp = context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
+            return sp.getString("DEVICE_CODE", null).let {
+                it ?: getDeviceCode(context).apply {
+                    sp.edit().putString("DEVICE_CODE", this).apply()
+                }
+            }
+        }
+
+        fun getLastingInstallTime(context: Context): String {
+            val sp = context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
+            return sp.getString("INSTALL_TIME", null).let {
+                it ?: System.currentTimeMillis().toString().apply {
+                    sp.edit().putString("INSTALL_TIME", this).apply()
+                }
+            }
         }
     }
 }

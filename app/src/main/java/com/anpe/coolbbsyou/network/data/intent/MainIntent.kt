@@ -4,9 +4,6 @@ sealed class MainIntent {
     // 获取首页内容
     object GetIndex: MainIntent()
 
-    // 获取首页内容
-    object LoadIndex: MainIntent()
-
     // 获取帖子详情
     data class GetDetails(val id: Int): MainIntent()
 
@@ -30,4 +27,7 @@ sealed class MainIntent {
 
     // 获取消息
     object GetNotification: MainIntent()
+
+    // 获取评论
+    data class GetReply(val id: Int): MainIntent()
 }

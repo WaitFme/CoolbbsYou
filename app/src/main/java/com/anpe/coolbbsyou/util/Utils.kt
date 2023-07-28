@@ -10,6 +10,7 @@ import androidx.core.text.HtmlCompat
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Base64
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.Random
@@ -124,6 +125,66 @@ class Utils {
         fun Int.secondToDateString(pattern: String = "yyyy-MM-dd HH:mm:ss"): String {
             val date = Date(this.toLong() * 1000)
             return SimpleDateFormat(pattern, Locale.CHINA).format(date)
+        }
+
+        fun Int.timeStampInterval(currentTime: Int): String {
+            val calendarOld = Calendar.getInstance()
+            val calendarNow = Calendar.getInstance()
+
+            val dateOld = Date(this.toLong() * 1000)
+            val dateNow = Date(currentTime.toLong() * 1000)
+
+            calendarOld.time = dateOld
+            calendarNow.time = dateNow
+
+            val dayOld = calendarOld.get(Calendar.DAY_OF_YEAR)
+            val dayNow = calendarNow.get(Calendar.DAY_OF_YEAR)
+
+            val hourOld = calendarNow.get(Calendar.HOUR_OF_DAY)
+            val hourNow = calendarNow.get(Calendar.HOUR_OF_DAY)
+
+            val minuteOld = calendarNow.get(Calendar.MINUTE)
+            val minuteNow = calendarNow.get(Calendar.MINUTE)
+
+            return if (dayOld == dayNow) {
+                if (hourOld == hourNow) {
+                    "${minuteNow - minuteOld}分钟前"
+                } else {
+                    "${hourNow - hourOld}小时前"
+                }
+            } else {
+                "${dayNow - dayOld}天前"
+            }
+        }
+
+        fun Int.timeStampInterval(currentTime: Long): String {
+            val calendarOld = Calendar.getInstance()
+            val calendarNow = Calendar.getInstance()
+
+            val dateOld = Date(this.toLong() * 1000)
+            val dateNow = Date(currentTime)
+
+            calendarOld.time = dateOld
+            calendarNow.time = dateNow
+
+            val dayOld = calendarOld.get(Calendar.DAY_OF_YEAR)
+            val dayNow = calendarNow.get(Calendar.DAY_OF_YEAR)
+
+            val hourOld = calendarOld.get(Calendar.HOUR_OF_DAY)
+            val hourNow = calendarNow.get(Calendar.HOUR_OF_DAY)
+
+            val minuteOld = calendarOld.get(Calendar.MINUTE)
+            val minuteNow = calendarNow.get(Calendar.MINUTE)
+
+            return if (dayOld == dayNow) {
+                if (hourOld == hourNow) {
+                    "${minuteNow - minuteOld}分钟前"
+                } else {
+                    "${hourNow - hourOld}小时前"
+                }
+            } else {
+                "${dayNow - dayOld}天前"
+            }
         }
 
         fun String.richToString(htmlCompat: Int = HtmlCompat.FROM_HTML_MODE_LEGACY) =
