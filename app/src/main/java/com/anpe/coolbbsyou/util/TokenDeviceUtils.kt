@@ -10,7 +10,19 @@ import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
 
 class TokenDeviceUtils {
     companion object {
-//        fun String.getDeviceInfo(isRaw: Boolean = true): String = this.reversed().getReBase64(isRaw)
+        private fun DeviceInfo.createDeviceCode(isRaw: Boolean = true) =
+            "$aid; ; ; $mac; $manuFactor; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
+
+        private fun getDeviceCode(context: Context): String {
+            val aid = Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            val mac = Utils.randomMacAddress()
+            val manuFactor = Build.MANUFACTURER
+            val brand = Build.BRAND
+            val model = Build.MODEL
+            val buildNumber = "CoolbbsYou ${Build.VERSION.RELEASE}"
+
+            return DeviceInfo(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
+        }
 
         fun String.getTokenV2(): String {
             val timeStamp = (System.currentTimeMillis() / 1000f).toString()
@@ -28,21 +40,6 @@ class TokenDeviceUtils {
             val bcryptResult = org.mindrot.jbcrypt.BCrypt.hashpw(md5Base64Token, bcryptSalt)
 
             return "v2${bcryptResult.getBase64()}"
-        }
-
-        private fun DeviceInfo.createDeviceCode(isRaw: Boolean = true) =
-            "$aid; ; ; $mac; $manuFactor; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
-
-
-        fun getDeviceCode(context: Context): String {
-            val aid = Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-            val mac = Utils.randomMacAddress()
-            val manuFactor = Build.MANUFACTURER
-            val brand = Build.BRAND
-            val model = Build.MODEL
-            val buildNumber = "CoolbbsYou ${Build.VERSION.RELEASE}"
-
-            return DeviceInfo(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
         }
 
         fun getLastingDeviceCode(context: Context): String {

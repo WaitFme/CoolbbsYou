@@ -242,7 +242,7 @@ private fun IndexItem(
         Text(
             modifier = Modifier
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
-            text = "${data.username} ${data.replynum}评论 ${data.createTime.timeStampInterval(timeMillis)}",
+            text = "${data.username} ${data.replynum}评论 ${(data.createTime.toLong() * 1000).timeStampInterval(timeMillis)}",
             fontSize = 13.sp
         )
     }

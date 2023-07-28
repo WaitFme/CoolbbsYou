@@ -124,7 +124,7 @@ private fun Content(modifier: Modifier = Modifier, entity: DetailsEntity) {
                     Text(
                         modifier = Modifier
                             .padding(15.dp, 10.dp, 15.dp, 15.dp),
-                        text = "${entity.data.createTime.timeStampInterval(System.currentTimeMillis())} 发布于${entity.data.ipLocation}",
+                        text = "${(entity.data.createTime.toLong() * 1000).timeStampInterval(System.currentTimeMillis())} 发布于${entity.data.ipLocation}",
                         fontSize = 12.sp
                     )
                 }

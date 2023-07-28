@@ -76,7 +76,7 @@ fun MessagePager(viewModel: MainViewModel) {
                                 fromUserAvatar,
                                 fromusername,
                                 note,
-                                dateline.timeStampInterval(timeMillis)
+                                (dateline.toLong() * 1000).timeStampInterval(timeMillis)
                             )
                         }
                     }
