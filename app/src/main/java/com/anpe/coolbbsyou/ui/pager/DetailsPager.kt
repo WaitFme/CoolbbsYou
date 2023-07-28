@@ -269,7 +269,9 @@ private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity) {
                 modifier = Modifier
                     .padding(end = 12.dp),
                 contentPadding = PaddingValues(2.dp),
-                onClick = { /*TODO*/ }) {
+                onClick = {
+                    // 订阅
+                }) {
                 Text(modifier = Modifier, text = "订阅")
             }
         }
