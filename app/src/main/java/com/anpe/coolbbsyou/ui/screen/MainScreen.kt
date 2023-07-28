@@ -619,9 +619,7 @@ private fun CustomDialog(
                     userLevelRef,
                     experienceRef,
                     experienceSeekRef,
-                    flowRef,
-                    fansRef,
-                    feedRef,
+                    funRef,
                     spacerRef,
                     itemRef
                 ) = createRefs()
@@ -704,7 +702,7 @@ private fun CustomDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .constrainAs(flowRef) {
+                        .constrainAs(funRef) {
                             start.linkTo(parent.start)
                             top.linkTo(experienceSeekRef.bottom, 20.dp)
                             end.linkTo(parent.end)
@@ -761,7 +759,7 @@ private fun CustomDialog(
                         .height(3.dp)
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                         .constrainAs(spacerRef) {
-                            top.linkTo(flowRef.bottom, 15.dp)
+                            top.linkTo(funRef.bottom, 15.dp)
                         }
                 )
 

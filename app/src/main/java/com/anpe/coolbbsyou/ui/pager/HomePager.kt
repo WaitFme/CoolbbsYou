@@ -250,11 +250,9 @@ private fun IndexItem(
                 messageRef,
                 infoHtmlRef,
                 deviceRef,
-                deviceLabelRef,
                 picRef,
                 hotReplyRef,
                 likeRef,
-                replyRef
             ) = createRefs()
 
             AsyncImage(

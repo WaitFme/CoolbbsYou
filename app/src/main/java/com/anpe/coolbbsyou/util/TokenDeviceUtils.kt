@@ -7,11 +7,10 @@ import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.network.data.model.deviceInfo.DeviceInfo
 import com.anpe.coolbbsyou.util.Utils.Companion.getBase64
 import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
-import com.anpe.coolbbsyou.util.Utils.Companion.getReBase64
 
 class TokenDeviceUtils {
     companion object {
-        fun String.getDeviceInfo(isRaw: Boolean = true): String = this.reversed().getReBase64(isRaw)
+//        fun String.getDeviceInfo(isRaw: Boolean = true): String = this.reversed().getReBase64(isRaw)
 
         fun String.getTokenV2(): String {
             val timeStamp = (System.currentTimeMillis() / 1000f).toString()

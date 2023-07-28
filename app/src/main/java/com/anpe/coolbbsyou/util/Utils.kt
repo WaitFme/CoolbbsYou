@@ -18,14 +18,12 @@ import java.util.Random
 
 class Utils {
     companion object {
-        private val TAG = this::class.simpleName
-
         fun Configuration.isTable() = this.screenWidthDp >= 800
 
         /**
          * 二进制数组转十六进制字符串
          *
-         * @param bytes byte array to be converted
+         * this byte array to be converted
          * @return string containing hex values
          */
         fun ByteArray.byteArrayToHexString(): String {
@@ -43,7 +41,7 @@ class Utils {
         /**
          * 十六进制字符串转二进制数组
          *
-         * @param hexString string of hex-encoded values
+         * this string of hex-encoded values
          * @return decoded byte array
          */
         fun String.hexStringToByteArray(): ByteArray {
