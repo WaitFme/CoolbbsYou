@@ -16,7 +16,7 @@ jbcrypt = "0.4"
 jsoup = "1.16.1"
 
 # Default version
-agp = "8.2.0-alpha13"
+agp = "8.1.0"
 kotlin = "1.8.10"
 core-ktx = "1.10.1"
 junit = "4.13.2"
