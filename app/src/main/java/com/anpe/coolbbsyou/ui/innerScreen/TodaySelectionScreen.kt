@@ -1,10 +1,9 @@
-package com.anpe.coolbbsyou.ui.pager
+package com.anpe.coolbbsyou.ui.innerScreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,9 +24,12 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,8 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,16 +53,22 @@ import coil.request.ImageRequest
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.today.Data
 import com.anpe.coolbbsyou.network.data.state.TodayState
+import com.anpe.coolbbsyou.ui.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.richToString
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun TodayCoolPager(navControllerInnerScreen: NavHostController, navControllerPager: NavHostController, viewModel: MainViewModel) {
+fun TodaySelectionScreen(
+    navControllerScreen: NavHostController,
+    navControllerInnerScreen: NavHostController,
+    viewModel: MainViewModel
+) {
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
 
@@ -79,61 +86,59 @@ fun TodayCoolPager(navControllerInnerScreen: NavHostController, navControllerPag
         }
     })
 
-    Box(Modifier.fillMaxSize()) {
-        val list: List<Data> = listOf()
-        var dataList by remember {
-            mutableStateOf(list)
-        }
-
-        when (todayState) {
-            is TodayState.Error -> {
-                refreshing = false
-                val error = (todayState as TodayState.Error).e
-                Text(modifier = Modifier.align(Alignment.Center), text = error)
-            }
-            TodayState.Idle -> {
-                refreshing = false
-                Text(modifier = Modifier.align(Alignment.Center), text = "idle")
-            }
-            TodayState.Loading -> {
-                if (dataList.isEmpty()) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navControllerInnerScreen.popBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "ArrowBack"
+                        )
+                    }
+                },
+                title = {
+                    Text(text = stringResource(id = InnerScreenManager.TodaySelectionInnerScreen.resourceId))
                 }
-            }
-            is TodayState.Success -> {
-                refreshing = false
-                dataList = (todayState as TodayState.Success).todayCoolEntity.data
-            }
+            )
         }
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(it)
+        ) {
+            val list: List<Data> = listOf()
+            var dataList by remember {
+                mutableStateOf(list)
+            }
 
-        Column {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp, bottom = 5.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    modifier = Modifier
-                        .padding(start = 15.dp),
-                    onClick = {
-                    navControllerPager.popBackStack()
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "ArrowBack"
-                    )
+            when (todayState) {
+                is TodayState.Error -> {
+                    refreshing = false
+                    val error = (todayState as TodayState.Error).e
+                    Text(modifier = Modifier.align(Alignment.Center), text = error)
                 }
 
-                Text(
-                    modifier = Modifier,
-                    text = "今日酷安",
-                    fontSize = 25.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontStyle = FontStyle.Italic,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                TodayState.Idle -> {
+                    refreshing = false
+                    Text(modifier = Modifier.align(Alignment.Center), text = "idle")
+                }
+
+                TodayState.Loading -> {
+                    if (dataList.isEmpty()) {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    }
+                }
+
+                is TodayState.Success -> {
+                    refreshing = false
+                    dataList = (todayState as TodayState.Success).todayCoolEntity.data
+                }
             }
+
             LazyColumn(
                 modifier = Modifier
                     .pullRefresh(refreshState)
@@ -148,7 +153,7 @@ fun TodayCoolPager(navControllerInnerScreen: NavHostController, navControllerPag
                                 scope.launch {
                                     viewModel.channel.send(MainIntent.GetDetails(it.id))
                                     if (!configuration.isTable()) {
-//                                        navControllerInnerScreen.navigate(InnerScreenManager.DetailsInnerScreen.route)
+                                        navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
                                     }
                                 }
                             }
@@ -156,14 +161,14 @@ fun TodayCoolPager(navControllerInnerScreen: NavHostController, navControllerPag
                     }
                 }
             )
-        }
 
-        PullRefreshIndicator(
-            modifier = Modifier.align(Alignment.TopCenter),
-            refreshing = refreshing,
-            state = refreshState,
-            contentColor = MaterialTheme.colorScheme.surfaceTint
-        )
+            PullRefreshIndicator(
+                modifier = Modifier.align(Alignment.TopCenter),
+                refreshing = refreshing,
+                state = refreshState,
+                contentColor = MaterialTheme.colorScheme.surfaceTint
+            )
+        }
     }
 }
 
@@ -240,7 +245,11 @@ private fun FeedItem(
         Text(
             modifier = Modifier
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp, bottom = 10.dp),
-            text = "${data.username} ${data.replynum}评论 ${(data.createTime.toLong() * 1000).timeStampInterval(timeMillis)}",
+            text = "${data.username} ${data.replynum}评论 ${
+                (data.createTime.toLong() * 1000).timeStampInterval(
+                    timeMillis
+                )
+            }",
             fontSize = 13.sp
         )
     }

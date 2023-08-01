@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.cachedIn
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
 import com.anpe.coolbbsyou.network.data.repository.ApiRepository
@@ -77,8 +78,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         isNineGrid(sp.getBoolean("IS_NINE_GRID", false))
 
-//        getLoginInfo()
-
         getIndexState()
 
         channelHandler(channel)
@@ -118,11 +117,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _indexState.emit(
                 try {
                     IndexState.Success(Pager(
-                        PagingConfig(pageSize = 1),
+                        PagingConfig(pageSize = 50, prefetchDistance = 10),
                         pagingSourceFactory = {
                             IndexSource(repository)
                         }
-                    ))
+                    ).flow.cachedIn(viewModelScope))
                 } catch (e: Exception) {
                     Log.e(TAG, "getIndexState: $e")
                     IndexState.Error(e.localizedMessage ?: "error")
@@ -286,10 +285,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _notificationState.emit(
                 try {
                     if (isLogin) {
-                        val page = Pager(
-                            PagingConfig(pageSize = 1),
-                            pagingSourceFactory = { NotificationSource(repository) })
-                        NotificationState.Success(page)
+                        NotificationState.Success(Pager(
+                            PagingConfig(pageSize = 50, prefetchDistance = 10),
+                            pagingSourceFactory = { NotificationSource(repository) }
+                        ).flow.cachedIn(viewModelScope))
                     } else {
                         NotificationState.Error("UN LOGIN")
                     }
@@ -310,9 +309,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _replyState.emit(
                 try {
                     ReplyState.Success(Pager(
-                        PagingConfig(pageSize = 1),
+                        PagingConfig(pageSize = 50, prefetchDistance = 10),
                         pagingSourceFactory = { ReplySource(repository, id) }
-                    ))
+                    ).flow.cachedIn(viewModelScope))
                 } catch (e: Exception) {
                     ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
                 }
