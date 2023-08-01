@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,6 +32,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -68,28 +69,26 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.state.DetailsState
 import com.anpe.coolbbsyou.network.data.state.SuggestState
+import com.anpe.coolbbsyou.ui.innerScreen.TodaySelectionScreen
+import com.anpe.coolbbsyou.ui.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
-import com.anpe.coolbbsyou.ui.pager.DetailsPager
 import com.anpe.coolbbsyou.ui.pager.HomePager
 import com.anpe.coolbbsyou.ui.pager.MessagePager
 import com.anpe.coolbbsyou.ui.pager.SettingsPager
-import com.anpe.coolbbsyou.ui.pager.TodayCoolPager
 import com.anpe.coolbbsyou.ui.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.view.CustomProgress
-import com.anpe.coolbbsyou.ui.view.MyScaffoldWithDetails
+import com.anpe.coolbbsyou.ui.view.DetailsPagerBridge
+import com.anpe.coolbbsyou.ui.view.ResponsiveLayout
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getBoolean
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getInt
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getString
@@ -98,8 +97,11 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel) {
-    val navController = rememberNavController()
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
+
+    val navControllerInnerScreen = rememberNavController()
+    val navControllerPager = rememberNavController()
 
     val items = listOf(
         PagerManager.HomePager,
@@ -107,22 +109,12 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
         PagerManager.SettingsPager,
     )
 
-    MyScaffoldWithDetails(
-        detailsBlock = { DetailsBlock(viewModel) },
-        topBar = { TopBar(navControllerScreen, viewModel) },
-        floatingActionButton = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                FloatingActionButton(onClick = { }) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                }
-            }
-        },
+    ResponsiveLayout(
         railBar = {
             RailBar(
                 navControllerScreen = navControllerScreen,
-                navController = navController,
+                navControllerInnerScreen = navControllerInnerScreen,
+                navControllerPager = navControllerPager,
                 items = items,
                 avatarClick = {
                     val uid = getInt("uid")
@@ -134,97 +126,137 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                 }
             )
         },
-        bottomBar = { BottomBar(navController = navController, items) },
+        changeValue = 800.dp,
+        detailsBlock = { DetailsBlock(viewModel) },
+        content = {
+            NavHost(
+                navController = navControllerInnerScreen,
+                startDestination = InnerScreenManager.HomeInnerScreen.route,
+                builder = {
+                    composable(route = InnerScreenManager.HomeInnerScreen.route) {
+                        Scaffold(
+                            topBar = { TopBar(navControllerScreen, viewModel) },
+                            floatingActionButton = {
+                                val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
+                                val currentDestination = navBackStackEntry?.destination
+                                if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
+                                    FloatingActionButton(onClick = { }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
+                            },
+                            bottomBar = {
+                                if (configuration.screenWidthDp < 800) {
+                                    BottomBar(navController = navControllerPager, items)
+                                }
+                            },
+                        ) {
+                            NavHost(
+                                modifier = Modifier.padding(it),
+                                navController = navControllerPager,
+                                startDestination = PagerManager.HomePager.route,
+                                builder = {
+                                    composable(route = PagerManager.HomePager.route) {
+                                        HomePager(
+                                            navControllerScreen = navControllerScreen,
+                                            navControllerInnerScreen = navControllerInnerScreen,
+                                            navControllerPager = navControllerPager,
+                                            viewModel = viewModel
+                                        )
+                                    }
+                                    composable(route = PagerManager.MessagePager.route) {
+                                        MessagePager(viewModel = viewModel)
+                                    }
+                                    composable(route = PagerManager.SettingsPager.route) {
+                                        SettingsPager(viewModel = viewModel)
+                                    }
+                                }
+                            )
+                        }
+                    }
+
+                    composable(route = InnerScreenManager.TodaySelectionInnerScreen.route) {
+                        TodaySelectionScreen(
+                            navControllerScreen = navControllerScreen,
+                            navControllerInnerScreen = navControllerInnerScreen,
+                            viewModel = viewModel
+                        )
+                    }
+                }
+            )
+        }
+    )
+
+    /*MyScaffoldWithDetails(
+        detailsBlock = { DetailsBlock(viewModel) },
+        topBar = { TopBar(navControllerScreen, viewModel) },
+        floatingActionButton = {
+            val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
+                FloatingActionButton(onClick = { }) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                }
+            }
+        },
+        railBar = {
+            RailBar(
+                navControllerScreen = navControllerScreen,
+                navControllerPager = navControllerPager,
+                items = items,
+                avatarClick = {
+                    val uid = getInt("uid")
+                    if (uid != -1) {
+                        scope.launch {
+                            viewModel.sendIntent(MainIntent.GetProfile(uid))
+                        }
+                    }
+                }
+            )
+        },
+        bottomBar = { BottomBar(navController = navControllerPager, items) },
         changeValue = 800.dp
     ) { pv ->
         NavHost(
             modifier = Modifier.padding(pv),
-            navController = navController,
+            navController = navControllerPager,
             startDestination = PagerManager.HomePager.route,
             builder = {
-                composable(PagerManager.HomePager.route) {
-                    HomePager(navControllerScreen, navController, viewModel)
+                composable(route = PagerManager.HomePager.route) {
+                    HomePager(navControllerScreen, navControllerPager, viewModel)
                 }
-                composable(PagerManager.MessagePager.route) { MessagePager(viewModel) }
-                composable(PagerManager.SettingsPager.route) { SettingsPager(viewModel) }
-                composable(
-                    route = "${PagerManager.TodayCoolPager.route}/{url}",
-                    arguments = listOf(navArgument("url") { type = NavType.StringType })
-                ) {
+                composable(route = PagerManager.MessagePager.route) {
+                    MessagePager(viewModel)
+                }
+                composable(route = PagerManager.SettingsPager.route) {
+                    SettingsPager(viewModel)
+                }
+                composable(route = PagerManager.TodayCoolPager.route) {
                     TodayCoolPager(
-                        navControllerScreen = navControllerScreen,
-                        navController = navController,
-                        url = it.arguments?.getString("url"),
+                        navControllerInnerScreen = navControllerScreen,
+                        navControllerPager = navControllerPager,
                         viewModel = viewModel
                     )
                 }
             }
         )
-    }
+    }*/
 }
 
 @Composable
 private fun DetailsBlock(viewModel: MainViewModel) {
-    val detailsState by viewModel.detailsState.collectAsState()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(if (isSystemInDarkTheme()) 0xff0d0d0d else 0xfff5f5f5))
-    ) {
-        when (detailsState) {
-            is DetailsState.Error -> {
-                Text(
-                    modifier = Modifier.align(Alignment.Center),
-                    text = (detailsState as DetailsState.Error).e
-                )
-            }
-
-            is DetailsState.Idle -> {
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        modifier = Modifier
-                            .size(100.dp),
-                        painter = painterResource(id = R.drawable.coolapk),
-                        contentDescription = "icon",
-                        tint = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1)
-                    )
-                    Text(
-                        text = "Coolbbs",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 55.sp,
-                        color = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1),
-                        fontStyle = FontStyle.Italic
-                    )
-                }
-            }
-
-            is DetailsState.Loading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-
-            is DetailsState.Success -> {
-                val detailsEntity = (detailsState as DetailsState.Success).detailsEntity
-
-                DetailsPager(
-                    modifier = Modifier.fillMaxWidth(),
-                    entity = detailsEntity
-                )
-            }
-        }
-    }
+    DetailsPagerBridge(viewModel = viewModel, onBack = { })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewModel = viewModel()) {
+private fun TopBar(
+    navControllerScreen: NavHostController,
+    viewModel: MainViewModel = viewModel()
+) {
     val configuration = LocalConfiguration.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -283,8 +315,10 @@ private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewMo
                         }
                     }
                     if (configuration.screenWidthDp < 800) {
-                        IconButton(
-                            modifier = Modifier.clip(RoundedCornerShape(10.dp)),
+                        /*IconButton(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.Gray),
                             onClick = {
                                 val uid = getInt("uid")
                                 if (uid != -1) {
@@ -301,13 +335,37 @@ private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewMo
                                 model = ImageRequest.Builder(context)
                                     .data(
                                         getString("userAvatar")
-                                            ?: R.drawable.baseline_supervised_user_circle_24
+                                            ?: R.drawable.ic_user_avatar
                                     )
                                     .crossfade(true)
                                     .build(),
                                 contentDescription = null
                             )
-                        }
+                        }*/
+
+                        AsyncImage(
+                            modifier = Modifier
+                                .padding(6.dp, 6.dp, 2.dp, 6.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(Color.Gray)
+                                .clickableNoRipple {
+                                    val uid = getInt("uid")
+                                    if (uid != -1) {
+                                        scope.launch {
+                                            viewModel.sendIntent(MainIntent.GetProfile(uid))
+                                        }
+                                    }
+                                    dialog = !dialog
+                                },
+                            model = ImageRequest.Builder(context)
+                                .data(
+                                    getString("userAvatar")
+                                        ?: R.drawable.ic_user_avatar
+                                )
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null
+                        )
                     }
                 }
             },
@@ -446,7 +504,8 @@ private fun TopBar(navControllerScreen: NavHostController, viewModel: MainViewMo
 @Composable
 private fun RailBar(
     navControllerScreen: NavHostController,
-    navController: NavHostController,
+    navControllerInnerScreen: NavHostController,
+    navControllerPager: NavHostController,
     items: List<PagerManager>,
     avatarClick: () -> Unit
 ) {
@@ -459,8 +518,10 @@ private fun RailBar(
         content = {
             val context = LocalContext.current
 
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
+            val navBackStackEntryInner by navControllerInnerScreen.currentBackStackEntryAsState()
+            val currentDestinationInner = navBackStackEntryInner?.destination
 
             Text(
                 modifier = Modifier
@@ -480,8 +541,8 @@ private fun RailBar(
                         dialog = !dialog
                     }
                     .padding(top = 10.dp, bottom = 30.dp)
-                    .size(45.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(7.dp)),
                 model = ImageRequest.Builder(context)
                     .data(
                         getString("userAvatar")
@@ -489,6 +550,7 @@ private fun RailBar(
                     )
                     .crossfade(true)
                     .build(),
+                contentScale = ContentScale.Crop,
                 contentDescription = null
             )
 
@@ -516,12 +578,23 @@ private fun RailBar(
                     },
                     alwaysShowLabel = true,
                     onClick = {
-                        navController.navigate(pager.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
+                        navControllerPager.popBackStack()
+                        navControllerPager.navigate(pager.route) {
+                            popUpTo(navControllerPager.graph.findStartDestination().id) {
                                 saveState = true
                             }
                             launchSingleTop = true
                             restoreState = true
+                        }
+                        if (currentDestinationInner?.hierarchy?.any { it.route == InnerScreenManager.HomeInnerScreen.route } == false) {
+                            navControllerInnerScreen.popBackStack()
+                            navControllerInnerScreen.navigate(InnerScreenManager.HomeInnerScreen.route) {
+                                popUpTo(navControllerInnerScreen.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     }
                 )

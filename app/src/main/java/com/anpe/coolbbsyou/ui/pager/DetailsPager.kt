@@ -1,6 +1,7 @@
 package com.anpe.coolbbsyou.ui.pager
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,11 +29,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,12 +56,14 @@ import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
 import com.anpe.coolbbsyou.network.data.model.reply.Data
 import com.anpe.coolbbsyou.network.data.state.ReplyState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.MyScaffold
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
+import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 
 @Composable
-fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity) {
+fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity, onBack: () -> Unit) {
     Surface {
         Row {
             Spacer(
@@ -64,15 +71,13 @@ fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity) {
                     .fillMaxHeight()
                     .width(1.dp)
                     .alpha(0.5f)
-                    .background(Color.LightGray)
+                    .background(if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray)
             )
             MyScaffold(
-                topBar = { TopBar(entity = entity) },
+                topBar = { TopBar(entity = entity, onBack = onBack) },
                 content = {
                     Column(
-                        modifier = modifier
-//                            .verticalScroll(rememberScrollState())
-                            .padding(it)
+                        modifier = modifier.padding(it)
                     ) {
                         Content(entity = entity)
                     }
@@ -93,15 +98,25 @@ private fun Content(modifier: Modifier = Modifier, entity: DetailsEntity) {
 
     val replyState by viewModel.replyState.collectAsState()
 
+    var status by remember {
+        mutableStateOf(false)
+    }
+
+    var initialPage by remember {
+        mutableStateOf(0)
+    }
+
     when (replyState) {
         is ReplyState.Error -> {}
         is ReplyState.Idle -> {}
         is ReplyState.Loading -> {}
         is ReplyState.Success -> {
             val pagingItems =
-                (replyState as ReplyState.Success).pager.flow.collectAsLazyPagingItems()
+                (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
 
-            LazyColumn(content = {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                content = {
                 item {
                     Text(
                         modifier = modifier
@@ -117,7 +132,11 @@ private fun Content(modifier: Modifier = Modifier, entity: DetailsEntity) {
                                 .width(500.dp),
                             list = entity.data.picArr,
                             itemPadding = PaddingValues(2.dp),
-                            itemClip = RoundedCornerShape(15.dp)
+                            itemClip = RoundedCornerShape(10.dp),
+                            onClick = {
+                                initialPage = it
+                                status = !status
+                            }
                         )
                     }
 
@@ -137,34 +156,11 @@ private fun Content(modifier: Modifier = Modifier, entity: DetailsEntity) {
             })
         }
     }
-}
 
-@Composable
-private fun ReplyItems(id: Int) {
-    val viewModel: MainViewModel = viewModel()
-
-    LaunchedEffect(key1 = true, block = {
-        viewModel.sendIntent(MainIntent.GetReply(id))
-    })
-
-    val replyState by viewModel.replyState.collectAsState()
-
-    when (replyState) {
-        is ReplyState.Error -> {}
-        is ReplyState.Idle -> {}
-        is ReplyState.Loading -> {}
-        is ReplyState.Success -> {
-            val pagingItems =
-                (replyState as ReplyState.Success).pager.flow.collectAsLazyPagingItems()
-
-            LazyColumn(content = {
-                items(pagingItems) {
-                    it?.apply {
-                        ReplyItem(data = this)
-                    }
-                }
-            })
-        }
+    if (status) {
+        DialogImage(entity.data.picArr, initialPage, onDismissRequest = {
+            status = false
+        })
     }
 }
 
@@ -182,6 +178,8 @@ private fun ReplyItem(data: Data) {
 
                 AsyncImage(
                     modifier = Modifier
+                        .padding(bottom = 10.dp)
+                        .size(40.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .constrainAs(avatarRef) {
                             start.linkTo(parent.start, 10.dp)
@@ -224,17 +222,20 @@ private fun ReplyItem(data: Data) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity) {
+private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity, onBack: () -> Unit) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
 
     TopAppBar(
         modifier = modifier,
         navigationIcon = {
-            IconButton(onClick = { }) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "arrowBack"
-                )
+            if (!configuration.isTable()) {
+                IconButton(onClick = { onBack() }) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "arrowBack"
+                    )
+                }
             }
         },
         title = {
@@ -246,7 +247,6 @@ private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity) {
                         .clip(CircleShape),
                     model = ImageRequest.Builder(context)
                         .data(entity.data.userAvatar)
-//                        .size(100)
                         .crossfade(true)
                         .build(),
                     contentDescription = "userAvatar"

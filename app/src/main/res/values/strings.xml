@@ -1,9 +1,13 @@
 <resources>
     <string name="app_name">酷你基哇</string>
 
-    <string name="splash_screen">Splash</string>
-    <string name="main_screen">Main</string>
-    <string name="details_screen">Details</string>
+    <string name="splash_screen">闪屏</string>
+    <string name="main_screen">主屏</string>
+    <string name="login_screen">登陆</string>
+    <string name="details_screen">详情</string>
+
+    <string name="home_inner_screen">主页</string>
+    <string name="today_selection_inner_screen">今日酷安</string>
 
     <string name="home_pager">主页</string>
     <string name="message_pager">消息</string>

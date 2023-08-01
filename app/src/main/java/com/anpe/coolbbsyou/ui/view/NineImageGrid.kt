@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Shapes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,13 +16,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 
 @Composable
 fun NineImageGrid(
     modifier: Modifier = Modifier,
     list: List<String>,
     itemPadding: PaddingValues = PaddingValues(0.dp),
-    itemClip: Shape = RoundedCornerShape(0.dp)
+    itemClip: Shape = RoundedCornerShape(0.dp),
+    onClick: (Int) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -47,10 +48,14 @@ fun NineImageGrid(
                                 .padding(itemPadding)
                                 .clip(itemClip)
                                 .weight(1f)
-                                .aspectRatio(1f),
+                                .aspectRatio(1f)
+                                .clickableNoRipple {
+                                    onClick(j)
+                                },
                             model = ImageRequest.Builder(context)
                                 .data(list[j])
                                 .size(500)
+                                .crossfade(true)
                                 .build(),
                             contentScale = ContentScale.Crop,
                             contentDescription = "image"

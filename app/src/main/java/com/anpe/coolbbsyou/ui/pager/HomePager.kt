@@ -1,5 +1,6 @@
 package com.anpe.coolbbsyou.ui.pager
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,9 +57,10 @@ import com.anpe.coolbbsyou.network.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.index.Data
 import com.anpe.coolbbsyou.network.data.state.IndexImageState
 import com.anpe.coolbbsyou.network.data.state.IndexState
+import com.anpe.coolbbsyou.ui.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
-import com.anpe.coolbbsyou.ui.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
@@ -70,7 +72,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomePager(
     navControllerScreen: NavHostController,
-    navController: NavHostController,
+    navControllerInnerScreen: NavHostController,
+    navControllerPager: NavHostController,
     viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
@@ -125,7 +128,7 @@ fun HomePager(
 
             is IndexState.Success -> {
                 refreshing = false
-                dataList = (indexState as IndexState.Success).pager.flow.collectAsLazyPagingItems()
+                dataList = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
             }
 
         }
@@ -147,18 +150,19 @@ fun HomePager(
                                     id = it.id
                                     when (it.entityType) {
                                         "imageCarouselCard_1" -> {
-                                            val url = it.entities[0].url
-                                            val substring = url.substring(url.indexOf("url=") + 4)
-                                            navController.navigate("${PagerManager.TodayCoolPager.route}/$substring")
+                                            scope.launch {
+                                                val url = it.entities[0].url
+                                                val substring = url.substring(url.indexOf("url=") + 4)
+                                                viewModel.channel.send(MainIntent.GetTodayCool(url = substring, page = 1))
+                                                navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
+                                            }
                                         }
 
                                         "feed" -> {
                                             scope.launch {
-//                                                id = 47999706
+                                                viewModel.channel.send(MainIntent.GetDetails(id))
                                                 if (!configuration.isTable()) {
-                                                    navControllerScreen.navigate("${ScreenManager.DetailsScreen.route}/$id")
-                                                } else {
-                                                    viewModel.channel.send(MainIntent.GetDetails(id))
+                                                    navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
                                                 }
                                             }
                                         }
@@ -195,7 +199,7 @@ private fun IndexItems(
             BannerItem(modifier = modifier, data = data, onClick = onClick)
         }
         "feed" -> {
-            IndexItem(modifier = modifier, data = data, isNineGrid = isNineGrid, onClick = onClick)
+            FeedItem(modifier = modifier, data = data, isNineGrid = isNineGrid, onClick = onClick)
         }
         "imageTextScrollCard" -> {
             ImageTextItem(modifier = modifier, data = data, onClick = onClick)
@@ -226,8 +230,9 @@ private fun BannerItem(modifier: Modifier = Modifier, data: Data, onClick: () ->
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun IndexItem(
+private fun FeedItem(
     modifier: Modifier = Modifier,
     data: Data,
     isNineGrid: Boolean,
@@ -235,12 +240,20 @@ private fun IndexItem(
 ) {
     val context = LocalContext.current
 
+    var status by remember {
+        mutableStateOf(false)
+    }
+
+    var initialPage by remember {
+        mutableStateOf(0)
+    }
+
     Card(
         modifier = modifier
+            .fillMaxWidth()
             .clickableNoRipple {
                 onClick()
-            }
-            .fillMaxWidth(),
+            },
         shape = RoundedCornerShape(15.dp)
     ) {
         ConstraintLayout {
@@ -257,7 +270,6 @@ private fun IndexItem(
 
             AsyncImage(
                 modifier = Modifier
-//                    .padding(10.dp)
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .constrainAs(proPicRef) {
@@ -323,9 +335,13 @@ private fun IndexItem(
                                 width = Dimension.matchParent
                             },
                         content = {
-                            items(data.picArr) {
+                            /*items(data.picArr) {
                                 AsyncImage(
                                     modifier = Modifier
+                                        .clickableNoRipple {
+                                            initialPage = it.length
+                                            status = !status
+                                        }
                                         .size(100.dp)
                                         .padding(end = 5.dp)
                                         .clip(RoundedCornerShape(10.dp))
@@ -337,6 +353,27 @@ private fun IndexItem(
                                     contentScale = ContentScale.Crop,
                                     contentDescription = "image"
                                 )
+                            }*/
+                            for ((num, pic) in data.picArr.withIndex()) {
+                                item {
+                                    AsyncImage(
+                                        modifier = Modifier
+                                            .clickableNoRipple {
+                                                initialPage = num
+                                                status = !status
+                                            }
+                                            .size(100.dp)
+                                            .padding(end = 5.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .aspectRatio(1f),
+                                        model = ImageRequest.Builder(context)
+                                            .data(pic)
+                                            .size(500)
+                                            .build(),
+                                        contentScale = ContentScale.Crop,
+                                        contentDescription = "image"
+                                    )
+                                }
                             }
                         })
                 } else {
@@ -350,7 +387,11 @@ private fun IndexItem(
                                 end.linkTo(parent.end, 10.dp)
                                 width = Dimension.matchParent
                             },
-                        list = data.picArr
+                        list = data.picArr,
+                        onClick = {
+                            initialPage = it
+                            status = !status
+                        }
                     )
                 }
             }
@@ -419,12 +460,18 @@ private fun IndexItem(
                 TextIcon(
                     modifier = Modifier.weight(1f),
                     iconId = R.drawable.baseline_share_24,
-                    text = "Share",
+                    text = data.shareNum.let { if (it == 0) "Share" else it.toString() },
                     textDirection = TextDirection.Bottom,
                     iconTint = MaterialTheme.colorScheme.surfaceTint
                 )
             }
         }
+    }
+
+    if (status) {
+        DialogImage(data.picArr, initialPage, onDismissRequest = {
+            status = false
+        })
     }
 }
 
