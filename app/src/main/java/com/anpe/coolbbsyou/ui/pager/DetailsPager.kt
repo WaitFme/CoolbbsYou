@@ -57,8 +57,10 @@ import com.anpe.coolbbsyou.network.data.model.reply.Data
 import com.anpe.coolbbsyou.network.data.state.ReplyState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
+import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.MyScaffold
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
+import com.anpe.coolbbsyou.util.RichTextUtil.Companion.R2T
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 
@@ -118,11 +120,20 @@ private fun Content(modifier: Modifier = Modifier, entity: DetailsEntity) {
                 modifier = Modifier.fillMaxWidth(),
                 content = {
                 item {
-                    Text(
+                    /*Text(
                         modifier = modifier
                             .padding(15.dp, 5.dp, 15.dp, 0.dp),
-                        text = entity.data.message,
+                        text = entity.data.message.R2T(),
                         fontSize = 16.sp,
+                    )*/
+
+                    HtmlText(
+                        modifier = modifier
+                            .padding(15.dp, 5.dp, 15.dp, 0.dp),
+                        fontSize = 16.sp,
+                        htmlText = entity.data.message, openLink = {
+                            println(it)
+                        }
                     )
 
                     if (entity.data.picArr.isNotEmpty()) {
