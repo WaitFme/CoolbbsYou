@@ -6,4 +6,6 @@ object Constants {
     const val APP_ID = "com.coolapk.market"
     const val REQUEST_WIDTH = "XMLHttpRequest"
     const val COOKIE_PREFS = "Cookies_Prefs"
+    const val HEADER_REQUEST_WIDTH = "X-Requested-With: $REQUEST_WIDTH"
+    const val HEADER_APP_ID = "X-App-Id: $APP_ID"
 }

@@ -1,4 +1,4 @@
-package com.anpe.coolbbsyou.network.data.intent
+package com.anpe.coolbbsyou.data.intent
 
 sealed class MainIntent {
     // 获取首页内容
@@ -30,4 +30,16 @@ sealed class MainIntent {
 
     // 获取评论
     data class GetReply(val id: Int): MainIntent()
+
+    // 点赞
+    data class Like(val id: Int): MainIntent()
+
+    // 取消点赞
+    data class Unlike(val id: Int): MainIntent()
+
+    // 关注
+    data class Follow(val uid: Int): MainIntent()
+
+    // 取消关注
+    data class Unfollow(val uid: Int): MainIntent()
 }

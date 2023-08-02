@@ -4,9 +4,9 @@
     <string name="splash_screen">闪屏</string>
     <string name="main_screen">主屏</string>
     <string name="login_screen">登陆</string>
-    <string name="details_screen">详情</string>
 
     <string name="home_inner_screen">主页</string>
+    <string name="details_inner_screen">详情</string>
     <string name="today_selection_inner_screen">今日酷安</string>
 
     <string name="home_pager">主页</string>

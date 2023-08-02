@@ -51,10 +51,10 @@ import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
 import com.anpe.bilibiliandyou.ui.view.TextIcon
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
 import com.anpe.coolbbsyou.network.data.model.reply.Data
-import com.anpe.coolbbsyou.network.data.state.ReplyState
+import com.anpe.coolbbsyou.data.state.ReplyState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText

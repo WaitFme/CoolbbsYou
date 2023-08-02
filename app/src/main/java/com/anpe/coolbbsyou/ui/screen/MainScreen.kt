@@ -76,8 +76,8 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.state.SuggestState
+import com.anpe.coolbbsyou.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.state.SuggestState
 import com.anpe.coolbbsyou.ui.innerScreen.TodaySelectionScreen
 import com.anpe.coolbbsyou.ui.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
@@ -181,6 +181,13 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                     composable(route = InnerScreenManager.TodaySelectionInnerScreen.route) {
                         TodaySelectionScreen(
                             navControllerScreen = navControllerScreen,
+                            navControllerInnerScreen = navControllerInnerScreen,
+                            viewModel = viewModel
+                        )
+                    }
+
+                    composable(route = InnerScreenManager.DetailsInnerScreen.route) {
+                        DetailsInnerScreen(
                             navControllerInnerScreen = navControllerInnerScreen,
                             viewModel = viewModel
                         )

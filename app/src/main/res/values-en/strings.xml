@@ -4,9 +4,9 @@
     <string name="splash_screen">Splash</string>
     <string name="main_screen">Main</string>
     <string name="login_screen">Login</string>
-    <string name="details_screen">Details</string>
 
     <string name="home_inner_screen">Home</string>
+    <string name="details_inner_screen">Details</string>
     <string name="today_selection_inner_screen">Today selection</string>
 
     <string name="home_pager">Home</string>

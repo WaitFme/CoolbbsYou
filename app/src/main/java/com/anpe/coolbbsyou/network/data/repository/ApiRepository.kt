@@ -52,4 +52,8 @@ class ApiRepository(context: Context = MyApplication.context) {
 
     suspend fun getReply(id: Int, page: Int, listType: String = "lastupdate_desc") =
         api.getReply(id = id, listType = listType, page = page)
+
+    suspend fun getLike(id: Int) = api.getLike(id = id)
+
+    suspend fun getUnlike(id: Int) = api.getUnlike(id = id)
 }

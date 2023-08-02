@@ -6,7 +6,7 @@ import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DetailsPagerBridge
 
 @Composable
-fun DetailsScreen(navControllerScreen: NavController, viewModel: MainViewModel) {
+fun DetailsInnerScreen(navControllerInnerScreen: NavController, viewModel: MainViewModel) {
     /*val details: DetailsEntity? = null
     var detailsEntity by remember {
         mutableStateOf(details)
@@ -38,6 +38,6 @@ fun DetailsScreen(navControllerScreen: NavController, viewModel: MainViewModel) 
     }*/
 
     DetailsPagerBridge(viewModel = viewModel, onBack = {
-        navControllerScreen.popBackStack()
+        navControllerInnerScreen.popBackStack()
     })
 }

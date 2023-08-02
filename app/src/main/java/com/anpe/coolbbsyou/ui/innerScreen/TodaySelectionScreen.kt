@@ -50,9 +50,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.today.Data
-import com.anpe.coolbbsyou.network.data.state.TodayState
+import com.anpe.coolbbsyou.data.state.TodayState
 import com.anpe.coolbbsyou.ui.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
@@ -104,11 +104,11 @@ fun TodaySelectionScreen(
                 }
             )
         }
-    ) {
+    ) { pv->
         Box(
             Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(pv)
         ) {
             val list: List<Data> = listOf()
             var dataList by remember {
@@ -146,18 +146,33 @@ fun TodaySelectionScreen(
                 contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
                 content = {
                     items(items = dataList) {
-                        IndexItems(
-                            modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                            data = it,
-                            onClick = {
-                                scope.launch {
-                                    viewModel.channel.send(MainIntent.GetDetails(it.id))
-                                    if (!configuration.isTable()) {
-                                        navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                        when (it.entityType) {
+                            "feed" -> {
+                                FeedItem(
+                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                    data = it,
+                                    onClick = {
+                                        scope.launch {
+                                            viewModel.channel.send(MainIntent.GetDetails(it.id))
+                                            if (!configuration.isTable()) {
+                                                navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                                            }
+                                        }
                                     }
-                                }
+                                )
                             }
-                        )
+
+                            "imageTextGridCard" -> {
+                                ImageTextItem(
+                                    modifier = Modifier.padding(
+                                        top = 5.dp,
+                                        bottom = 5.dp
+                                    ), data = it, onClick = {
+
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
             )
@@ -168,23 +183,6 @@ fun TodaySelectionScreen(
                 state = refreshState,
                 contentColor = MaterialTheme.colorScheme.surfaceTint
             )
-        }
-    }
-}
-
-@Composable
-private fun IndexItems(
-    modifier: Modifier = Modifier,
-    data: Data,
-    onClick: () -> Unit
-) {
-    when (data.entityType) {
-        "feed" -> {
-            FeedItem(modifier = modifier, data = data, onClick = onClick)
-        }
-
-        "imageTextGridCard" -> {
-            ImageTextItem(modifier = modifier, data = data, onClick = onClick)
         }
     }
 }
@@ -210,7 +208,7 @@ private fun FeedItem(
         Text(
             modifier = Modifier
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp),
-            text = data.message.richToString()
+            text = data.message
         )
 
         if (data.picArr.isNotEmpty()) {

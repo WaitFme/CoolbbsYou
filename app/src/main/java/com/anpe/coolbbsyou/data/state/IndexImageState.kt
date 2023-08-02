@@ -1,4 +1,4 @@
-package com.anpe.coolbbsyou.network.data.state
+package com.anpe.coolbbsyou.data.state
 
 sealed class IndexImageState {
     // 九宫格图片

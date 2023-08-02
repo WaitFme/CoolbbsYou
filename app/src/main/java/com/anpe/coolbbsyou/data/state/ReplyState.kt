@@ -1,4 +1,4 @@
-package com.anpe.coolbbsyou.network.data.state
+package com.anpe.coolbbsyou.data.state
 
 import androidx.paging.PagingData
 import com.anpe.coolbbsyou.network.data.model.reply.Data

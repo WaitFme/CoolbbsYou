@@ -9,6 +9,4 @@ sealed class ScreenManager(val route: String, @StringRes val resourceId: Int) {
     object MainScreen: ScreenManager("MainScreen", R.string.main_screen)
 
     object LoginScreen: ScreenManager("LoginScreen", R.string.login_screen)
-
-    object DetailsScreen: ScreenManager("DetailsInnerScreen", R.string.details_screen)
 }

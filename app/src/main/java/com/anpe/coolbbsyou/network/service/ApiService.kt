@@ -2,6 +2,7 @@ package com.anpe.coolbbsyou.network.service
 
 import android.content.Context
 import com.anpe.coolbbsyou.constant.Constants
+import com.anpe.coolbbsyou.data.domain.like.LikeModel
 import com.anpe.coolbbsyou.network.data.cookie.CookieManger
 import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
 import com.anpe.coolbbsyou.network.data.model.index.IndexEntity
@@ -17,15 +18,18 @@ import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.TokenDeviceUtils
 import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getTokenV2
 import okhttp3.OkHttpClient
+import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import retrofit2.http.Query
 import java.util.concurrent.TimeUnit
+
 
 interface ApiService {
     companion object {
@@ -58,10 +62,9 @@ interface ApiService {
         }
     }
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("/v6/main/indexV8")
     suspend fun getIndex(
-        @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
-        @Header("X-App-Id") appId: String = Constants.APP_ID,
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("ids") ids: String = "",
@@ -72,39 +75,36 @@ interface ApiService {
 
     ): IndexEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("/v6/feed/detail")
     suspend fun getDetails(
-        @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
-        @Header("X-App-Id") appId: String = Constants.APP_ID,
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("id") id: Int
     ): DetailsEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/page/dataList")
     suspend fun getTodayCool(
-        @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
-        @Header("X-App-Id") appId: String = Constants.APP_ID,
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("page") page: Int = 1,
         @Query("url") url: String
     ): TodayCoolEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/search/suggestSearchWordsNew")
     suspend fun getSuggestSearch(
-        @Header("X-Requested-With") requestedWith: String = Constants.REQUEST_WIDTH,
-        @Header("X-App-Id") appId: String = Constants.APP_ID,
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("type") type: String = "app",
         @Query("searchValue") searchValue: String
     ): SuggestSearchEntity
 
+    @Headers("X-Requested-With: XMLHttpRequest")
     @FormUrlEncoded
     @POST("$ACCOUNT_URL/auth/loginByCoolApk")
     suspend fun postAccount(
-        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
         @Field("submit") submit: Int = 1,
         @Field("randomNumber") randomNumber: String = LoginUtils.createRandomNumber(),
         @Field("requestHash") requestHash: String,
@@ -114,40 +114,55 @@ interface ApiService {
         @Field("code") code: String = "",
     ): LoginEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/notification/list")
     suspend fun getNotification(
-        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
-        @Header("X-App-Id") appId: String = "com.coolapk.market",
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("page") page: Int
     ): NotificationEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/account/checkLoginInfo")
     suspend fun getLoginState(
-        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
-        @Header("X-App-Id") appId: String = "com.coolapk.market",
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
     ): LoginStateEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/user/profile")
     suspend fun getProfile(
-        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
-        @Header("X-App-Id") appId: String = "com.coolapk.market",
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("uid") uid: Int
     ): ProfileEntity
 
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("/v6/feed/replyList")
     suspend fun getReply(
-        @Header("X-Requested-With") requestedWith: String = "XMLHttpRequest",
-        @Header("X-App-Id") appId: String = "com.coolapk.market",
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("id") id: Int,
         @Query("listType") listType: String,
         @Query("page") page: Int
     ): ReplyEntity
+
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
+    @FormUrlEncoded
+    @POST("$API_URL/v6/feed/like")
+    suspend fun getLike(
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
+        @Field("id") id: Int
+    ): LikeModel
+
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
+    @FormUrlEncoded
+    @POST("$API_URL/v6/feed/unlike")
+    suspend fun getUnlike(
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
+        @Field("id") id: Int
+    ): LikeModel
+
 }

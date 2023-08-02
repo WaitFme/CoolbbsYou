@@ -30,9 +30,9 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.nofitication.Data
-import com.anpe.coolbbsyou.network.data.state.NotificationState
+import com.anpe.coolbbsyou.data.state.NotificationState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.Utils.Companion.richToString
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval

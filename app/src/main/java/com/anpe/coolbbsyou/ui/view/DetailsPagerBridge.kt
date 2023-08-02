@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.network.data.state.DetailsState
+import com.anpe.coolbbsyou.data.state.DetailsState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.pager.DetailsPager
 

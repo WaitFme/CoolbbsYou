@@ -9,22 +9,23 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.domain.like.LikeModel
+import com.anpe.coolbbsyou.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
 import com.anpe.coolbbsyou.network.data.repository.ApiRepository
 import com.anpe.coolbbsyou.network.data.source.IndexSource
 import com.anpe.coolbbsyou.network.data.source.NotificationSource
 import com.anpe.coolbbsyou.network.data.source.ReplySource
-import com.anpe.coolbbsyou.network.data.state.DetailsState
-import com.anpe.coolbbsyou.network.data.state.IndexImageState
-import com.anpe.coolbbsyou.network.data.state.IndexState
-import com.anpe.coolbbsyou.network.data.state.LoginInfoState
-import com.anpe.coolbbsyou.network.data.state.LoginState
-import com.anpe.coolbbsyou.network.data.state.NotificationState
-import com.anpe.coolbbsyou.network.data.state.ProfileState
-import com.anpe.coolbbsyou.network.data.state.ReplyState
-import com.anpe.coolbbsyou.network.data.state.SuggestState
-import com.anpe.coolbbsyou.network.data.state.TodayState
+import com.anpe.coolbbsyou.data.state.DetailsState
+import com.anpe.coolbbsyou.data.state.IndexImageState
+import com.anpe.coolbbsyou.data.state.IndexState
+import com.anpe.coolbbsyou.data.state.LoginInfoState
+import com.anpe.coolbbsyou.data.state.LoginState
+import com.anpe.coolbbsyou.data.state.NotificationState
+import com.anpe.coolbbsyou.data.state.ProfileState
+import com.anpe.coolbbsyou.data.state.ReplyState
+import com.anpe.coolbbsyou.data.state.SuggestState
+import com.anpe.coolbbsyou.data.state.TodayState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,6 +104,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     is MainIntent.GetProfile -> getProfile(it.uid)
                     is MainIntent.GetNotification -> getNotification()
                     is MainIntent.GetReply -> getReply(it.id)
+                    is MainIntent.Follow -> {}
+                    is MainIntent.Like -> {}
+                    is MainIntent.Unfollow -> {}
+                    is MainIntent.Unlike -> {
+
+                    }
                 }
             }
         }
@@ -316,6 +323,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
                 }
             )
+        }
+    }
+
+    suspend fun getLike(id: Int): LikeModel? {
+        return if (isLogin) {
+            repository.getLike(id = id)
+        } else {
+            null
+        }
+    }
+
+    suspend fun getUnlike(id: Int): LikeModel? {
+        return if (isLogin) {
+            repository.getUnlike(id = id)
+        } else {
+            null
         }
     }
 }
