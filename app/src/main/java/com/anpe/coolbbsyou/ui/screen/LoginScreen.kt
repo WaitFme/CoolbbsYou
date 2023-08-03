@@ -28,9 +28,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.repository.ApiRepository
-import com.anpe.coolbbsyou.network.data.state.LoginState
+import com.anpe.coolbbsyou.data.state.LoginState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.LoginUtils.Companion.createRequestHash
 import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast

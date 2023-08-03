@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -52,17 +51,18 @@ import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
 import com.anpe.bilibiliandyou.ui.view.TextIcon
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.intent.MainIntent
 import com.anpe.coolbbsyou.network.data.model.index.Data
-import com.anpe.coolbbsyou.network.data.state.IndexImageState
-import com.anpe.coolbbsyou.network.data.state.IndexState
+import com.anpe.coolbbsyou.data.state.IndexImageState
+import com.anpe.coolbbsyou.data.state.IndexState
+import com.anpe.coolbbsyou.ui.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
-import com.anpe.coolbbsyou.ui.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.ui.view.DialogImage
+import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
-import com.anpe.coolbbsyou.util.Utils.Companion.richToString
 import kotlinx.coroutines.launch
 
 
@@ -70,7 +70,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomePager(
     navControllerScreen: NavHostController,
-    navController: NavHostController,
+    navControllerInnerScreen: NavHostController,
+    navControllerPager: NavHostController,
     viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
@@ -79,10 +80,6 @@ fun HomePager(
     val indexState by viewModel.indexState.collectAsState()
 
     val indexImageState by viewModel.indexImageState.collectAsState()
-
-    var id by remember {
-        mutableStateOf(-1)
-    }
 
     val isNineGrid = when (indexImageState) {
         IndexImageState.ImageRow -> false
@@ -125,7 +122,7 @@ fun HomePager(
 
             is IndexState.Success -> {
                 refreshing = false
-                dataList = (indexState as IndexState.Success).pager.flow.collectAsLazyPagingItems()
+                dataList = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
             }
 
         }
@@ -136,38 +133,73 @@ fun HomePager(
                 .fillMaxHeight(),
             contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
             content = {
-                dataList?.apply {
-                    items(items = this) {
-                        if (it != null) {
-                            IndexItems(
-                                modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                data = it,
-                                isNineGrid = isNineGrid,
-                                onClick = {
-                                    id = it.id
-                                    when (it.entityType) {
-                                        "imageCarouselCard_1" -> {
-                                            val url = it.entities[0].url
-                                            val substring = url.substring(url.indexOf("url=") + 4)
-                                            navController.navigate("${PagerManager.TodayCoolPager.route}/$substring")
-                                        }
+                dataList?.let { lazyItem ->
+                    items(lazyItem) {
+                        it?.apply {
+                            var likeNum by remember {
+                                mutableStateOf(likenum)
+                            }
 
-                                        "feed" -> {
+                            when (entityType) {
+                                "imageCarouselCard_1" -> {
+                                    BannerItem(
+                                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                        data = this,
+                                        onClick = {
                                             scope.launch {
-//                                                id = 47999706
+                                                val url = entities[0].url
+                                                val substring =
+                                                    url.substring(url.indexOf("url=") + 4)
+                                                viewModel.channel.send(
+                                                    MainIntent.GetTodayCool(
+                                                        url = substring,
+                                                        page = 1
+                                                    )
+                                                )
+                                                navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
+                                            }
+                                        },
+                                    )
+                                }
+                                "feed" -> {
+                                    FeedItem(
+                                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                        data = this,
+                                        isNineGrid = isNineGrid,
+                                        onClick = {
+                                            scope.launch {
+//                                                id = 48068410
+                                                viewModel.channel.send(MainIntent.GetDetails(id))
                                                 if (!configuration.isTable()) {
-                                                    navControllerScreen.navigate("${ScreenManager.DetailsScreen.route}/$id")
-                                                } else {
-                                                    viewModel.channel.send(MainIntent.GetDetails(id))
+                                                    navControllerInnerScreen.navigate(InnerScreenManager.DetailsInnerScreen.route)
+                                                }
+                                            }
+                                        },
+                                        onLike = {
+                                            scope.launch {
+                                                viewModel.getLike(id)?.apply {
+//                                                    likeNum = data.count
                                                 }
                                             }
                                         }
-
-                                        "imageTextScrollCard" -> {
-                                        }
-                                    }
+                                    )
                                 }
-                            )
+                                "imageTextScrollCard" -> {
+                                    ImageTextItem(
+                                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                        data = this,
+                                        onClick = {
+                                            scope.launch {
+//                                                id = 48068410
+                                                /*viewModel.channel.send(MainIntent.GetDetails(id))
+                                                if (!configuration.isTable()) {
+                                                    navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                                                }*/
+                                            }
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -180,26 +212,6 @@ fun HomePager(
             state = refreshState,
             contentColor = MaterialTheme.colorScheme.surfaceTint
         )
-    }
-}
-
-@Composable
-private fun IndexItems(
-    modifier: Modifier = Modifier,
-    data: Data,
-    isNineGrid: Boolean,
-    onClick: () -> Unit
-) {
-    when (data.entityType) {
-        "imageCarouselCard_1" -> {
-            BannerItem(modifier = modifier, data = data, onClick = onClick)
-        }
-        "feed" -> {
-            IndexItem(modifier = modifier, data = data, isNineGrid = isNineGrid, onClick = onClick)
-        }
-        "imageTextScrollCard" -> {
-            ImageTextItem(modifier = modifier, data = data, onClick = onClick)
-        }
     }
 }
 
@@ -227,20 +239,34 @@ private fun BannerItem(modifier: Modifier = Modifier, data: Data, onClick: () ->
 }
 
 @Composable
-private fun IndexItem(
+private fun FeedItem(
     modifier: Modifier = Modifier,
     data: Data,
     isNineGrid: Boolean,
-    onClick: () -> Unit
+    likeNum: Int = data.likenum,
+    replyNum: Int = data.replynum,
+    shareNum: Int = data.shareNum,
+    onClick: () -> Unit,
+    onLike: (Int) -> Unit = {},
+    onReply: (Int) -> Unit = {},
+    onShare: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
 
+    var status by remember {
+        mutableStateOf(false)
+    }
+
+    var initialPage by remember {
+        mutableStateOf(0)
+    }
+
     Card(
         modifier = modifier
+            .fillMaxWidth()
             .clickableNoRipple {
                 onClick()
-            }
-            .fillMaxWidth(),
+            },
         shape = RoundedCornerShape(15.dp)
     ) {
         ConstraintLayout {
@@ -257,7 +283,6 @@ private fun IndexItem(
 
             AsyncImage(
                 modifier = Modifier
-//                    .padding(10.dp)
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .constrainAs(proPicRef) {
@@ -287,7 +312,7 @@ private fun IndexItem(
                     start.linkTo(nameRef.start)
                     top.linkTo(nameRef.bottom)
                 },
-                text = data.infoHtml.richToString(),
+                text = data.infoHtml,
                 fontSize = 11.sp
             )
 
@@ -301,7 +326,7 @@ private fun IndexItem(
                 fontSize = 11.sp
             )
 
-            Text(
+            HtmlText(
                 modifier = Modifier
                     .constrainAs(messageRef) {
                         start.linkTo(parent.start, 10.dp)
@@ -309,7 +334,10 @@ private fun IndexItem(
                         end.linkTo(parent.end, 10.dp)
                         this.width = Dimension.matchParent
                     },
-                text = data.message.richToString()
+                htmlText = data.message,
+                openLink = {
+
+                }
             )
 
             if (data.picArr.isNotEmpty()) {
@@ -323,20 +351,26 @@ private fun IndexItem(
                                 width = Dimension.matchParent
                             },
                         content = {
-                            items(data.picArr) {
-                                AsyncImage(
-                                    modifier = Modifier
-                                        .size(100.dp)
-                                        .padding(end = 5.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .aspectRatio(1f),
-                                    model = ImageRequest.Builder(context)
-                                        .data(it)
-                                        .size(500)
-                                        .build(),
-                                    contentScale = ContentScale.Crop,
-                                    contentDescription = "image"
-                                )
+                            for ((num, pic) in data.picArr.withIndex()) {
+                                item {
+                                    AsyncImage(
+                                        modifier = Modifier
+                                            .clickableNoRipple {
+                                                initialPage = num
+                                                status = !status
+                                            }
+                                            .size(100.dp)
+                                            .padding(end = 5.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .aspectRatio(1f),
+                                        model = ImageRequest.Builder(context)
+                                            .data(pic)
+                                            .size(500)
+                                            .build(),
+                                        contentScale = ContentScale.Crop,
+                                        contentDescription = "image"
+                                    )
+                                }
                             }
                         })
                 } else {
@@ -350,7 +384,11 @@ private fun IndexItem(
                                 end.linkTo(parent.end, 10.dp)
                                 width = Dimension.matchParent
                             },
-                        list = data.picArr
+                        list = data.picArr,
+                        onClick = {
+                            initialPage = it
+                            status = !status
+                        }
                     )
                 }
             }
@@ -403,15 +441,23 @@ private fun IndexItem(
                     }
             ) {
                 TextIcon(
-                    modifier = Modifier.weight(1f),
-                    text = data.likenum.toString(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickableNoRipple {
+                            onLike(data.id)
+                        },
+                    text = likeNum.toString(),
                     textDirection = TextDirection.Bottom,
                     iconId = R.drawable.baseline_thumb_up_alt_24,
                     iconTint = MaterialTheme.colorScheme.surfaceTint
                 )
                 TextIcon(
-                    modifier = Modifier.weight(1f),
-                    text = data.replynum.toString(),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickableNoRipple {
+                            onReply(data.id)
+                        },
+                    text = replyNum.toString(),
                     textDirection = TextDirection.Bottom,
                     iconId = R.drawable.baseline_chat_bubble_24,
                     iconTint = MaterialTheme.colorScheme.surfaceTint
@@ -419,12 +465,18 @@ private fun IndexItem(
                 TextIcon(
                     modifier = Modifier.weight(1f),
                     iconId = R.drawable.baseline_share_24,
-                    text = "Share",
+                    text = shareNum.let { if (it == 0) "Share" else it.toString() },
                     textDirection = TextDirection.Bottom,
                     iconTint = MaterialTheme.colorScheme.surfaceTint
                 )
             }
         }
+    }
+
+    if (status) {
+        DialogImage(data.picArr, initialPage, onDismissRequest = {
+            status = false
+        })
     }
 }
 
@@ -445,7 +497,7 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
                 Column(
                     modifier = Modifier
                         .width(200.dp)
-                        .padding(end = 5.dp)
+                        .padding(end = 10.dp)
                         .clip(RoundedCornerShape(15.dp))
                         .clickableNoRipple {
                             onClick()
@@ -457,17 +509,23 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
                             .aspectRatio(2f),
                         model = ImageRequest.Builder(context)
                             .data(it.pic)
+                            .crossfade(true)
                             .build(),
                         contentScale = ContentScale.Crop,
                         contentDescription = "image"
                     )
-                    Text(
+                    HtmlText(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color.White),
-                        text = it.message.richToString(),
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .padding(5.dp),
+                        htmlText = it.message?: "NULL",
                         overflow = TextOverflow.Ellipsis,
-                        maxLines = 2
+                        maxLines = 2,
+                        fontSize = 15.sp,
+                        openLink = {
+
+                        }
                     )
                 }
             }

@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,11 +26,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.state.NotificationState
+import com.anpe.coolbbsyou.data.intent.MainIntent
+import com.anpe.coolbbsyou.network.data.model.nofitication.Data
+import com.anpe.coolbbsyou.data.state.NotificationState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.Utils.Companion.richToString
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
@@ -45,6 +50,9 @@ fun MessagePager(viewModel: MainViewModel) {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
+        var dataList by remember {
+            mutableStateOf<LazyPagingItems<Data>?>(null)
+        }
 
         when (notificationState) {
             is NotificationState.Error -> {
@@ -57,32 +65,34 @@ fun MessagePager(viewModel: MainViewModel) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
             is NotificationState.Success -> {
-                val dataList = (notificationState as NotificationState.Success).pager.flow.collectAsLazyPagingItems()
-
-                LazyColumn(content = {
-                    item {
-                        Column {
-                            BlockItem(title = "我的动态")
-                            BlockItem(title = "我的评论")
-                            BlockItem(title = "我收到的赞")
-                            BlockItem(title = "好友关注")
-                            BlockItem(title = "私信")
-                        }
-                    }
-
-                    items(dataList) {
-                        it?.apply {
-                            NotificationItem(
-                                fromUserAvatar,
-                                fromusername,
-                                note,
-                                (dateline.toLong() * 1000).timeStampInterval(timeMillis)
-                            )
-                        }
-                    }
-                })
+                dataList = (notificationState as NotificationState.Success).pager.collectAsLazyPagingItems()
             }
         }
+
+        LazyColumn(content = {
+            item {
+                Column {
+                    BlockItem(title = "我的动态")
+                    BlockItem(title = "我的评论")
+                    BlockItem(title = "我收到的赞")
+                    BlockItem(title = "好友关注")
+                    BlockItem(title = "私信")
+                }
+            }
+
+            dataList?.apply {
+                items(this) {
+                    it?.apply {
+                        NotificationItem(
+                            fromUserAvatar,
+                            fromusername,
+                            note,
+                            (dateline.toLong() * 1000).timeStampInterval(timeMillis)
+                        )
+                    }
+                }
+            }
+        })
     }
 }
 

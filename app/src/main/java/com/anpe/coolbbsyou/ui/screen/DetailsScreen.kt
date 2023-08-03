@@ -1,22 +1,13 @@
 package com.anpe.coolbbsyou.ui.screen
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.navigation.NavController
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
-import com.anpe.coolbbsyou.network.data.state.DetailsState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
-import com.anpe.coolbbsyou.ui.pager.DetailsPager
+import com.anpe.coolbbsyou.ui.view.DetailsPagerBridge
 
 @Composable
-fun DetailsScreen(navControllerScreen: NavController, id: Int?, viewModel: MainViewModel) {
-    val details: DetailsEntity? = null
+fun DetailsInnerScreen(navControllerInnerScreen: NavController, viewModel: MainViewModel) {
+    /*val details: DetailsEntity? = null
     var detailsEntity by remember {
         mutableStateOf(details)
     }
@@ -26,9 +17,9 @@ fun DetailsScreen(navControllerScreen: NavController, id: Int?, viewModel: MainV
     }
 
     LaunchedEffect(key1 = true, block = {
-        id?.apply {
+        *//*id?.apply {
             viewModel.channel.send(MainIntent.GetDetails(this))
-        }
+        }*//*
 
         viewModel.detailsState.collect {
             when (it) {
@@ -41,6 +32,12 @@ fun DetailsScreen(navControllerScreen: NavController, id: Int?, viewModel: MainV
     })
 
     detailsEntity?.apply {
-        DetailsPager(entity = this)
-    }
+        DetailsPager(entity = this, onBack = {
+            navControllerScreen.popBackStack()
+        })
+    }*/
+
+    DetailsPagerBridge(viewModel = viewModel, onBack = {
+        navControllerInnerScreen.popBackStack()
+    })
 }

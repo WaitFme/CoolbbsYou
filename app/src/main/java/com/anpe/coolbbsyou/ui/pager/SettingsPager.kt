@@ -22,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.anpe.coolbbsyou.network.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.state.IndexImageState
+import com.anpe.coolbbsyou.data.intent.MainIntent
+import com.anpe.coolbbsyou.data.state.IndexImageState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.launch
 

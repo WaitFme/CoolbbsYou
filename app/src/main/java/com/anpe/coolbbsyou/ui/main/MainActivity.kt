@@ -11,12 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
-import com.anpe.coolbbsyou.ui.screen.DetailsScreen
 import com.anpe.coolbbsyou.ui.screen.LoginScreen
 import com.anpe.coolbbsyou.ui.screen.MainScreen
 import com.anpe.coolbbsyou.ui.screen.SplashScreen
@@ -48,38 +45,28 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
+                    val navControllerScreen = rememberNavController()
                     val viewModel: MainViewModel = viewModel()
 
                     NavHost(
-                        navController = navController,
+                        navController = navControllerScreen,
                         startDestination = ScreenManager.SplashScreen.route,
                         builder = {
                             composable(route = ScreenManager.SplashScreen.route) {
                                 SplashScreen(
-                                    navControllerScreen = navController,
+                                    navControllerScreen = navControllerScreen,
                                     viewModel = viewModel
                                 )
                             }
                             composable(route = ScreenManager.MainScreen.route) {
                                 MainScreen(
-                                    navControllerScreen = navController,
+                                    navControllerScreen = navControllerScreen,
                                     viewModel = viewModel
                                 )
                             }
-                            composable(
-                                route = "${ScreenManager.DetailsScreen.route}/{id}",
-                                arguments = listOf(navArgument("id") { type = NavType.IntType })
-                            ) {
-                                DetailsScreen(
-                                    navControllerScreen = navController,
-                                    id = it.arguments?.getInt("id"),
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(ScreenManager.LoginScreen.route) {
+                            composable(route = ScreenManager.LoginScreen.route) {
                                 LoginScreen(
-                                    navControllerScreen = navController,
+                                    navControllerScreen = navControllerScreen,
                                     viewModel = viewModel
                                 )
                             }
