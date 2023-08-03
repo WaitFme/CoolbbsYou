@@ -70,9 +70,7 @@ fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity) {
                 topBar = { TopBar(entity = entity) },
                 content = {
                     Column(
-                        modifier = modifier
-//                            .verticalScroll(rememberScrollState())
-                            .padding(it)
+                        modifier = modifier.padding(it)
                     ) {
                         Content(entity = entity)
                     }

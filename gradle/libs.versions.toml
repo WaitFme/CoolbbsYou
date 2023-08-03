@@ -9,14 +9,14 @@ coil-compose = "2.2.2"
 retrofit = "2.9.0"
 converter-gson = "2.9.0"
 richtext = "3.0.7"
-richtext-ui-material3 = "0.16.0"
+richtext-ui-material3 = "0.17.0"
 paging-runtime = "3.1.1"
 paging-compose = "1.0.0-alpha18"
 jbcrypt = "0.4"
 jsoup = "1.16.1"
 
 # Default version
-agp = "8.2.0-alpha13"
+agp = "8.1.0"
 kotlin = "1.8.10"
 core-ktx = "1.10.1"
 junit = "4.13.2"
@@ -33,7 +33,7 @@ navigation-compose = { group = "androidx.navigation", name = "navigation-compose
 accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist-swiperefresh" }
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist-systemuicontroller" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
-coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil-compose" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.4.0" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
 richtext = { group = "com.zzhoujay.richtext", name = "richtext", version.ref = "richtext" }
