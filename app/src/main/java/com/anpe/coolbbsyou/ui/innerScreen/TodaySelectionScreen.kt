@@ -155,7 +155,7 @@ fun TodaySelectionScreen(
                                         scope.launch {
                                             viewModel.channel.send(MainIntent.GetDetails(it.id))
                                             if (!configuration.isTable()) {
-                                                navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                                                navControllerInnerScreen.navigate(InnerScreenManager.DetailsInnerScreen.route)
                                             }
                                         }
                                     }
