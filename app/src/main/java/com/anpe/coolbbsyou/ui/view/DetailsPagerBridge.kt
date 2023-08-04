@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.data.state.DetailsState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
-import com.anpe.coolbbsyou.ui.pager.DetailsPager
+import com.anpe.coolbbsyou.ui.host.pager.DetailsPager
 
 
 @Composable

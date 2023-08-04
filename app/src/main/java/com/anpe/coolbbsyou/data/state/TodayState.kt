@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.data.state
 
-import com.anpe.coolbbsyou.network.data.model.today.TodayCoolEntity
+import com.anpe.coolbbsyou.data.domain.today.TodayCoolEntity
 
 sealed class TodayState {
     object Idle: TodayState()

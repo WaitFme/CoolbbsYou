@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.provider.Settings
 import com.anpe.coolbbsyou.constant.Constants
-import com.anpe.coolbbsyou.network.data.model.deviceInfo.DeviceInfo
+import com.anpe.coolbbsyou.data.domain.deviceInfo.DeviceInfo
 import com.anpe.coolbbsyou.util.Utils.Companion.getBase64
 import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
 

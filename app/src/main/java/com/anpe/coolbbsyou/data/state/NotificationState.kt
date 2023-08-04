@@ -1,7 +1,7 @@
 package com.anpe.coolbbsyou.data.state
 
 import androidx.paging.PagingData
-import com.anpe.coolbbsyou.network.data.model.nofitication.Data
+import com.anpe.coolbbsyou.data.domain.nofitication.Data
 import kotlinx.coroutines.flow.Flow
 
 sealed class NotificationState {

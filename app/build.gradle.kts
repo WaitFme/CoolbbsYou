@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -36,6 +37,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = "1.8"
+    }
+    kotlin {
+        jvmToolchain(8)
     }
     buildFeatures {
         compose = true
@@ -76,10 +80,12 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
-    implementation(libs.richtext.ui.material3)
     implementation(libs.material)
     implementation(libs.paging.runtime)
     implementation(libs.paging.compose)
     implementation(libs.jbcrypt)
     implementation(libs.jsoup)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 }

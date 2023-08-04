@@ -1,13 +1,13 @@
 package com.anpe.coolbbsyou.data.state
 
-import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
+import com.anpe.coolbbsyou.data.domain.profile.ProfileModel
 
 sealed class ProfileState {
     object Idle: ProfileState()
 
     object Loading: ProfileState()
 
-    data class Success(val profileEntity: ProfileEntity): ProfileState()
+    data class Success(val profileModel: ProfileModel): ProfileState()
 
     data class Error(val e: String): ProfileState()
 }

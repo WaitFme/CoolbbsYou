@@ -4,6 +4,7 @@
     <string name="splash_screen">Splash</string>
     <string name="main_screen">Main</string>
     <string name="login_screen">Login</string>
+    <string name="full_image_screen">Full screen image</string>
 
     <string name="home_inner_screen">Home</string>
     <string name="details_inner_screen">Details</string>

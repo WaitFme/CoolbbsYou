@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.data.state
 
-import com.anpe.coolbbsyou.network.data.model.login.LoginEntity
+import com.anpe.coolbbsyou.data.domain.login.LoginEntity
 
 sealed class LoginState {
     object Idle: LoginState()

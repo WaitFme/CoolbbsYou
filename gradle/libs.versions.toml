@@ -8,14 +8,14 @@ gson = "2.10"
 coil-compose = "2.2.2"
 retrofit = "2.9.0"
 converter-gson = "2.9.0"
-richtext = "3.0.7"
-richtext-ui-material3 = "0.17.0"
 paging-runtime = "3.1.1"
 paging-compose = "1.0.0-alpha18"
 jbcrypt = "0.4"
 jsoup = "1.16.1"
+room = "2.5.2"
 
 # Default version
+ksp = "1.8.10-1.0.9"
 agp = "8.1.0"
 kotlin = "1.8.10"
 core-ktx = "1.10.1"
@@ -36,15 +36,14 @@ gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.4.0" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
-richtext = { group = "com.zzhoujay.richtext", name = "richtext", version.ref = "richtext" }
-# implementation "com.halilibo.compose-richtext:richtext-ui-material3:${richtext_version}"
-richtext-ui-material3 = { group = "com.halilibo.compose-richtext", name = "richtext-ui-material3", version.ref = "richtext-ui-material3" }
 material = { group = "androidx.compose.material", name = "material" }
-paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging-runtime"}
-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging-compose"}
-jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt"}
+paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging-runtime" }
+paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging-compose" }
+jbcrypt = { group = "org.mindrot", name = "jbcrypt", version.ref = "jbcrypt" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
-
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
 # Default libraries
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
@@ -65,4 +64,5 @@ material3 = { group = "androidx.compose.material3", name = "material3" }
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
 

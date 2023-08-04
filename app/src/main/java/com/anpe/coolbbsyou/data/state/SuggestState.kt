@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.data.state
 
-import com.anpe.coolbbsyou.network.data.model.suggest.SuggestSearchEntity
+import com.anpe.coolbbsyou.data.domain.suggest.SuggestSearchEntity
 
 sealed class SuggestState {
     object Idle: SuggestState()

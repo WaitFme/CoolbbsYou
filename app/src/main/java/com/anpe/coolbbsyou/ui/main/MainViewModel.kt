@@ -10,12 +10,12 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
 import com.anpe.coolbbsyou.data.domain.like.LikeModel
+import com.anpe.coolbbsyou.data.domain.profile.ProfileModel
 import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.network.data.model.profile.ProfileEntity
-import com.anpe.coolbbsyou.network.data.repository.ApiRepository
-import com.anpe.coolbbsyou.network.data.source.IndexSource
-import com.anpe.coolbbsyou.network.data.source.NotificationSource
-import com.anpe.coolbbsyou.network.data.source.ReplySource
+import com.anpe.coolbbsyou.data.remote.repository.RemoteRepository
+import com.anpe.coolbbsyou.data.source.IndexSource
+import com.anpe.coolbbsyou.data.source.NotificationSource
+import com.anpe.coolbbsyou.data.source.ReplySource
 import com.anpe.coolbbsyou.data.state.DetailsState
 import com.anpe.coolbbsyou.data.state.IndexImageState
 import com.anpe.coolbbsyou.data.state.IndexState
@@ -37,7 +37,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         private val TAG = this::class.java.simpleName
     }
 
-    private val repository = ApiRepository()
+    private val repository = RemoteRepository()
 
     private val sp: SharedPreferences =
         application.getSharedPreferences(application.packageName, Context.MODE_PRIVATE)
@@ -268,8 +268,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * 保存个人主页信息
      * @param profileEntity 个人主页信息实体
      */
-    private fun saveProfile(profileEntity: ProfileEntity) {
-        profileEntity.data.apply {
+    private fun saveProfile(profileModel: ProfileModel) {
+        profileModel.data.apply {
             sp.edit().putInt("uid", uid).apply()
             sp.edit().putString("username", username).apply()
             sp.edit().putInt("level", level).apply()

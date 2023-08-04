@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.data.state
 
-import com.anpe.coolbbsyou.network.data.model.details.DetailsEntity
+import com.anpe.coolbbsyou.data.domain.details.DetailsEntity
 
 sealed class DetailsState {
     object Idle: DetailsState()

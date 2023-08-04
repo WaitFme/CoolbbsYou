@@ -14,10 +14,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.anpe.coolbbsyou.ui.screen.LoginScreen
-import com.anpe.coolbbsyou.ui.screen.MainScreen
-import com.anpe.coolbbsyou.ui.screen.SplashScreen
-import com.anpe.coolbbsyou.ui.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.ui.host.screen.LoginScreen
+import com.anpe.coolbbsyou.ui.host.screen.MainScreen
+import com.anpe.coolbbsyou.ui.host.screen.SplashScreen
+import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.theme.CoolbbsYouTheme
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
