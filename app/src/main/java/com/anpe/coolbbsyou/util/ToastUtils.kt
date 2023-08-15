@@ -40,5 +40,10 @@ class ToastUtils {
             context: Context = MyApplication.context,
             duration: Int = Toast.LENGTH_SHORT
         ) = text.showToastBase(context, duration)
+
+        fun Context.showToastString(
+            text: String,
+            duration: Int = Toast.LENGTH_SHORT
+        ) = text.showToastBase(this, duration)
     }
 }

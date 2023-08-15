@@ -1,11 +1,15 @@
 package com.anpe.coolbbsyou.data.remote.repository
 
 import android.content.Context
-import com.anpe.coolbbsyou.data.domain.index.IndexEntity
+import com.anpe.coolbbsyou.data.remote.domain.index.IndexModel
 import com.anpe.coolbbsyou.data.remote.service.ApiService
 import com.anpe.coolbbsyou.data.remote.service.ApiServiceTwo
+import com.anpe.coolbbsyou.util.LoginUtils.Companion.getRequestHash
 import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getLastingInstallTime
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 
 class RemoteRepository(context: Context = MyApplication.context) {
     private val api = ApiService.getSerVice(context)
@@ -15,7 +19,7 @@ class RemoteRepository(context: Context = MyApplication.context) {
 
     private var firstLauncher = 1
 
-    suspend fun getIndex(page: Int, lastItem: Int? = null): IndexEntity {
+    suspend fun getIndex(page: Int, lastItem: Int? = null): IndexModel {
         val indexEntity = api.getIndex(
             page = page,
             lastItem = lastItem,
@@ -32,11 +36,23 @@ class RemoteRepository(context: Context = MyApplication.context) {
 
     fun getRequestHash() = apiCall.getRequestHash()
 
+    suspend fun getRequestHashTest(): String? {
+        val response = CoroutineScope(Dispatchers.Default).async {
+            apiCall.getRequestHash().execute()
+        }.await()
+
+        val body = response.body()?.string()!!
+
+        return body.getRequestHash()
+    }
+
     suspend fun getDetails(id: Int) = api.getDetails(id = id)
 
     suspend fun getTodayCool(page: Int, url: String) = api.getTodayCool(page = page, url = url)
 
     suspend fun getSuggestSearch(keyword: String) = api.getSuggestSearch(searchValue = keyword)
+
+    suspend fun getSearch(keyword: String, page: Int) = api.getSearch(searchValue = keyword, page = page)
 
     suspend fun postAccount(requestHash: String, login: String, password: String) = api.postAccount(
         requestHash = requestHash,

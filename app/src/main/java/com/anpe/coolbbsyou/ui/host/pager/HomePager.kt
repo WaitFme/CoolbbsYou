@@ -1,5 +1,6 @@
 package com.anpe.coolbbsyou.ui.host.pager
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,10 +52,10 @@ import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
 import com.anpe.bilibiliandyou.ui.view.TextIcon
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.domain.index.Data
-import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.data.state.IndexImageState
-import com.anpe.coolbbsyou.data.state.IndexState
+import com.anpe.coolbbsyou.data.remote.domain.index.Data
+import com.anpe.coolbbsyou.intent.event.MainEvent
+import com.anpe.coolbbsyou.intent.state.IndexImageState
+import com.anpe.coolbbsyou.intent.state.IndexState
 import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
@@ -91,7 +92,7 @@ fun HomePager(
     val refreshState = rememberPullRefreshState(refreshing = refreshing, onRefresh = {
         scope.launch {
             refreshing = true
-            viewModel.channel.send(MainIntent.GetIndex)
+            viewModel.channel.send(MainEvent.GetIndex)
             println("refresh")
         }
     })
@@ -123,7 +124,6 @@ fun HomePager(
                 refreshing = false
                 dataList = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
             }
-
         }
 
         LazyColumn(
@@ -146,7 +146,7 @@ fun HomePager(
                                                 val substring =
                                                     url.substring(url.indexOf("url=") + 4)
                                                 viewModel.channel.send(
-                                                    MainIntent.GetTodayCool(
+                                                    MainEvent.GetTodayCool(
                                                         url = substring,
                                                         page = 1
                                                     )
@@ -173,7 +173,8 @@ fun HomePager(
                                         likeStatus = likeStatus,
                                         onClick = {
                                             scope.launch {
-                                                viewModel.channel.send(MainIntent.GetDetails(id))
+                                                Log.d("testId", "HomePager: $id")
+                                                viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
                                                 if (!configuration.isTable()) {
                                                     navControllerInnerScreen.navigate(InnerScreenManager.DetailsInnerScreen.route)
                                                 }

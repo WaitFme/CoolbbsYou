@@ -3,9 +3,11 @@ package com.anpe.coolbbsyou.util
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
 import androidx.core.text.HtmlCompat
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -193,5 +195,17 @@ class Utils {
          */
         fun String.richToString(htmlCompat: Int = HtmlCompat.FROM_HTML_MODE_LEGACY) =
             HtmlCompat.fromHtml(this, htmlCompat).toString()
+
+        fun ColorScheme.verifyColor(verifyStatus: Int, verifyTitle: String): Color {
+            return if (verifyStatus == 1) {
+                if (verifyTitle == "酷安认证: 酷安员工") {
+                    Color.Green
+                } else {
+                    Color.Yellow
+                }
+            } else {
+                this.primary
+            }
+        }
     }
 }

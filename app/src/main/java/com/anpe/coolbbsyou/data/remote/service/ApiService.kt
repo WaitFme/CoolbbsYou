@@ -2,17 +2,18 @@ package com.anpe.coolbbsyou.data.remote.service
 
 import android.content.Context
 import com.anpe.coolbbsyou.constant.Constants
-import com.anpe.coolbbsyou.data.domain.details.DetailsEntity
-import com.anpe.coolbbsyou.data.domain.index.IndexEntity
-import com.anpe.coolbbsyou.data.domain.like.LikeModel
-import com.anpe.coolbbsyou.data.domain.login.LoginEntity
-import com.anpe.coolbbsyou.data.domain.loginState.LoginStateEntity
-import com.anpe.coolbbsyou.data.domain.nofitication.NotificationEntity
-import com.anpe.coolbbsyou.data.domain.profile.ProfileModel
-import com.anpe.coolbbsyou.data.domain.reply.ReplyEntity
-import com.anpe.coolbbsyou.data.domain.suggest.SuggestSearchEntity
-import com.anpe.coolbbsyou.data.domain.today.TodayCoolEntity
 import com.anpe.coolbbsyou.data.remote.cookie.CookieManger
+import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
+import com.anpe.coolbbsyou.data.remote.domain.index.IndexModel
+import com.anpe.coolbbsyou.data.remote.domain.like.LikeModel
+import com.anpe.coolbbsyou.data.remote.domain.login.LoginModel
+import com.anpe.coolbbsyou.data.remote.domain.loginState.LoginStateModel
+import com.anpe.coolbbsyou.data.remote.domain.nofitication.NotificationModel
+import com.anpe.coolbbsyou.data.remote.domain.profile.ProfileModel
+import com.anpe.coolbbsyou.data.remote.domain.reply.ReplyModel
+import com.anpe.coolbbsyou.data.remote.domain.search.SearchModel
+import com.anpe.coolbbsyou.data.remote.domain.suggest.SuggestSearchModel
+import com.anpe.coolbbsyou.data.remote.domain.today.TodayCoolModel
 import com.anpe.coolbbsyou.util.LoginUtils
 import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.TokenDeviceUtils
@@ -72,7 +73,7 @@ interface ApiService {
         @Query("page") page: Int,
         @Query("firstLaunch") firstLaunch: Int
 
-    ): IndexEntity
+    ): IndexModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("/v6/feed/detail")
@@ -80,7 +81,7 @@ interface ApiService {
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("id") id: Int
-    ): DetailsEntity
+    ): DetailsModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/page/dataList")
@@ -89,7 +90,7 @@ interface ApiService {
         @Header("X-App-Token") token: String = deviceToken,
         @Query("page") page: Int = 1,
         @Query("url") url: String
-    ): TodayCoolEntity
+    ): TodayCoolModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/search/suggestSearchWordsNew")
@@ -98,10 +99,20 @@ interface ApiService {
         @Header("X-App-Token") token: String = deviceToken,
         @Query("type") type: String = "app",
         @Query("searchValue") searchValue: String
-    ): SuggestSearchEntity
+    ): SuggestSearchModel
 
-    @Headers("X-Requested-With: XMLHttpRequest")
+    @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
+    @GET("$API_URL/v6/search")
+    suspend fun getSearch(
+        @Header("X-App-Device") device: String = deviceCode,
+        @Header("X-App-Token") token: String = deviceToken,
+        @Query("type") type: String = "all",
+        @Query("page") page: Int,
+        @Query("searchValue") searchValue: String
+    ): SearchModel
+
     @FormUrlEncoded
+    @Headers(Constants.HEADER_REQUEST_WIDTH)
     @POST("$ACCOUNT_URL/auth/loginByCoolApk")
     suspend fun postAccount(
         @Field("submit") submit: Int = 1,
@@ -111,7 +122,7 @@ interface ApiService {
         @Field("password") password: String,
         @Field("captcha") captcha: String = "",
         @Field("code") code: String = "",
-    ): LoginEntity
+    ): LoginModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/notification/list")
@@ -119,14 +130,14 @@ interface ApiService {
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("page") page: Int
-    ): NotificationEntity
+    ): NotificationModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/account/checkLoginInfo")
     suspend fun getLoginState(
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
-    ): LoginStateEntity
+    ): LoginStateModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/user/profile")
@@ -142,9 +153,10 @@ interface ApiService {
         @Header("X-App-Device") device: String = deviceCode,
         @Header("X-App-Token") token: String = deviceToken,
         @Query("id") id: Int,
+        @Query("discussMode") discussMode: Int = 1,
         @Query("listType") listType: String,
         @Query("page") page: Int
-    ): ReplyEntity
+    ): ReplyModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)
     @GET("$API_URL/v6/feed/like")

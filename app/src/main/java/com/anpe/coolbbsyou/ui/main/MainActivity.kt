@@ -29,17 +29,11 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CoolbbsYouTheme {
-                rememberSystemUiController().run {
-                    setStatusBarColor(
-                        color = Color.Transparent,
-                        darkIcons = !isSystemInDarkTheme()
-                    )
-                    setNavigationBarColor(
-                        color = Color.Transparent,
-                        darkIcons = !isSystemInDarkTheme(),
-                        navigationBarContrastEnforced = false
-                    )
-                }
+                rememberSystemUiController().setSystemBarsColor(
+                    color = Color.Transparent,
+                    darkIcons = !isSystemInDarkTheme(),
+                    isNavigationBarContrastEnforced = false
+                )
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),

@@ -22,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.data.state.IndexImageState
+import com.anpe.coolbbsyou.intent.event.MainEvent
+import com.anpe.coolbbsyou.intent.state.IndexImageState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -31,9 +31,9 @@ import kotlinx.coroutines.launch
 fun SettingsPager(viewModel: MainViewModel = viewModel()) {
     val scope = rememberCoroutineScope()
 
-    val t by viewModel.indexImageState.collectAsState()
+    val indexImageState by viewModel.indexImageState.collectAsState()
 
-    val isNineGrid = when (t) {
+    val isNineGrid = when (indexImageState) {
         IndexImageState.ImageRow -> false
         IndexImageState.NineGrid -> true
     }
@@ -51,7 +51,7 @@ fun SettingsPager(viewModel: MainViewModel = viewModel()) {
                 checked = it
 
                 scope.launch {
-                    viewModel.channel.send(MainIntent.OpenNineGrid(checked))
+                    viewModel.channel.send(MainEvent.OpenNineGrid(checked))
                 }
             }
         )
@@ -89,5 +89,33 @@ private fun SettingsSwitchItem(
                 onCheckedChange(it)
             }
         )
+    }
+}
+
+@Composable
+private fun SettingsItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    tip: String? = null,
+    onClick: () -> Unit = { }
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(80.dp)
+            .clickable {
+                onClick()
+            }
+    ) {
+        Column(
+            modifier = Modifier
+            .padding(15.dp)
+            .align(Alignment.CenterStart)
+        ) {
+            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            tip?.apply {
+                Text(text = this, fontSize = 14.sp)
+            }
+        }
     }
 }

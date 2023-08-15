@@ -1,21 +1,27 @@
 package com.anpe.coolbbsyou.ui.host.pager
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -39,11 +45,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
@@ -51,181 +61,308 @@ import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
 import com.anpe.bilibiliandyou.ui.view.TextIcon
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.data.domain.details.DetailsEntity
-import com.anpe.coolbbsyou.data.domain.reply.Data
-import com.anpe.coolbbsyou.data.state.ReplyState
+import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
+import com.anpe.coolbbsyou.data.remote.domain.reply.Data
+import com.anpe.coolbbsyou.intent.event.MainEvent
+import com.anpe.coolbbsyou.intent.state.ReplyState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.MyScaffold
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
-import com.anpe.coolbbsyou.util.RichTextUtil.Companion.R2T
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 
 @Composable
-fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsEntity, onBack: () -> Unit) {
-    Surface {
-        Row {
-            Spacer(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp)
-                    .alpha(0.5f)
-                    .background(if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray)
-            )
-            MyScaffold(
-                topBar = { TopBar(entity = entity, onBack = onBack) },
-                content = {
-                    Column(
-                        modifier = modifier.padding(it)
-                    ) {
-                        Content(entity = entity)
+fun DetailsPager(modifier: Modifier = Modifier, entity: DetailsModel, onBack: () -> Unit) {
+    Surface(modifier = Modifier.offset(1.dp)) {
+        val viewModel: MainViewModel = viewModel()
+
+        val configuration = LocalConfiguration.current
+
+        val replyState by viewModel.replyState.collectAsState()
+
+        LaunchedEffect(key1 = true, block = {
+            viewModel.sendIntent(MainEvent.GetReply(entity.data.id))
+        })
+
+        MyScaffold(
+            topBar = { TopBar(entity = entity, onBack = onBack) },
+            content = {
+                Column(
+                    modifier = modifier.padding(it)
+                ) {
+                    if (configuration.screenWidthDp > 1000) {
+                        Row {
+                            ContentBlock(
+                                modifier = Modifier
+                                    .weight(1.5f)
+                                    .verticalScroll(rememberScrollState()),
+                                entity = entity
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .offset(1.dp)
+                            ) {
+                                var pagingItems by remember {
+                                    mutableStateOf<LazyPagingItems<Data>?>(null)
+                                }
+
+                                when (replyState) {
+                                    is ReplyState.Error -> {}
+                                    is ReplyState.Idle -> {}
+                                    is ReplyState.Loading -> {}
+                                    is ReplyState.Success -> {
+                                        pagingItems =
+                                            (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
+                                    }
+                                }
+
+                                if (pagingItems != null) {
+                                    Column(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(15.dp)
+                                                .alpha(0.5f)
+                                        ) {
+                                            Text(
+                                                modifier = Modifier.align(Alignment.CenterStart),
+                                                text = "共${entity.data.replynum}回复"
+                                            )
+                                        }
+                                        LazyColumn(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            contentPadding = PaddingValues(bottom = 15.dp),
+                                            content = {
+                                                items(pagingItems!!) {
+                                                    it?.apply {
+                                                        ReplyItem(
+                                                            data = this,
+                                                            itemPadding = PaddingValues(
+                                                                15.dp,
+                                                                7.dp,
+                                                                15.dp
+                                                            )
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        when (replyState) {
+                            is ReplyState.Error -> {}
+                            is ReplyState.Idle -> {}
+                            is ReplyState.Loading -> {}
+                            is ReplyState.Success -> {
+                                val pagingItems =
+                                    (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
+
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(bottom = 15.dp),
+                                    content = {
+                                        item {
+                                            ContentBlock(modifier = Modifier, entity = entity)
+                                        }
+                                        items(pagingItems) {
+                                            it?.apply {
+                                                ReplyItem(
+                                                    data = this,
+                                                    itemPadding = PaddingValues(15.dp, 7.dp, 15.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
-                },
+                }
+            },
 //                bottomBar = { BottomBar(entity = entity) }
-            )
-        }
+        )
     }
 }
 
 @Composable
-private fun Content(modifier: Modifier = Modifier, entity: DetailsEntity) {
-    val viewModel: MainViewModel = viewModel()
+private fun ContentBlock(modifier: Modifier = Modifier, entity: DetailsModel) {
+    Column(modifier = modifier) {
+        var status by remember {
+            mutableStateOf(false)
+        }
 
-    LaunchedEffect(key1 = true, block = {
-        viewModel.sendIntent(MainIntent.GetReply(entity.data.id))
-    })
+        var initialPage by remember {
+            mutableStateOf(0)
+        }
 
-    val replyState by viewModel.replyState.collectAsState()
+        HtmlText(
+            modifier = Modifier
+                .padding(15.dp, 15.dp, 15.dp, 0.dp),
+            fontSize = 16.sp,
+            htmlText = entity.data.message, openLink = {
+                println(it)
+            }
+        )
 
-    var status by remember {
-        mutableStateOf(false)
-    }
-
-    var initialPage by remember {
-        mutableStateOf(0)
-    }
-
-    when (replyState) {
-        is ReplyState.Error -> {}
-        is ReplyState.Idle -> {}
-        is ReplyState.Loading -> {}
-        is ReplyState.Success -> {
-            val pagingItems =
-                (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
-
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                content = {
-                item {
-                    /*Text(
-                        modifier = modifier
-                            .padding(15.dp, 5.dp, 15.dp, 0.dp),
-                        text = entity.data.message.R2T(),
-                        fontSize = 16.sp,
-                    )*/
-
-                    HtmlText(
-                        modifier = modifier
-                            .padding(15.dp, 5.dp, 15.dp, 0.dp),
-                        fontSize = 16.sp,
-                        htmlText = entity.data.message, openLink = {
-                            println(it)
-                        }
-                    )
-
-                    if (entity.data.picArr.isNotEmpty()) {
-                        NineImageGrid(
-                            modifier = Modifier
-                                .padding(13.dp, 10.dp, 13.dp, 0.dp)
-                                .width(500.dp),
-                            list = entity.data.picArr,
-                            itemPadding = PaddingValues(2.dp),
-                            itemClip = RoundedCornerShape(10.dp),
-                            onClick = {
-                                initialPage = it
-                                status = !status
-                            }
-                        )
-                    }
-
-                    Text(
-                        modifier = Modifier
-                            .padding(15.dp, 10.dp, 15.dp, 15.dp),
-                        text = "${(entity.data.createTime.toLong() * 1000).timeStampInterval(System.currentTimeMillis())} 发布于${entity.data.ipLocation}",
-                        fontSize = 12.sp
-                    )
+        if (entity.data.picArr.isNotEmpty()) {
+            NineImageGrid(
+                modifier = Modifier
+                    .padding(13.dp, 10.dp, 13.dp, 0.dp)
+//                    .fillMaxWidth()
+                    .width(500.dp),
+                list = entity.data.picArr,
+                itemPadding = PaddingValues(2.dp),
+                itemClip = RoundedCornerShape(10.dp),
+                onClick = {
+                    initialPage = it
+                    status = !status
                 }
+            )
+        }
 
-                items(pagingItems) {
-                    it?.apply {
-                        ReplyItem(data = this)
-                    }
-                }
+        Text(
+            modifier = Modifier
+                .padding(15.dp, 10.dp, 15.dp, 15.dp),
+            text = "${(entity.data.createTime.toLong() * 1000).timeStampInterval(System.currentTimeMillis())} 发布于${entity.data.ipLocation}",
+            fontSize = 12.sp
+        )
+
+        if (status) {
+            DialogImage(entity.data.picArr, initialPage, onDismissRequest = {
+                status = false
             })
         }
     }
-
-    if (status) {
-        DialogImage(entity.data.picArr, initialPage, onDismissRequest = {
-            status = false
-        })
-    }
 }
 
 @Composable
-private fun ReplyItem(data: Data) {
-    if (data.rusername.isEmpty()) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(15.dp, 5.dp, 15.dp, 5.dp),
-            shape = RoundedCornerShape(15.dp)
+private fun ReplyItem(
+    data: Data,
+    itemPadding: PaddingValues = PaddingValues(15.dp, 5.dp, 15.dp, 0.dp)
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(itemPadding),
+        shape = RoundedCornerShape(15.dp)
+    ) {
+        ConstraintLayout(
+            modifier = Modifier.padding(10.dp)
         ) {
-            ConstraintLayout {
-                val (avatarRef, usernameRef, messageRef) = createRefs()
+            val (avatarRef, usernameRef, messageRef, picRef, funRef, replyRowsRef) = createRefs()
 
+            AsyncImage(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .constrainAs(avatarRef) {
+                        start.linkTo(parent.start)
+                        top.linkTo(parent.top)
+                    },
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(data.userAvatar)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "avatar"
+            )
+
+            Text(
+                modifier = Modifier
+                    .constrainAs(usernameRef) {
+                        start.linkTo(avatarRef.end, 10.dp)
+                        top.linkTo(avatarRef.top)
+                    },
+                fontSize = 15.sp,
+                text = data.username,
+                color = if (data.userInfo.verifyStatus == 1) {
+                    if (data.userInfo.verifyTitle == "酷安认证: 酷安员工") {
+                        Color.Green
+                    } else {
+                        Color.Yellow
+                    }
+                } else {
+                    MaterialTheme.colorScheme.primary
+                }
+            )
+
+            HtmlText(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .constrainAs(messageRef) {
+                        start.linkTo(avatarRef.end, 10.dp)
+                        top.linkTo(usernameRef.bottom, 5.dp)
+                        end.linkTo(parent.end)
+                        width = Dimension.preferredWrapContent
+                    },
+                fontSize = 14.sp, // 13sp
+                lineHeight = 20.sp,
+                htmlText = data.message,
+                openLink = {}
+            )
+
+            if (data.pic.isNotEmpty()) {
                 AsyncImage(
                     modifier = Modifier
-                        .padding(bottom = 10.dp)
-                        .size(40.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .constrainAs(avatarRef) {
-                            start.linkTo(parent.start, 10.dp)
-                            top.linkTo(parent.top, 10.dp)
+                        .height(150.dp)
+                        .constrainAs(picRef) {
+                            start.linkTo(avatarRef.end, 10.dp)
+                            top.linkTo(messageRef.bottom, 10.dp)
+                            end.linkTo(parent.end)
+                            width = Dimension.preferredWrapContent
                         },
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(data.userAvatar)
+                        .data(data.pic)
                         .crossfade(true)
                         .build(),
-                    contentDescription = "avatar"
+                    contentDescription = "reply pic"
                 )
+            }
 
-                Text(
+            if (data.replyRows.isNotEmpty()) {
+                Column(
                     modifier = Modifier
-                        .constrainAs(usernameRef) {
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(5.dp)
+                        .constrainAs(replyRowsRef) {
                             start.linkTo(avatarRef.end, 10.dp)
-                            top.linkTo(avatarRef.top)
-                    },
-                    fontSize = 15.sp,
-                    text = data.username
-                )
-
-                Text(
-                    modifier = Modifier
-                        .constrainAs(messageRef) {
-                            start.linkTo(avatarRef.end, 10.dp)
-                            top.linkTo(usernameRef.bottom)
-                            end.linkTo(parent.end, 10.dp)
-                            bottom.linkTo(parent.bottom, 10.dp)
+                            top.linkTo(
+                                if (data.pic.isEmpty()) messageRef.bottom else picRef.bottom,
+                                10.dp
+                            )
+                            end.linkTo(parent.end)
                             width = Dimension.preferredWrapContent
-                    },
-                    fontSize = 13.sp,
-                    lineHeight = 17.sp,
-                    text = data.message
-                )
+                        }
+                ) {
+                    data.replyRows.forEach {
+                        /*Text(
+                            text = "${it.username}: ${it.message}",
+                            fontSize = 13.sp,
+                            lineHeight = 17.sp
+                        )*/
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                    append(it.username)
+                                }
+                                append(": ${it.message}")
+
+                            },
+                            fontSize = 13.sp,
+                            lineHeight = 17.sp
+                        )
+                    }
+                }
             }
         }
     }
@@ -233,12 +370,14 @@ private fun ReplyItem(data: Data) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity, onBack: () -> Unit) {
+private fun TopBar(modifier: Modifier = Modifier, entity: DetailsModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
 
     TopAppBar(
-        modifier = modifier,
+        modifier = modifier
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .offset(0.dp, (-1).dp),
         navigationIcon = {
             if (!configuration.isTable()) {
                 IconButton(onClick = { onBack() }) {
@@ -276,6 +415,19 @@ private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity, onBack:
             }
         },
         actions = {
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "add")
+            }
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(imageVector = Icons.Default.ThumbUp, contentDescription = "add")
+            }
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(imageVector = Icons.Default.FavoriteBorder, contentDescription = "add")
+            }
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(imageVector = Icons.Default.Send, contentDescription = "add")
+            }
+
             TextButton(
                 modifier = Modifier
                     .padding(end = 12.dp),
@@ -290,7 +442,7 @@ private fun TopBar(modifier: Modifier = Modifier, entity: DetailsEntity, onBack:
 }
 
 @Composable
-private fun BottomBar(modifier: Modifier = Modifier, entity: DetailsEntity) {
+private fun BottomBar(modifier: Modifier = Modifier, entity: DetailsModel) {
     Row(
         modifier = modifier
             .fillMaxWidth()

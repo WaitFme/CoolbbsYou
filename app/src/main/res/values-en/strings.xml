@@ -1,15 +1,19 @@
 <resources>
     <string name="app_name">CoolbbsYou</string>
 
+    <!--SCREEN-->
     <string name="splash_screen">Splash</string>
     <string name="main_screen">Main</string>
     <string name="login_screen">Login</string>
     <string name="full_image_screen">Full screen image</string>
 
+    <!--INNER SCREEN-->
     <string name="home_inner_screen">Home</string>
     <string name="details_inner_screen">Details</string>
     <string name="today_selection_inner_screen">Today selection</string>
+    <string name="search_inner_screen">Search</string>
 
+    <!--PAGER-->
     <string name="home_pager">Home</string>
     <string name="message_pager">Message</string>
     <string name="settings_pager">Settings</string>
@@ -18,4 +22,7 @@
     <string name="fans">fans</string>
     <string name="feed">feed</string>
     <string name="search_tip">CoolbbsYou</string>
+
+    <string name="account_label">Account</string>
+    <string name="passwd_label">Password</string>
 </resources>

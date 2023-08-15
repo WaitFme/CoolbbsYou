@@ -30,9 +30,9 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
-import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.data.domain.nofitication.Data
-import com.anpe.coolbbsyou.data.state.NotificationState
+import com.anpe.coolbbsyou.intent.event.MainEvent
+import com.anpe.coolbbsyou.data.remote.domain.nofitication.Data
+import com.anpe.coolbbsyou.intent.state.NotificationState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.Utils.Companion.richToString
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
@@ -44,7 +44,7 @@ fun MessagePager(viewModel: MainViewModel) {
     val timeMillis = System.currentTimeMillis()
 
     LaunchedEffect(key1 = true, block = {
-        viewModel.sendIntent(MainIntent.GetNotification)
+        viewModel.sendIntent(MainEvent.GetNotification)
     })
 
     Box(

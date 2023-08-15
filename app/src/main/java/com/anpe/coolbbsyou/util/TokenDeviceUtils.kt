@@ -4,13 +4,13 @@ import android.content.Context
 import android.os.Build
 import android.provider.Settings
 import com.anpe.coolbbsyou.constant.Constants
-import com.anpe.coolbbsyou.data.domain.deviceInfo.DeviceInfo
+import com.anpe.coolbbsyou.data.local.entity.deviceInfo.DeviceInfoEntity
 import com.anpe.coolbbsyou.util.Utils.Companion.getBase64
 import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
 
 class TokenDeviceUtils {
     companion object {
-        private fun DeviceInfo.createDeviceCode(isRaw: Boolean = true) =
+        private fun DeviceInfoEntity.createDeviceCode(isRaw: Boolean = true) =
             "$aid; ; ; $mac; $manuFactor; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
 
         private fun getDeviceCode(context: Context): String {
@@ -21,7 +21,7 @@ class TokenDeviceUtils {
             val model = Build.MODEL
             val buildNumber = "CoolbbsYou ${Build.VERSION.RELEASE}"
 
-            return DeviceInfo(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
+            return DeviceInfoEntity(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
         }
 
         fun String.getTokenV2(): String {

@@ -34,6 +34,7 @@ accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompani
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist-systemuicontroller" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.4.0" }
+coil-gif = { group = "io.coil-kt", name = "coil-gif", version = "2.4.0" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
 material = { group = "androidx.compose.material", name = "material" }

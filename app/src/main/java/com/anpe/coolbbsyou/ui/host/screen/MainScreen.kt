@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,12 +46,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -78,16 +82,18 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.data.state.SuggestState
-import com.anpe.coolbbsyou.ui.host.innerScreen.TodaySelectionScreen
+import com.anpe.coolbbsyou.intent.event.MainEvent
+import com.anpe.coolbbsyou.intent.state.SuggestState
+import com.anpe.coolbbsyou.ui.host.innerScreen.DetailsInnerScreen
+import com.anpe.coolbbsyou.ui.host.innerScreen.SearchInnerScreen
+import com.anpe.coolbbsyou.ui.host.innerScreen.TodaySelectionInnerScreen
 import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
-import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.host.pager.HomePager
 import com.anpe.coolbbsyou.ui.host.pager.MessagePager
 import com.anpe.coolbbsyou.ui.host.pager.SettingsPager
 import com.anpe.coolbbsyou.ui.host.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.CustomProgress
 import com.anpe.coolbbsyou.ui.view.DetailsPagerBridge
 import com.anpe.coolbbsyou.ui.view.ResponsiveLayout
@@ -105,26 +111,66 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
     val navControllerInnerScreen = rememberNavController()
     val navControllerPager = rememberNavController()
 
-    val items = listOf(
-        PagerManager.HomePager,
-        PagerManager.MessagePager,
-        PagerManager.SettingsPager,
+    val homeItem = NavigationItem(
+        title = stringResource(id = PagerManager.HomePager.resourceId),
+        icon = painterResource(id = R.drawable.baseline_home_24),
+        route = PagerManager.HomePager.route
     )
+    val messageItem = NavigationItem(
+        title = stringResource(id = PagerManager.MessagePager.resourceId),
+        icon = painterResource(id = R.drawable.baseline_message_24),
+        route = PagerManager.MessagePager.route,
+    )
+    val settingItem = NavigationItem(
+        title = stringResource(id = PagerManager.SettingsPager.resourceId),
+        icon = painterResource(id = R.drawable.baseline_settings_24),
+        route = PagerManager.SettingsPager.route,
+    )
+
+    val items = listOf(homeItem, messageItem, settingItem)
+
+    var dialog by remember {
+        mutableStateOf(false)
+    }
 
     ResponsiveLayout(
         railBar = {
+            var index by rememberSaveable {
+                mutableStateOf(0)
+            }
+
             RailBar(
-                navControllerScreen = navControllerScreen,
-                navControllerInnerScreen = navControllerInnerScreen,
-                navControllerPager = navControllerPager,
                 items = items,
+                selectedItemIndex = index,
                 avatarClick = {
                     val uid = getInt("uid")
                     if (uid != -1) {
                         scope.launch {
-                            viewModel.sendIntent(MainIntent.GetProfile(uid))
+                            viewModel.sendIntent(MainEvent.GetProfile(uid))
                         }
                     }
+                    dialog = !dialog
+                },
+                onNavigate = {
+                    index = it
+                    navControllerPager.popBackStack()
+                    navControllerPager.navigate(items[index].route) {
+                        popUpTo(navControllerPager.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                    /*if (currentDestinationInner?.hierarchy?.any { it.route == InnerScreenManager.HomeInnerScreen.route } == false) {
+                        navControllerInnerScreen.popBackStack()
+                        navControllerInnerScreen.navigate(InnerScreenManager.HomeInnerScreen.route) {
+                            popUpTo(navControllerInnerScreen.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }*/
                 }
             )
         },
@@ -137,7 +183,26 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                 builder = {
                     composable(route = InnerScreenManager.HomeInnerScreen.route) {
                         Scaffold(
-                            topBar = { TopBar(navControllerScreen, viewModel) },
+                            topBar = {
+                                TopBar(
+                                    onAvatarClick = {
+                                        val uid = getInt("uid")
+                                        if (uid != -1) {
+                                            scope.launch {
+                                                viewModel.sendIntent(MainEvent.GetProfile(uid))
+                                            }
+                                        }
+                                        dialog = !dialog
+                                    },
+                                    onSearch = {
+                                        scope.launch {
+                                            viewModel.channel.send(MainEvent.GetSearch(it))
+                                        }
+                                        navControllerInnerScreen.navigate(InnerScreenManager.SearchInnerScreen.route)
+                                    },
+                                    viewModel = viewModel
+                                )
+                            },
                             floatingActionButton = {
                                 val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
                                 val currentDestination = navBackStackEntry?.destination
@@ -152,7 +217,25 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                             },
                             bottomBar = {
                                 if (configuration.screenWidthDp < 800) {
-                                    BottomBar(navController = navControllerPager, items)
+//                                    BottomBar(navController = navControllerPager, items)
+                                    var index by rememberSaveable {
+                                        mutableStateOf(0)
+                                    }
+
+                                    BottomBar(
+                                        items = items,
+                                        selectedItemIndex = index,
+                                        onNavigate = {
+                                            index = it
+                                            navControllerPager.navigate(items[index].route) {
+                                                popUpTo(navControllerPager.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
+                                            }
+                                        }
+                                    )
                                 }
                             },
                         ) {
@@ -181,7 +264,7 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                     }
 
                     composable(route = InnerScreenManager.TodaySelectionInnerScreen.route) {
-                        TodaySelectionScreen(
+                        TodaySelectionInnerScreen(
                             navControllerScreen = navControllerScreen,
                             navControllerInnerScreen = navControllerInnerScreen,
                             viewModel = viewModel
@@ -194,65 +277,30 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                             viewModel = viewModel
                         )
                     }
+
+                    composable(route = InnerScreenManager.SearchInnerScreen.route) {
+                        SearchInnerScreen(
+                            navControllerInnerScreen = navControllerInnerScreen,
+                            viewModel = viewModel
+                        )
+                    }
                 }
             )
         }
     )
 
-    /*MyScaffoldWithDetails(
-        detailsBlock = { DetailsBlock(viewModel) },
-        topBar = { TopBar(navControllerScreen, viewModel) },
-        floatingActionButton = {
-            val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                FloatingActionButton(onClick = { }) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                }
-            }
-        },
-        railBar = {
-            RailBar(
-                navControllerScreen = navControllerScreen,
-                navControllerPager = navControllerPager,
-                items = items,
-                avatarClick = {
-                    val uid = getInt("uid")
-                    if (uid != -1) {
-                        scope.launch {
-                            viewModel.sendIntent(MainIntent.GetProfile(uid))
-                        }
-                    }
-                }
-            )
-        },
-        bottomBar = { BottomBar(navController = navControllerPager, items) },
-        changeValue = 800.dp
-    ) { pv ->
-        NavHost(
-            modifier = Modifier.padding(pv),
-            navController = navControllerPager,
-            startDestination = PagerManager.HomePager.route,
-            builder = {
-                composable(route = PagerManager.HomePager.route) {
-                    HomePager(navControllerScreen, navControllerPager, viewModel)
-                }
-                composable(route = PagerManager.MessagePager.route) {
-                    MessagePager(viewModel)
-                }
-                composable(route = PagerManager.SettingsPager.route) {
-                    SettingsPager(viewModel)
-                }
-                composable(route = PagerManager.TodayCoolPager.route) {
-                    TodayCoolPager(
-                        navControllerInnerScreen = navControllerScreen,
-                        navControllerPager = navControllerPager,
-                        viewModel = viewModel
-                    )
-                }
-            }
+    if (dialog) {
+        BackHandler {
+            dialog = false
+        }
+    }
+
+    if (dialog) {
+        CustomDialog(
+            onDismissRequest = { dialog = false },
+            navControllerScreen = navControllerScreen
         )
-    }*/
+    }
 }
 
 @Composable
@@ -263,7 +311,8 @@ private fun DetailsBlock(viewModel: MainViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar(
-    navControllerScreen: NavHostController,
+    onAvatarClick: () -> Unit,
+    onSearch: (String) -> Unit,
     viewModel: MainViewModel = viewModel()
 ) {
     val configuration = LocalConfiguration.current
@@ -280,10 +329,6 @@ private fun TopBar(
         mutableStateOf(false)
     }
 
-    var dialog by remember {
-        mutableStateOf(false)
-    }
-
     Column {
         SearchBar(
             modifier = Modifier
@@ -295,13 +340,15 @@ private fun TopBar(
                 scope.launch {
                     if (query.isNotEmpty()) {
                         status = true
-                        viewModel.channel.send(MainIntent.GetSuggestSearch(query))
+                        viewModel.channel.send(MainEvent.GetSuggestSearch(query))
                     } else {
                         status = false
                     }
                 }
             },
-            onSearch = {},
+            onSearch = {
+                onSearch(it)
+            },
             active = false,
             onActiveChange = {},
             placeholder = {
@@ -360,13 +407,7 @@ private fun TopBar(
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color.Gray)
                                 .clickableNoRipple {
-                                    val uid = getInt("uid")
-                                    if (uid != -1) {
-                                        scope.launch {
-                                            viewModel.sendIntent(MainIntent.GetProfile(uid))
-                                        }
-                                    }
-                                    dialog = !dialog
+                                    onAvatarClick()
                                 },
                             model = ImageRequest.Builder(context)
                                 .data(
@@ -496,43 +537,20 @@ private fun TopBar(
                 }
             }
         }
-
-        if (dialog) {
-            BackHandler {
-                dialog = false
-            }
-        }
-
-        if (dialog) {
-            CustomDialog(
-                onDismissRequest = { dialog = false },
-                navControllerScreen = navControllerScreen
-            )
-        }
     }
 }
 
 @Composable
 private fun RailBar(
-    navControllerScreen: NavHostController,
-    navControllerInnerScreen: NavHostController,
-    navControllerPager: NavHostController,
-    items: List<PagerManager>,
-    avatarClick: () -> Unit
+    items: List<NavigationItem>,
+    selectedItemIndex: Int,
+    avatarClick: () -> Unit,
+    onNavigate: (Int) -> Unit
 ) {
-    var dialog by remember {
-        mutableStateOf(false)
-    }
-
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        content = {
+        header = {
             val context = LocalContext.current
-
-            val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            val navBackStackEntryInner by navControllerInnerScreen.currentBackStackEntryAsState()
-            val currentDestinationInner = navBackStackEntryInner?.destination
 
             Text(
                 modifier = Modifier
@@ -549,7 +567,6 @@ private fun RailBar(
                 modifier = Modifier
                     .clickableNoRipple {
                         avatarClick()
-                        dialog = !dialog
                     }
                     .padding(top = 10.dp, bottom = 30.dp)
                     .size(50.dp)
@@ -564,105 +581,69 @@ private fun RailBar(
                 contentScale = ContentScale.Crop,
                 contentDescription = null
             )
+        },
+        content = {
+            ConstraintLayout(modifier = Modifier.fillMaxHeight()) {
+                val (homeRef, messageRef, settingRef) = createRefs()
+                val refList = listOf(homeRef, messageRef, settingRef)
 
-            items.forEach { pager ->
-                NavigationRailItem(
-                    modifier = Modifier
-                        .padding(top = 5.dp, bottom = 5.dp),
-                    selected = currentDestination?.hierarchy?.any { it.route == pager.route } == true,
-                    icon = {
-                        Icon(
-                            when (pager.route) {
-                                PagerManager.HomePager.route -> painterResource(id = R.drawable.baseline_home_24)
-                                PagerManager.MessagePager.route -> painterResource(id = R.drawable.baseline_message_24)
-                                PagerManager.SettingsPager.route -> painterResource(id = R.drawable.baseline_settings_24)
-                                else -> painterResource(id = R.drawable.baseline_error_24)
-                            },
-                            contentDescription = null
-                        )
-                    },
-                    label = {
-                        Text(
-                            stringResource(pager.resourceId),
-                            fontSize = 14.sp
-                        )
-                    },
-                    alwaysShowLabel = true,
-                    onClick = {
-                        navControllerPager.popBackStack()
-                        navControllerPager.navigate(pager.route) {
-                            popUpTo(navControllerPager.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                        if (currentDestinationInner?.hierarchy?.any { it.route == InnerScreenManager.HomeInnerScreen.route } == false) {
-                            navControllerInnerScreen.popBackStack()
-                            navControllerInnerScreen.navigate(InnerScreenManager.HomeInnerScreen.route) {
-                                popUpTo(navControllerInnerScreen.graph.findStartDestination().id) {
-                                    saveState = true
+                items.forEachIndexed { index, item ->
+                    NavigationRailItem(
+                        modifier = Modifier
+                            .padding(top = 5.dp, bottom = 5.dp)
+                            .constrainAs(refList[index]) {
+                                when (index) {
+                                    0 -> {
+                                        start.linkTo(parent.start)
+                                        top.linkTo(parent.top)
+                                        end.linkTo(parent.end)
+                                    }
+
+                                    1 -> {
+                                        start.linkTo(parent.start)
+                                        top.linkTo(homeRef.bottom)
+                                        end.linkTo(parent.end)
+                                    }
+
+                                    2 -> {
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                        bottom.linkTo(parent.bottom)
+                                    }
+
+                                    else -> {}
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
-                    }
-                )
+                            },
+                        selected = selectedItemIndex == index,
+                        icon = { NavigationIcon(item = item) },
+                        label = if (index != 2) {
+                            { Text(text = item.title, fontSize = 14.sp) }
+                        } else {
+                            null
+                        },
+                        alwaysShowLabel = true,
+                        onClick = { onNavigate(index) }
+                    )
+                }
             }
         }
     )
-
-    if (dialog) {
-        BackHandler {
-            dialog = false
-        }
-    }
-
-    if (dialog) {
-        CustomDialog(
-            onDismissRequest = { dialog = false },
-            navControllerScreen = navControllerScreen
-        )
-    }
 }
 
 @Composable
-private fun BottomBar(navController: NavHostController, items: List<PagerManager>) {
+private fun BottomBar(
+    items: List<NavigationItem>,
+    selectedItemIndex: Int,
+    onNavigate: (Int) -> Unit
+) {
     NavigationBar {
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
-
-        items.forEach { pager ->
+        items.forEachIndexed { index, item ->
             NavigationBarItem(
-                selected = currentDestination?.hierarchy?.any { it.route == pager.route } == true,
-                icon = {
-                    Icon(
-                        when (pager.route) {
-                            PagerManager.HomePager.route -> painterResource(id = R.drawable.baseline_home_24)
-                            PagerManager.MessagePager.route -> painterResource(id = R.drawable.baseline_message_24)
-                            PagerManager.SettingsPager.route -> painterResource(id = R.drawable.baseline_settings_24)
-                            else -> painterResource(id = R.drawable.baseline_error_24)
-                        },
-                        contentDescription = null
-                    )
-                },
-                label = {
-                    Text(
-                        stringResource(pager.resourceId),
-                        fontSize = 14.sp
-                    )
-                },
+                selected = index == selectedItemIndex,
+                icon = { NavigationIcon(item = item) },
+                label = { Text(text = item.title, fontSize = 14.sp) },
                 alwaysShowLabel = false,
-                onClick = {
-                    navController.navigate(pager.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                }
+                onClick = { onNavigate(index) }
             )
         }
     }
@@ -719,8 +700,8 @@ private fun CustomDialog(
                         .clickableNoRipple {
                             if (!getBoolean("isLogin")) {
                                 onDismissRequest()
-                                navControllerScreen.navigate(ScreenManager.LoginScreen.route)
                             }
+                            navControllerScreen.navigate(ScreenManager.LoginScreen.route)
                         },
                     model = ImageRequest.Builder(context)
                         .data(
@@ -897,6 +878,32 @@ private fun IconText(modifier: Modifier = Modifier, text: String, icon: Int? = n
                 .padding(start = if (icon == null) 30.dp else 15.dp),
             text = text, fontSize = 14.sp,
             fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+data class NavigationItem(
+    val title: String,
+    val icon: Painter,
+    val route: String,
+    val badgeCount: Int? = null,
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun NavigationIcon(item: NavigationItem) {
+    BadgedBox(
+        badge = {
+            item.badgeCount?.let {
+                Badge {
+                    Text(text = if (it <= 99) item.badgeCount.toString() else "99+")
+                }
+            }
+        }
+    ) {
+        Icon(
+            painter = item.icon,
+            contentDescription = item.title
         )
     }
 }

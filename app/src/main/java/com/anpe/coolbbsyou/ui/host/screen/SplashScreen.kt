@@ -22,9 +22,9 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.intent.MainIntent
-import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -46,7 +46,7 @@ fun SplashScreen(navControllerScreen: NavController, viewModel: MainViewModel) {
     }
 
     LaunchedEffect(key1 = true) {
-        viewModel.sendIntent(MainIntent.LoginState)
+        viewModel.sendIntent(MainEvent.GetLoginInfo)
     }
 
     Splash(alphaAnim.value)

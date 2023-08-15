@@ -78,6 +78,7 @@ dependencies {
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.gson)
     implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.material)
