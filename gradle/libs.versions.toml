@@ -2,8 +2,7 @@
 # User version
 constraintlayout-compose = "1.0.1"
 navigation-compose = "2.6.0"
-accompanist-swiperefresh = "0.30.1"
-accompanist-systemuicontroller = "0.30.1"
+accompanist = "0.32.0"
 gson = "2.10"
 coil-compose = "2.2.2"
 retrofit = "2.9.0"
@@ -16,7 +15,7 @@ room = "2.5.2"
 
 # Default version
 ksp = "1.8.10-1.0.9"
-agp = "8.1.0"
+agp = "8.1.1"
 kotlin = "1.8.10"
 core-ktx = "1.10.1"
 junit = "4.13.2"
@@ -24,14 +23,15 @@ androidx-test-ext-junit = "1.1.5"
 espresso-core = "3.5.1"
 lifecycle-runtime-ktx = "2.6.1"
 activity-compose = "1.7.2"
-compose-bom = "2023.06.00"
+compose-bom = "2023.08.00"
 
 [libraries]
 # User libraries
 constraintlayout-compose = { group = "androidx.constraintlayout", name = "constraintlayout-compose", version.ref = "constraintlayout-compose" }
 navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
-accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist-swiperefresh" }
-accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist-systemuicontroller" }
+accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompanist-swiperefresh", version.ref = "accompanist" }
+accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
+accompanist-adaptive = { group = "com.google.accompanist", name = "accompanist-adaptive", version.ref = "accompanist" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.4.0" }
 coil-gif = { group = "io.coil-kt", name = "coil-gif", version = "2.4.0" }
@@ -60,6 +60,7 @@ ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+windowsSizeClass = { group = "androidx.compose.material3", name = "material3-window-size-class" }
 material3 = { group = "androidx.compose.material3", name = "material3" }
 
 [plugins]

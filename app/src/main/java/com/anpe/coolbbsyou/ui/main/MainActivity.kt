@@ -7,6 +7,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
@@ -19,9 +21,11 @@ import com.anpe.coolbbsyou.ui.host.screen.MainScreen
 import com.anpe.coolbbsyou.ui.host.screen.SplashScreen
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.theme.CoolbbsYouTheme
+import com.google.accompanist.adaptive.calculateDisplayFeatures
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -34,6 +38,9 @@ class MainActivity : ComponentActivity() {
                     darkIcons = !isSystemInDarkTheme(),
                     isNavigationBarContrastEnforced = false
                 )
+
+                val windowSizeClass = calculateWindowSizeClass(activity = this)
+                val displayFeatures = calculateDisplayFeatures(activity = this)
 
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -55,6 +62,8 @@ class MainActivity : ComponentActivity() {
                             composable(route = ScreenManager.MainScreen.route) {
                                 MainScreen(
                                     navControllerScreen = navControllerScreen,
+                                    windowSizeClass = windowSizeClass,
+                                    displayFeatures = displayFeatures,
                                     viewModel = viewModel
                                 )
                             }

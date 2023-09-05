@@ -108,7 +108,7 @@ data class Data(
     @SerializedName("hitnum")
     val hitnum: String,
     @SerializedName("id")
-    val id: String,
+    val id: Int,
     @SerializedName("index_name")
     val indexName: String,
     @SerializedName("info")
@@ -136,7 +136,7 @@ data class Data(
     @SerializedName("lastupdate")
     val lastupdate: String,
     @SerializedName("likenum")
-    val likenum: String,
+    val likenum: Int,
     @SerializedName("location")
     val location: String,
     @SerializedName("media_info")
@@ -198,7 +198,7 @@ data class Data(
     @SerializedName("relatednum")
     val relatednum: String,
     @SerializedName("replynum")
-    val replynum: String,
+    val replynum: Int,
     @SerializedName("reportnum")
     val reportnum: String,
     @SerializedName("shareUrl")

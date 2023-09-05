@@ -109,6 +109,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     is MainEvent.Like -> {}
                     is MainEvent.Unfollow -> {}
                     is MainEvent.Unlike -> {}
+                    else -> {}
                 }
             }
         }
@@ -123,7 +124,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _indexState.emit(
                 try {
                     IndexState.Success(Pager(
-                        PagingConfig(pageSize = 50, prefetchDistance = 10),
+                        config = PagingConfig(pageSize = 50, prefetchDistance = 10),
                         pagingSourceFactory = {
                             IndexSource(repository)
                         }

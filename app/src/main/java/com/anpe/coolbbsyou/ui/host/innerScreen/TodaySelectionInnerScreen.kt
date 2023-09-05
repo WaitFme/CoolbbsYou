@@ -56,7 +56,6 @@ import com.anpe.coolbbsyou.intent.state.TodayState
 import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
-import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 import kotlinx.coroutines.launch
 
@@ -65,6 +64,7 @@ import kotlinx.coroutines.launch
 fun TodaySelectionInnerScreen(
     navControllerScreen: NavHostController,
     navControllerInnerScreen: NavHostController,
+    setIsDetailOpen: (Boolean) -> Unit,
     viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
@@ -152,9 +152,7 @@ fun TodaySelectionInnerScreen(
                                     onClick = {
                                         scope.launch {
                                             viewModel.channel.send(MainEvent.GetDetails(it.id))
-                                            if (!configuration.isTable()) {
-                                                navControllerInnerScreen.navigate(InnerScreenManager.DetailsInnerScreen.route)
-                                            }
+                                            setIsDetailOpen(true)
                                         }
                                     }
                                 )

@@ -1,6 +1,5 @@
 package com.anpe.coolbbsyou.ui.host.pager
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,7 +47,6 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavHostController
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
@@ -62,7 +62,6 @@ import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
-import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import kotlinx.coroutines.launch
 
 
@@ -72,6 +71,7 @@ fun HomePager(
     navControllerScreen: NavHostController,
     navControllerInnerScreen: NavHostController,
     navControllerPager: NavHostController,
+    setIsDetailOpen: (Boolean) -> Unit,
     viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
@@ -132,90 +132,92 @@ fun HomePager(
                 .fillMaxHeight(),
             contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
             content = {
-                dataList?.let { lazyItem ->
+                /*dataList?.let { lazyItem ->
                     items(lazyItem) {
                         it?.apply {
-                            when (entityType) {
-                                "imageCarouselCard_1" -> {
-                                    BannerItem(
-                                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                        data = this,
-                                        onClick = {
-                                            scope.launch {
-                                                val url = entities[0].url
-                                                val substring =
-                                                    url.substring(url.indexOf("url=") + 4)
-                                                viewModel.channel.send(
-                                                    MainEvent.GetTodayCool(
-                                                        url = substring,
-                                                        page = 1
-                                                    )
+                        }
+                    }
+                }*/
+                items(dataList) {
+                    it.run {
+                        when (entityType) {
+                            "imageCarouselCard_1" -> {
+                                BannerItem(
+                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                    data = this,
+                                    onClick = {
+                                        scope.launch {
+                                            val url = entities[0].url
+                                            val substring =
+                                                url.substring(url.indexOf("url=") + 4)
+                                            viewModel.channel.send(
+                                                MainEvent.GetTodayCool(
+                                                    url = substring,
+                                                    page = 1
                                                 )
-                                                navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
-                                            }
-                                        },
-                                    )
+                                            )
+                                            navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
+                                        }
+                                    },
+                                )
+                            }
+                            "feed" -> {
+                                var likeNum by remember {
+                                    mutableStateOf(likenum)
                                 }
-                                "feed" -> {
-                                    var likeNum by remember {
-                                        mutableStateOf(likenum)
-                                    }
-                                    var likeStatus by remember {
-                                        mutableStateOf(userAction?.let {
-                                            userAction.like == 1
-                                        } ?: false)
-                                    }
-                                    FeedItem(
-                                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                        data = this,
-                                        isNineGrid = isNineGrid,
-                                        likeNum = likeNum,
-                                        likeStatus = likeStatus,
-                                        onClick = {
-                                            scope.launch {
-                                                Log.d("testId", "HomePager: $id")
-                                                viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
-                                                if (!configuration.isTable()) {
-                                                    navControllerInnerScreen.navigate(InnerScreenManager.DetailsInnerScreen.route)
-                                                }
-                                            }
-                                        },
-                                        onLike = {
-                                            scope.launch {
-                                                if (likeStatus) {
-                                                    viewModel.getUnlike(it.id)?.apply {
-                                                        if (data != null) {
-                                                            likeNum = data
-                                                            likeStatus = false
-                                                        }
+                                var likeStatus by remember {
+                                    mutableStateOf(userAction?.let {
+                                        userAction.like == 1
+                                    } ?: false)
+                                }
+                                FeedItem(
+                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                    data = this,
+                                    isNineGrid = isNineGrid,
+                                    likeNum = likeNum,
+                                    likeStatus = likeStatus,
+                                    onClick = {
+                                        scope.launch {
+                                            viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
+                                            viewModel.channel.send(MainEvent.GetReply(id))
+                                            setIsDetailOpen(true)
+                                        }
+                                    },
+                                    onLike = {
+                                        scope.launch {
+                                            if (likeStatus) {
+                                                viewModel.getUnlike(it.id)?.apply {
+                                                    if (data != null) {
+                                                        likeNum = data
+                                                        likeStatus = false
                                                     }
-                                                } else {
-                                                    viewModel.getLike(it.id)?.apply {
-                                                        if (data != null) {
-                                                            likeNum = data
-                                                            likeStatus = true
-                                                        }
+                                                }
+                                            } else {
+                                                viewModel.getLike(it.id)?.apply {
+                                                    if (data != null) {
+                                                        likeNum = data
+                                                        likeStatus = true
                                                     }
                                                 }
                                             }
                                         }
-                                    )
-                                }
-                                "imageTextScrollCard" -> {
-                                    ImageTextItem(
-                                        modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                        data = this,
-                                        onClick = {
-                                            scope.launch {
+                                    }
+                                )
+                            }
+                            "imageTextScrollCard" -> {
+                                ImageTextItem(
+                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                    data = this,
+                                    onClick = {
+                                        scope.launch {
 //                                                id = 48068410
-                                                /*viewModel.channel.send(MainIntent.GetDetails(id))
-                                                if (!configuration.isTable()) {
-                                                    navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
-                                                }*/
-                                            }
+                                            /*viewModel.channel.send(MainIntent.GetDetails(id))
+                                            if (!configuration.isTable()) {
+                                                navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                                            }*/
                                         }
-                                    )
-                                }
+                                    }
+                                )
                             }
                         }
                     }
@@ -548,5 +550,22 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
                 }
             }
         })
+    }
+}
+
+fun <T : Any> LazyListScope.items(
+    items: LazyPagingItems<T>?,
+    key: ((item: T) -> Any)? = null,
+    itemContent: @Composable LazyItemScope.(value: T) -> Unit
+) {
+    items?.let {
+        items(
+            count = it.itemCount,
+            key = null
+        ) { index ->
+            if (it[index] != null) {
+                itemContent(it[index]!!)
+            }
+        }
     }
 }

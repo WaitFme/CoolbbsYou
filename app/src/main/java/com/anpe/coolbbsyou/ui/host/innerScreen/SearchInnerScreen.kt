@@ -70,17 +70,19 @@ import com.anpe.coolbbsyou.data.remote.domain.search.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.SearchState
 import com.anpe.coolbbsyou.intent.state.SuggestState
-import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
-import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import kotlinx.coroutines.launch
 
 @Composable
-fun SearchInnerScreen(navControllerInnerScreen: NavController, viewModel: MainViewModel) {
+fun SearchInnerScreen(
+    navControllerInnerScreen: NavController,
+    setIsDetailOpen: (Boolean) -> Unit,
+    viewModel: MainViewModel
+) {
     Surface {
         val scope = rememberCoroutineScope()
 
@@ -150,6 +152,7 @@ fun SearchInnerScreen(navControllerInnerScreen: NavController, viewModel: MainVi
                                         "card-user" -> {
                                             Card(
                                                 modifier = Modifier
+                                                    .fillMaxWidth()
                                                     .padding(15.dp, 5.dp, 15.dp, 5.dp)
                                                     .clip(RoundedCornerShape(15.dp))
                                             ) {
@@ -213,7 +216,7 @@ fun SearchInnerScreen(navControllerInnerScreen: NavController, viewModel: MainVi
 
                                     if (it?.entityType == "feed") {
                                         var likeNum by remember {
-                                            mutableStateOf(0)
+                                            mutableStateOf(it.likenum)
                                         }
                                         var likeStatus by remember {
                                             /*mutableStateOf(userAction?.let {
@@ -229,16 +232,12 @@ fun SearchInnerScreen(navControllerInnerScreen: NavController, viewModel: MainVi
                                             likeStatus = likeStatus,
                                             onClick = {
                                                 scope.launch {
-                                                    viewModel.channel.send(MainEvent.GetDetails(it.id.toInt()))
-                                                    if (!configuration.isTable()) {
-                                                        navControllerInnerScreen.navigate(
-                                                            InnerScreenManager.DetailsInnerScreen.route
-                                                        )
-                                                    }
+                                                    viewModel.channel.send(MainEvent.GetDetails(it.id))
+                                                    setIsDetailOpen(true)
                                                 }
                                             },
                                             onLike = {
-                                                /*scope.launch {
+                                                scope.launch {
                                                     if (likeStatus) {
                                                         viewModel.getUnlike(it.id)?.apply {
                                                             if (data != null) {
@@ -254,7 +253,7 @@ fun SearchInnerScreen(navControllerInnerScreen: NavController, viewModel: MainVi
                                                             }
                                                         }
                                                     }
-                                                }*/
+                                                }
                                             }
                                         )
                                     }
@@ -513,9 +512,9 @@ private fun FeedItem(
     modifier: Modifier = Modifier,
     data: Data,
     isNineGrid: Boolean,
-    likeNum: Int = data.likenum.toInt(),
+    likeNum: Int = data.likenum,
     likeStatus: Boolean = false,
-    replyNum: Int = data.replynum.toInt(),
+    replyNum: Int = data.replynum,
 //    shareNum: Int = data.shareNum.toInt(),
     shareNum: Int = 0,
     onClick: () -> Unit,

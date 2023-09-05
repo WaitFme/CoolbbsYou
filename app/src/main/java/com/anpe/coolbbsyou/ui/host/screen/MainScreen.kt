@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,12 +41,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,15 +83,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.window.layout.DisplayFeature
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.intent.event.MainEvent
+import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.SuggestState
-import com.anpe.coolbbsyou.ui.host.innerScreen.DetailsInnerScreen
 import com.anpe.coolbbsyou.ui.host.innerScreen.SearchInnerScreen
 import com.anpe.coolbbsyou.ui.host.innerScreen.TodaySelectionInnerScreen
 import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
+import com.anpe.coolbbsyou.ui.host.pager.DetailPager
 import com.anpe.coolbbsyou.ui.host.pager.HomePager
 import com.anpe.coolbbsyou.ui.host.pager.MessagePager
 import com.anpe.coolbbsyou.ui.host.pager.SettingsPager
@@ -95,8 +101,7 @@ import com.anpe.coolbbsyou.ui.host.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.CustomProgress
-import com.anpe.coolbbsyou.ui.view.DetailsPagerBridge
-import com.anpe.coolbbsyou.ui.view.ResponsiveLayout
+import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getBoolean
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getInt
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getString
@@ -104,9 +109,13 @@ import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
 @Composable
-fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel) {
+fun MainScreen(
+    navControllerScreen: NavHostController,
+    windowSizeClass: WindowSizeClass,
+    displayFeatures: List<DisplayFeature>,
+    viewModel: MainViewModel
+) {
     val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
 
     val navControllerInnerScreen = rememberNavController()
     val navControllerPager = rememberNavController()
@@ -129,11 +138,17 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
 
     val items = listOf(homeItem, messageItem, settingItem)
 
-    var dialog by remember {
-        mutableStateOf(false)
-    }
+    var dialog by remember { mutableStateOf(false) }
 
-    ResponsiveLayout(
+    var isDetailOpen by rememberSaveable { mutableStateOf(false) }
+
+    TwoPaneResponsiveLayout(
+        isDetailOpen = isDetailOpen,
+        setIsDetailOpen = {
+            isDetailOpen = it
+        },
+        windowSizeClass = windowSizeClass,
+        displayFeatures = displayFeatures,
         railBar = {
             var index by rememberSaveable {
                 mutableStateOf(0)
@@ -174,10 +189,9 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                 }
             )
         },
-        changeValue = 800.dp,
-        detailsBlock = { DetailsBlock(viewModel) },
-        content = {
-            NavHost(
+        list = {
+            /*NavHost(
+                modifier = Modifier,
                 navController = navControllerInnerScreen,
                 startDestination = InnerScreenManager.HomeInnerScreen.route,
                 builder = {
@@ -249,6 +263,9 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                                             navControllerScreen = navControllerScreen,
                                             navControllerInnerScreen = navControllerInnerScreen,
                                             navControllerPager = navControllerPager,
+                                            setIsDetailOpen = {
+                                                isDetailOpen = it
+                                            },
                                             viewModel = viewModel
                                         )
                                     }
@@ -271,13 +288,6 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                         )
                     }
 
-                    composable(route = InnerScreenManager.DetailsInnerScreen.route) {
-                        DetailsInnerScreen(
-                            navControllerInnerScreen = navControllerInnerScreen,
-                            viewModel = viewModel
-                        )
-                    }
-
                     composable(route = InnerScreenManager.SearchInnerScreen.route) {
                         SearchInnerScreen(
                             navControllerInnerScreen = navControllerInnerScreen,
@@ -285,6 +295,23 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
                         )
                     }
                 }
+            )*/
+            ListBlock(
+                navControllerScreen = navControllerScreen,
+                navControllerInnerScreen = navControllerInnerScreen,
+                navControllerPager = navControllerPager,
+                items = items,
+                windowSizeClass = windowSizeClass,
+                showDialog = { dialog = it },
+                setIsDetailOpen = { isDetailOpen = it },
+                viewModel = viewModel
+            )
+        },
+        detail = {
+            DetailBlock(
+                windowSizeClass = windowSizeClass,
+                setIsDetailOpen = { isDetailOpen = it },
+                viewModel = viewModel
             )
         }
     )
@@ -293,9 +320,6 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
         BackHandler {
             dialog = false
         }
-    }
-
-    if (dialog) {
         CustomDialog(
             onDismissRequest = { dialog = false },
             navControllerScreen = navControllerScreen
@@ -304,8 +328,195 @@ fun MainScreen(navControllerScreen: NavHostController, viewModel: MainViewModel)
 }
 
 @Composable
-private fun DetailsBlock(viewModel: MainViewModel) {
-    DetailsPagerBridge(viewModel = viewModel, onBack = { })
+private fun ListBlock(
+    navControllerScreen: NavHostController,
+    navControllerInnerScreen: NavHostController,
+    navControllerPager: NavHostController,
+    items: List<NavigationItem>,
+    windowSizeClass: WindowSizeClass,
+    showDialog: (Boolean) -> Unit,
+    setIsDetailOpen: (Boolean) -> Unit,
+    viewModel: MainViewModel
+) {
+    val scope = rememberCoroutineScope()
+
+    val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
+
+    NavHost(
+        modifier = Modifier,
+        navController = navControllerInnerScreen,
+        startDestination = InnerScreenManager.HomeInnerScreen.route,
+        builder = {
+            composable(route = InnerScreenManager.HomeInnerScreen.route) {
+                Scaffold(
+                    topBar = {
+                        TopBar(
+                            onAvatarClick = {
+                                val uid = getInt("uid")
+                                if (uid != -1) {
+                                    scope.launch {
+                                        viewModel.sendIntent(MainEvent.GetProfile(uid))
+                                    }
+                                }
+                                showDialog(true)
+                            },
+                            onSearch = {
+                                scope.launch {
+                                    viewModel.channel.send(MainEvent.GetSearch(it))
+                                }
+                                navControllerInnerScreen.navigate(InnerScreenManager.SearchInnerScreen.route)
+                            },
+                            viewModel = viewModel
+                        )
+                    },
+                    floatingActionButton = {
+                        val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
+                        if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
+                            FloatingActionButton(onClick = { }) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    },
+                    bottomBar = {
+                        when (widthSizeClass) {
+                            WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> {
+                                var index by rememberSaveable {
+                                    mutableStateOf(0)
+                                }
+
+                                BottomBar(
+                                    items = items,
+                                    selectedItemIndex = index,
+                                    onNavigate = {
+                                        index = it
+                                        navControllerPager.navigate(items[index].route) {
+                                            popUpTo(navControllerPager.graph.findStartDestination().id) {
+                                                saveState = true
+                                            }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                )
+                            }
+
+                            WindowWidthSizeClass.Expanded -> {}
+                            else -> {}
+                        }
+                    },
+                ) {
+                    NavHost(
+                        modifier = Modifier.padding(it),
+                        navController = navControllerPager,
+                        startDestination = PagerManager.HomePager.route,
+                        builder = {
+                            composable(route = PagerManager.HomePager.route) {
+                                HomePager(
+                                    navControllerScreen = navControllerScreen,
+                                    navControllerInnerScreen = navControllerInnerScreen,
+                                    navControllerPager = navControllerPager,
+                                    setIsDetailOpen = setIsDetailOpen,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = PagerManager.MessagePager.route) {
+                                MessagePager(viewModel = viewModel)
+                            }
+                            composable(route = PagerManager.SettingsPager.route) {
+                                SettingsPager(viewModel = viewModel)
+                            }
+                        }
+                    )
+                }
+            }
+
+            composable(route = InnerScreenManager.TodaySelectionInnerScreen.route) {
+                TodaySelectionInnerScreen(
+                    navControllerScreen = navControllerScreen,
+                    navControllerInnerScreen = navControllerInnerScreen,
+                    setIsDetailOpen = setIsDetailOpen,
+                    viewModel = viewModel
+                )
+            }
+
+            composable(route = InnerScreenManager.SearchInnerScreen.route) {
+                SearchInnerScreen(
+                    navControllerInnerScreen = navControllerInnerScreen,
+                    setIsDetailOpen = setIsDetailOpen,
+                    viewModel = viewModel
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun DetailBlock(
+    windowSizeClass: WindowSizeClass,
+    setIsDetailOpen: (Boolean) -> Unit,
+    viewModel: MainViewModel
+) {
+    val detailsState by viewModel.detailsState.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(if (isSystemInDarkTheme()) 0xff0d0d0d else 0xfff5f5f5))
+    ) {
+        when (detailsState) {
+            is DetailsState.Error -> {
+                Text(
+                    modifier = Modifier.align(Alignment.Center),
+                    text = (detailsState as DetailsState.Error).e
+                )
+            }
+
+            is DetailsState.Idle -> {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        modifier = Modifier
+                            .size(100.dp),
+                        painter = painterResource(id = R.drawable.coolapk),
+                        contentDescription = "icon",
+                        tint = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1)
+                    )
+                    Text(
+                        text = "Coolbbs",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 55.sp,
+                        color = Color(if (isSystemInDarkTheme()) 0xff161616 else 0xfff1f1f1),
+                        fontStyle = FontStyle.Italic
+                    )
+                }
+            }
+
+            is DetailsState.Loading -> {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+
+            is DetailsState.Success -> {
+                val detailsEntity = (detailsState as DetailsState.Success).detailsEntity
+
+                DetailPager(
+                    modifier = Modifier.fillMaxWidth(),
+                    entity = detailsEntity,
+                    windowSizeClass = windowSizeClass,
+                    setIsDetailOpen = setIsDetailOpen
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
