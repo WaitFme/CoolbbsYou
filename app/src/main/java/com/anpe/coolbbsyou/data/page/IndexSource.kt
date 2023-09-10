@@ -8,44 +8,39 @@ import com.anpe.coolbbsyou.data.remote.repository.RemoteRepository
 
 class IndexSource(private val repository: RemoteRepository) : PagingSource<Int, Data>() {
     companion object {
-        private val TAG = IndexSource::class.java.simpleName
+        private val TAG = IndexSource::class.simpleName
     }
 
-    //    private var lastItem = -1
+    private var firstItem: Int? = null
     private var lastItem: Int? = null
 
     override fun getRefreshKey(state: PagingState<Int, Data>): Int? {
-        Log.d(TAG, "getRefreshKey: $state")
+        Log.d(TAG, "getRefreshKey: ${state.anchorPosition}")
+//        firstItem = 1
         return null
     }
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Data> {
-        return try {
-            val currentPage = params.key ?: 1
+        val currentPage = params.key ?: 1
 
-            /*val indexEntity = if (lastItem == -1) {
-                repository.getIndex(currentPage).apply {
-                    lastItem = data[data.lastIndex - 1].id
-                }
-            } else {
-                repository.getIndex(currentPage, lastItem).apply {
-                    lastItem = data.last().id
-                }
-            }*/
+        Log.d(TAG, "load: $currentPage $firstItem")
 
-            val indexEntity = repository.getIndex(currentPage, lastItem).apply {
-                lastItem = data[if (lastItem == null) data.lastIndex - 1 else data.lastIndex].id
-            }
+        val indexModel = repository.getIndex(
+            page = currentPage,
+            firstItem = firstItem,
+            lastItem = lastItem
+        ).apply {
+            firstItem = if (currentPage == 1)
+                data[data.indexOfFirst { it.entityType == "feed" }].id
+            else null
 
-            val nextPage = if (currentPage == 10) {
-                null
-            } else {
-                currentPage + 1
-            }
-
-            LoadResult.Page(indexEntity.data, null, nextPage)
-        } catch (e: Exception) {
-            LoadResult.Error(throwable = e)
+            lastItem = data[data.indexOfLast {
+                it.entityType == "feed"
+            }].id
         }
+
+        val nextPage = currentPage + 1
+
+        return LoadResult.Page(indexModel.data, null, nextPage)
     }
 }

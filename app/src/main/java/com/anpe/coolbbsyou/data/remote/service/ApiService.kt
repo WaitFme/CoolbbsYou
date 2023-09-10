@@ -69,9 +69,10 @@ interface ApiService {
         @Header("X-App-Token") token: String = deviceToken,
         @Query("ids") ids: String = "",
         @Query("installTime") installTime: String,
+        @Query("firstItem") firstItem: Int?,
         @Query("lastItem") lastItem: Int?,
         @Query("page") page: Int,
-        @Query("firstLaunch") firstLaunch: Int
+        @Query("firstLaunch") firstLaunch: Int = 0
 
     ): IndexModel
 

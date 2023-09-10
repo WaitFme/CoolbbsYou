@@ -1,7 +1,6 @@
 package com.anpe.coolbbsyou.data.remote.repository
 
 import android.content.Context
-import com.anpe.coolbbsyou.data.remote.domain.index.IndexModel
 import com.anpe.coolbbsyou.data.remote.service.ApiService
 import com.anpe.coolbbsyou.data.remote.service.ApiServiceTwo
 import com.anpe.coolbbsyou.util.LoginUtils.Companion.getRequestHash
@@ -17,22 +16,16 @@ class RemoteRepository(context: Context = MyApplication.context) {
 
     private val installTime = getLastingInstallTime(context)
 
-    private var firstLauncher = 1
-
-    suspend fun getIndex(page: Int, lastItem: Int? = null): IndexModel {
-        val indexEntity = api.getIndex(
-            page = page,
-            lastItem = lastItem,
-            firstLaunch = firstLauncher,
-            installTime = installTime
-        )
-
-        if (firstLauncher == 1) {
-            firstLauncher = 0
-        }
-
-        return indexEntity
-    }
+    suspend fun getIndex(
+        page: Int,
+        firstItem: Int? = null,
+        lastItem: Int? = null
+    ) = api.getIndex(
+        page = page,
+        firstItem = firstItem,
+        lastItem = lastItem,
+        installTime = installTime,
+    )
 
     fun getRequestHash() = apiCall.getRequestHash()
 

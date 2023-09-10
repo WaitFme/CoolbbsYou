@@ -55,6 +55,7 @@ import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.TodayState
 import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 import kotlinx.coroutines.launch
@@ -201,10 +202,11 @@ private fun FeedItem(
             .fillMaxWidth(),
         shape = RoundedCornerShape(15.dp)
     ) {
-        Text(
+        HtmlText(
             modifier = Modifier
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp),
-            text = data.message
+            htmlText = data.message,
+            openLink = {}
         )
 
         if (data.picArr.isNotEmpty()) {

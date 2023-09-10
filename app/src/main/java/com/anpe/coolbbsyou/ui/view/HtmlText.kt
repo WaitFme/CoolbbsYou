@@ -22,18 +22,16 @@ package com.anpe.coolbbsyou.ui.view
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -57,7 +55,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import kotlinx.coroutines.coroutineScope
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
@@ -94,7 +91,7 @@ fun HtmlText(
     overflow: TextOverflow = TextOverflow.Ellipsis,
     softWrap: Boolean = true,
     textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
-    linkStyle: TextStyle = textStyle.copy(MaterialTheme.colors.primary),
+    linkStyle: TextStyle = textStyle.copy(MaterialTheme.colorScheme.primary),
     linkResolver: (href: String) -> ResolvedLink = { ResolvedLink(it) },
 //  positionWrapper: PositionWrapper? = null,
     openLink: (String) -> Unit,
@@ -147,7 +144,7 @@ fun HtmlText(
     overflow: TextOverflow = TextOverflow.Ellipsis,
     softWrap: Boolean = true,
     textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
-    linkStyle: TextStyle = textStyle.copy(MaterialTheme.colors.primary),
+    linkStyle: TextStyle = textStyle.copy(MaterialTheme.colorScheme.primary),
     linkResolver: (href: String) -> ResolvedLink = { ResolvedLink(it) },
 //  positionWrapper: PositionWrapper? = null,
     openLink: (String) -> Unit,
@@ -295,7 +292,7 @@ private fun RenderContent(
 fun renderContentAnnotatedString(
     htmlText: String,
     textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
-    linkStyle: TextStyle = textStyle.copy(MaterialTheme.colors.primary),
+    linkStyle: TextStyle = textStyle.copy(MaterialTheme.colorScheme.primary),
     linkResolver: (href: String) -> ResolvedLink,
 ): AnnotatedString {
     val styleData = remember(textStyle, linkStyle) {

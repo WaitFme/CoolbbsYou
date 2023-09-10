@@ -170,6 +170,7 @@ fun DetailPager(
                                 }
                             }
                         }
+
                         else -> {
                             when (replyState) {
                                 is ReplyState.Error -> {}
@@ -191,7 +192,12 @@ fun DetailPager(
                                                     ReplyItem(
                                                         modifier = Modifier.fillMaxWidth(),
                                                         data = this,
-                                                        itemPadding = PaddingValues(15.dp, 7.dp, 15.dp, 15.dp)
+                                                        itemPadding = PaddingValues(
+                                                            15.dp,
+                                                            7.dp,
+                                                            15.dp,
+                                                            15.dp
+                                                        )
                                                     )
                                                 }
                                             }
@@ -381,7 +387,7 @@ private fun ReplyItem(
 @Composable
 private fun TopBar(
     modifier: Modifier = Modifier,
-                   entity: DetailsModel,
+    entity: DetailsModel,
     setIsDetailOpen: (Boolean) -> Unit
 ) {
     val context = LocalContext.current

@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
-        private val TAG = this::class.java.simpleName
+        private val TAG = MainViewModel::class.simpleName
     }
 
     private val repository = RemoteRepository()
@@ -121,19 +121,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun getIndexState() {
         viewModelScope.launch {
             _indexState.emit(IndexState.Loading)
-            _indexState.emit(
-                try {
-                    IndexState.Success(Pager(
-                        config = PagingConfig(pageSize = 50, prefetchDistance = 10),
-                        pagingSourceFactory = {
-                            IndexSource(repository)
-                        }
-                    ).flow.cachedIn(viewModelScope))
-                } catch (e: Exception) {
-                    Log.e(TAG, "getIndexState: $e")
-                    IndexState.Error(e.localizedMessage ?: "error")
-                }
-            )
+
+            try {
+                val pagingDataFlow = Pager(
+                    config = PagingConfig(pageSize = 10, prefetchDistance = 3),
+                    pagingSourceFactory = { IndexSource(repository) }
+                ).flow.cachedIn(viewModelScope)
+                _indexState.emit(IndexState.Success(pagingDataFlow))
+            } catch (e: Exception) {
+                _indexState.emit(IndexState.Error(e.toString() ?: "error"))
+            }
         }
     }
 
@@ -215,14 +212,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             )
         }
-
-
-        IndexState.Success(Pager(
-            PagingConfig(pageSize = 50, prefetchDistance = 10),
-            pagingSourceFactory = {
-                IndexSource(repository)
-            }
-        ).flow.cachedIn(viewModelScope))
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.anpe.coolbbsyou.ui.host.pager
 
+import android.util.Log
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,8 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -25,19 +29,22 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,9 +82,10 @@ fun HomePager(
     viewModel: MainViewModel
 ) {
     val scope = rememberCoroutineScope()
-    val configuration = LocalConfiguration.current
 
     val indexState by viewModel.indexState.collectAsState()
+
+    val lazyPagingItems = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
 
     val indexImageState by viewModel.indexImageState.collectAsState()
 
@@ -92,168 +100,203 @@ fun HomePager(
     val refreshState = rememberPullRefreshState(refreshing = refreshing, onRefresh = {
         scope.launch {
             refreshing = true
-            viewModel.channel.send(MainEvent.GetIndex)
-            println("refresh")
+            lazyPagingItems.refresh()
+            refreshing = false
         }
     })
 
     Box(Modifier.fillMaxSize()) {
-        var dataList by remember {
-            mutableStateOf<LazyPagingItems<Data>?>(null)
-        }
-
         when (indexState) {
             is IndexState.Error -> {
-                refreshing = false
                 val error = (indexState as IndexState.Error).error
                 Text(modifier = Modifier.align(Alignment.Center), text = error)
             }
 
             is IndexState.Idle -> {
-                refreshing = false
                 Text(modifier = Modifier.align(Alignment.Center), text = "idle")
             }
 
             is IndexState.Loading -> {
-                if (dataList == null) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
 
             is IndexState.Success -> {
-                refreshing = false
-                dataList = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
+                Log.d("stateIndex", "HomePager: Success")
+
+
+                var index by rememberSaveable { mutableIntStateOf(1) }
+                Column {
+                    TabRow(
+                        modifier = Modifier
+                            .padding(start = 15.dp, end = 15.dp),
+                        selectedTabIndex = index,
+                        divider = { }
+                    ) {
+                        Tab(
+                            selected = true,
+                            text = { Text(text = "关注") },
+                            onClick = { index = 0 }
+                        )
+                        Tab(
+                            selected = false,
+                            text = { Text(text = "头条") },
+                            onClick = { index = 1 }
+                        )
+                        Tab(
+                            selected = false,
+                            text = { Text(text = "话题") },
+                            onClick = { index = 2 }
+                        )
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .pullRefresh(refreshState)
+                            .fillMaxHeight(),
+                        contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
+                        content = {
+                            Log.d("stateIndex", "HomePager: 0")
+                            items(lazyPagingItems) {
+                                Log.d("stateIndex", "HomePager: ${it._tid}")
+                                it.run {
+                                    when (entityType) {
+                                        "imageCarouselCard_1" -> {
+                                            BannerItem(
+                                                modifier = Modifier.padding(top = 15.dp, bottom = 5.dp),
+                                                data = this,
+                                                onClick = {
+                                                    scope.launch {
+                                                        val url = entities[0].url
+                                                        val substring =
+                                                            url.substring(url.indexOf("url=") + 4)
+                                                        viewModel.channel.send(
+                                                            MainEvent.GetTodayCool(
+                                                                url = substring,
+                                                                page = 1
+                                                            )
+                                                        )
+                                                        navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
+                                                    }
+                                                },
+                                            )
+                                        }
+
+                                        "feed" -> {
+                                            var likeNum by remember {
+                                                mutableStateOf(likenum)
+                                            }
+                                            var likeStatus by remember {
+                                                mutableStateOf(userAction?.let {
+                                                    userAction.like == 1
+                                                } ?: false)
+                                            }
+                                            FeedItem(
+                                                modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                                data = this,
+                                                isNineGrid = isNineGrid,
+                                                likeNum = likeNum,
+                                                likeStatus = likeStatus,
+                                                onClick = {
+                                                    scope.launch {
+                                                        viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
+                                                        viewModel.channel.send(MainEvent.GetReply(id))
+                                                        setIsDetailOpen(true)
+                                                    }
+                                                },
+                                                onLike = {
+                                                    scope.launch {
+                                                        if (likeStatus) {
+                                                            viewModel.getUnlike(it.id)?.apply {
+                                                                if (data != null) {
+                                                                    likeNum = data
+                                                                    likeStatus = false
+                                                                }
+                                                            }
+                                                        } else {
+                                                            viewModel.getLike(it.id)?.apply {
+                                                                if (data != null) {
+                                                                    likeNum = data
+                                                                    likeStatus = true
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            )
+                                        }
+
+                                        "imageTextScrollCard" -> {
+                                            ImageTextItem(
+                                                modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                                data = this,
+                                                onClick = {
+                                                    scope.launch {
+//                                                id = 48068410
+                                                        /*viewModel.channel.send(MainIntent.GetDetails(id))
+                                                        if (!configuration.isTable()) {
+                                                            navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                                                        }*/
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+
+                PullRefreshIndicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    refreshing = refreshing,
+                    state = refreshState,
+                    contentColor = MaterialTheme.colorScheme.surfaceTint
+                )
             }
         }
-
-        LazyColumn(
-            modifier = Modifier
-                .pullRefresh(refreshState)
-                .fillMaxHeight(),
-            contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
-            content = {
-                /*dataList?.let { lazyItem ->
-                    items(lazyItem) {
-                        it?.apply {
-                        }
-                    }
-                }*/
-                items(dataList) {
-                    it.run {
-                        when (entityType) {
-                            "imageCarouselCard_1" -> {
-                                BannerItem(
-                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                    data = this,
-                                    onClick = {
-                                        scope.launch {
-                                            val url = entities[0].url
-                                            val substring =
-                                                url.substring(url.indexOf("url=") + 4)
-                                            viewModel.channel.send(
-                                                MainEvent.GetTodayCool(
-                                                    url = substring,
-                                                    page = 1
-                                                )
-                                            )
-                                            navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
-                                        }
-                                    },
-                                )
-                            }
-                            "feed" -> {
-                                var likeNum by remember {
-                                    mutableStateOf(likenum)
-                                }
-                                var likeStatus by remember {
-                                    mutableStateOf(userAction?.let {
-                                        userAction.like == 1
-                                    } ?: false)
-                                }
-                                FeedItem(
-                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                    data = this,
-                                    isNineGrid = isNineGrid,
-                                    likeNum = likeNum,
-                                    likeStatus = likeStatus,
-                                    onClick = {
-                                        scope.launch {
-                                            viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
-                                            viewModel.channel.send(MainEvent.GetReply(id))
-                                            setIsDetailOpen(true)
-                                        }
-                                    },
-                                    onLike = {
-                                        scope.launch {
-                                            if (likeStatus) {
-                                                viewModel.getUnlike(it.id)?.apply {
-                                                    if (data != null) {
-                                                        likeNum = data
-                                                        likeStatus = false
-                                                    }
-                                                }
-                                            } else {
-                                                viewModel.getLike(it.id)?.apply {
-                                                    if (data != null) {
-                                                        likeNum = data
-                                                        likeStatus = true
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                )
-                            }
-                            "imageTextScrollCard" -> {
-                                ImageTextItem(
-                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                    data = this,
-                                    onClick = {
-                                        scope.launch {
-//                                                id = 48068410
-                                            /*viewModel.channel.send(MainIntent.GetDetails(id))
-                                            if (!configuration.isTable()) {
-                                                navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
-                                            }*/
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        )
-
-        PullRefreshIndicator(
-            modifier = Modifier.align(Alignment.TopCenter),
-            refreshing = refreshing,
-            state = refreshState,
-            contentColor = MaterialTheme.colorScheme.surfaceTint
-        )
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun BannerItem(modifier: Modifier = Modifier, data: Data, onClick: () -> Unit) {
     val context = LocalContext.current
 
+    val list = mutableListOf<String>()
     data.entities.forEach {
-        if (it.title == "今日酷安") {
-            AsyncImage(
-                modifier = modifier
-                    .padding(bottom = 5.dp)
-                    .clip(RoundedCornerShape(15.dp))
-                    .clickableNoRipple {
-                        onClick()
-                    },
-                model = ImageRequest.Builder(context)
-                    .data(data.entities[0].pic)
-                    .build(),
-                contentScale = ContentScale.Crop,
-                contentDescription = "image"
-            )
+        when (it.title) {
+            "今日酷安" -> {
+                list.add(it.pic)
+            }
+            "新机资讯" -> {
+                list.add(it.pic)
+            }
         }
+    }
+
+    val state = rememberPagerState(initialPage = 0) {
+        list.size
+    }
+    HorizontalPager(
+        modifier = modifier
+            .padding(bottom = 5.dp)
+            .clip(RoundedCornerShape(15.dp)),
+        state = state,
+//        pageSpacing = 10.dp
+    ) {
+        AsyncImage(
+            modifier = Modifier
+                .clip(RoundedCornerShape(15.dp))
+                .clickableNoRipple {
+                    onClick()
+                },
+            model = ImageRequest.Builder(context)
+                .data(list[it])
+                .build(),
+            contentScale = ContentScale.Crop,
+            contentDescription = "image"
+        )
     }
 }
 
@@ -539,7 +582,7 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.primaryContainer)
                             .padding(5.dp),
-                        htmlText = it.message?: "NULL",
+                        htmlText = it.message ?: "NULL",
                         overflow = TextOverflow.Ellipsis,
                         maxLines = 2,
                         fontSize = 15.sp,
@@ -553,19 +596,58 @@ private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: ()
     }
 }
 
-fun <T : Any> LazyListScope.items(
+private fun <T : Any> LazyListScope.items(
     items: LazyPagingItems<T>?,
     key: ((item: T) -> Any)? = null,
     itemContent: @Composable LazyItemScope.(value: T) -> Unit
 ) {
-    items?.let {
+    items?.run {
         items(
-            count = it.itemCount,
+            count = itemCount,
             key = null
         ) { index ->
-            if (it[index] != null) {
-                itemContent(it[index]!!)
+            if (this@run[index] != null) {
+                itemContent(this@run[index]!!)
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+private fun RefreshLoadColumn(
+    lazyPagingItems: LazyPagingItems<Data>?,
+    onRefresh: () -> Unit,
+    content: () -> Unit
+) {
+    var refreshing by rememberSaveable {
+        mutableStateOf(true)
+    }
+
+    val refreshState = rememberPullRefreshState(
+        refreshing = refreshing,
+        onRefresh = {
+            refreshing = true
+            onRefresh()
+            refreshing = false
+        }
+    )
+
+    Box(Modifier.fillMaxSize()) {
+        var dataList by remember {
+            mutableStateOf<LazyPagingItems<Data>?>(lazyPagingItems)
+        }
+        lazyPagingItems?.apply {
+            this
+            val data = this[itemCount]
+        }
+        content()
+
+        PullRefreshIndicator(
+            modifier = Modifier.align(Alignment.TopCenter),
+            refreshing = refreshing,
+            state = refreshState,
+            contentColor = MaterialTheme.colorScheme.surfaceTint
+        )
     }
 }
