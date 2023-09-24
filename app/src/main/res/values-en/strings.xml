@@ -12,6 +12,8 @@
     <string name="details_inner_screen">Details</string>
     <string name="today_selection_inner_screen">Today selection</string>
     <string name="search_inner_screen">Search</string>
+    <string name="user_space_inner_screen">User space</string>
+    <string name="topic_inner_screen">Topic screen</string>
 
     <!--PAGER-->
     <string name="home_pager">Home</string>

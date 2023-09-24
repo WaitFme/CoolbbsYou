@@ -1,6 +1,5 @@
 package com.anpe.coolbbsyou.ui.host.pager
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,13 +28,10 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -121,10 +117,7 @@ fun HomePager(
             }
 
             is IndexState.Success -> {
-                Log.d("stateIndex", "HomePager: Success")
-
-
-                var index by rememberSaveable { mutableIntStateOf(1) }
+                /*var index by rememberSaveable { mutableIntStateOf(1) }
                 Column {
                     TabRow(
                         modifier = Modifier
@@ -148,104 +141,105 @@ fun HomePager(
                             onClick = { index = 2 }
                         )
                     }
+                }*/
 
-                    LazyColumn(
-                        modifier = Modifier
-                            .pullRefresh(refreshState)
-                            .fillMaxHeight(),
-                        contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
-                        content = {
-                            Log.d("stateIndex", "HomePager: 0")
-                            items(lazyPagingItems) {
-                                Log.d("stateIndex", "HomePager: ${it._tid}")
-                                it.run {
-                                    when (entityType) {
-                                        "imageCarouselCard_1" -> {
-                                            BannerItem(
-                                                modifier = Modifier.padding(top = 15.dp, bottom = 5.dp),
-                                                data = this,
-                                                onClick = {
-                                                    scope.launch {
-                                                        val url = entities[0].url
-                                                        val substring =
-                                                            url.substring(url.indexOf("url=") + 4)
-                                                        viewModel.channel.send(
-                                                            MainEvent.GetTodayCool(
-                                                                url = substring,
-                                                                page = 1
-                                                            )
+                LazyColumn(
+                    modifier = Modifier
+                        .pullRefresh(refreshState)
+                        .fillMaxHeight(),
+                    contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
+                    content = {
+                        items(lazyPagingItems) {
+                            it.run {
+                                when (entityType) {
+                                    "imageCarouselCard_1" -> {
+                                        BannerItem(
+                                            modifier = Modifier.padding(top = 15.dp, bottom = 5.dp),
+                                            data = this,
+                                            onClick = {
+                                                scope.launch {
+                                                    val url = entities[0].url
+                                                    val substring =
+                                                        url.substring(url.indexOf("url=") + 4)
+                                                    viewModel.channel.send(
+                                                        MainEvent.GetTodayCool(
+                                                            url = substring,
+                                                            page = 1
                                                         )
-                                                        navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
-                                                    }
-                                                },
-                                            )
-                                        }
+                                                    )
+                                                    navControllerInnerScreen.navigate(InnerScreenManager.TodaySelectionInnerScreen.route)
+                                                }
+                                            },
+                                        )
+                                    }
 
-                                        "feed" -> {
-                                            var likeNum by remember {
-                                                mutableStateOf(likenum)
-                                            }
-                                            var likeStatus by remember {
-                                                mutableStateOf(userAction?.let {
-                                                    userAction.like == 1
-                                                } ?: false)
-                                            }
-                                            FeedItem(
-                                                modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                                data = this,
-                                                isNineGrid = isNineGrid,
-                                                likeNum = likeNum,
-                                                likeStatus = likeStatus,
-                                                onClick = {
-                                                    scope.launch {
-                                                        viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
-                                                        viewModel.channel.send(MainEvent.GetReply(id))
-                                                        setIsDetailOpen(true)
-                                                    }
-                                                },
-                                                onLike = {
-                                                    scope.launch {
-                                                        if (likeStatus) {
-                                                            viewModel.getUnlike(it.id)?.apply {
-                                                                if (data != null) {
-                                                                    likeNum = data
-                                                                    likeStatus = false
-                                                                }
+                                    "feed" -> {
+                                        var likeNum by remember {
+                                            mutableStateOf(likenum)
+                                        }
+                                        var likeStatus by remember {
+                                            mutableStateOf(userAction?.let {
+                                                userAction.like == 1
+                                            } ?: false)
+                                        }
+                                        FeedItem(
+                                            modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                            data = this,
+                                            isNineGrid = isNineGrid,
+                                            likeNum = likeNum,
+                                            likeStatus = likeStatus,
+                                            onClick = {
+                                                scope.launch {
+                                                    viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
+                                                    viewModel.channel.send(MainEvent.GetReply(id))
+                                                    setIsDetailOpen(true)
+                                                }
+                                            },
+                                            onLike = {
+                                                scope.launch {
+                                                    if (likeStatus) {
+                                                        viewModel.getUnlike(it.id)?.apply {
+                                                            if (data != null) {
+                                                                likeNum = data
+                                                                likeStatus = false
                                                             }
-                                                        } else {
-                                                            viewModel.getLike(it.id)?.apply {
-                                                                if (data != null) {
-                                                                    likeNum = data
-                                                                    likeStatus = true
-                                                                }
+                                                        }
+                                                    } else {
+                                                        viewModel.getLike(it.id)?.apply {
+                                                            if (data != null) {
+                                                                likeNum = data
+                                                                likeStatus = true
                                                             }
                                                         }
                                                     }
                                                 }
-                                            )
-                                        }
+                                            },
+                                            onClickPic = {
+                                                viewModel.displayFullScreenImage(it, picArr, navControllerScreen)
+                                            }
+                                        )
+                                    }
 
-                                        "imageTextScrollCard" -> {
-                                            ImageTextItem(
-                                                modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
-                                                data = this,
-                                                onClick = {
-                                                    scope.launch {
+                                    "imageTextScrollCard" -> {
+                                        ImageTextItem(
+                                            modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                            data = this,
+                                            onClick = {
+                                                scope.launch {
 //                                                id = 48068410
-                                                        /*viewModel.channel.send(MainIntent.GetDetails(id))
-                                                        if (!configuration.isTable()) {
-                                                            navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
-                                                        }*/
-                                                    }
+                                                    /*viewModel.channel.send(MainIntent.GetDetails(id))
+                                                    if (!configuration.isTable()) {
+                                                        navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
+                                                    }*/
                                                 }
-                                            )
-                                        }
+                                            }
+                                        )
                                     }
                                 }
                             }
                         }
-                    )
-                }
+                    }
+                )
 
                 PullRefreshIndicator(
                     modifier = Modifier.align(Alignment.TopCenter),
@@ -313,6 +307,7 @@ private fun FeedItem(
     onLike: (Data) -> Unit = {},
     onReply: (Int) -> Unit = {},
     onShare: (Int) -> Unit = {},
+    onClickPic: (Int) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -421,6 +416,7 @@ private fun FeedItem(
                                             .clickableNoRipple {
                                                 initialPage = num
                                                 status = !status
+                                                onClickPic(num)
                                             }
                                             .size(100.dp)
                                             .padding(end = 5.dp)

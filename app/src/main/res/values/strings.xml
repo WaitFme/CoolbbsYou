@@ -12,6 +12,8 @@
     <string name="details_inner_screen">详情</string>
     <string name="today_selection_inner_screen">今日酷安</string>
     <string name="search_inner_screen">搜索页</string>
+    <string name="user_space_inner_screen">用户空间</string>
+    <string name="topic_inner_screen">话题页</string>
 
     <!--PAGER-->
     <string name="home_pager">主页</string>

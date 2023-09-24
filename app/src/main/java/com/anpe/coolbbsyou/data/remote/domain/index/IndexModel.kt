@@ -78,7 +78,7 @@ data class Data(
     @SerializedName("extra_title")
     val extraTitle: String,
     @SerializedName("extra_type")
-    val extraType: Int,
+    val extraType: String,
     @SerializedName("extra_url")
     val extraUrl: String,
     @SerializedName("favnum")

@@ -67,7 +67,7 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
             }
 
             LaunchedEffect(key1 = true, block = {
-                requestHash = repository.getRequestHashTest()?: ""
+                requestHash = repository.getRequestHash()?: ""
 
                 viewModel.loginState.collect {
                     when (it) {

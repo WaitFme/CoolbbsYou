@@ -9,4 +9,8 @@ sealed class InnerScreenManager(val route: String, @StringRes val resourceId: In
     object TodaySelectionInnerScreen: InnerScreenManager("TodaySelectionScreen", R.string.today_selection_inner_screen)
 
     object SearchInnerScreen: InnerScreenManager("SearchInnerScreen", R.string.search_inner_screen)
+
+    object UserSpaceInnerScreen: InnerScreenManager("UserSpaceInnerScreen", R.string.user_space_inner_screen)
+
+    object TopicInnerScreen: InnerScreenManager("TopicInnerScreen", R.string.topic_inner_screen)
 }

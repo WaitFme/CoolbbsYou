@@ -510,9 +510,10 @@ private fun DetailBlock(
 
                 DetailPager(
                     modifier = Modifier.fillMaxWidth(),
-                    entity = detailsEntity,
+                    detailsModel = detailsEntity,
                     windowSizeClass = windowSizeClass,
-                    setIsDetailOpen = setIsDetailOpen
+                    setIsDetailOpen = setIsDetailOpen,
+                    viewModel = viewModel
                 )
             }
         }

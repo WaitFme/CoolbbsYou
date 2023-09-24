@@ -10,5 +10,5 @@ sealed class ScreenManager(val route: String, @StringRes val resourceId: Int) {
 
     object LoginScreen: ScreenManager("LoginScreen", R.string.login_screen)
 
-    object FullImageScreen: ScreenManager("", R.string.full_image_screen)
+    object FullImageScreen: ScreenManager("FullImageScreen", R.string.full_image_screen)
 }

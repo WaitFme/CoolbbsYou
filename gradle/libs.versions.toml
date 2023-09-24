@@ -1,29 +1,29 @@
 [versions]
 # User version
 constraintlayout-compose = "1.0.1"
-navigation-compose = "2.6.0"
+navigation-compose = "2.7.0"
 accompanist = "0.32.0"
 gson = "2.10"
-coil-compose = "2.2.2"
+coil = "2.4.0"
 retrofit = "2.9.0"
-converter-gson = "2.9.0"
 paging-runtime = "3.1.1"
 paging-compose = "1.0.0-alpha18"
 jbcrypt = "0.4"
 jsoup = "1.16.1"
 room = "2.5.2"
+moshi = "1.15.0"
 
 # Default version
-ksp = "1.8.10-1.0.9"
+ksp = "1.9.0-1.0.13"
 agp = "8.1.1"
-kotlin = "1.8.10"
+kotlin = "1.9.0"
 core-ktx = "1.10.1"
 junit = "4.13.2"
 androidx-test-ext-junit = "1.1.5"
 espresso-core = "3.5.1"
 lifecycle-runtime-ktx = "2.6.1"
 activity-compose = "1.7.2"
-compose-bom = "2023.08.00"
+compose-bom = "2023.09.00"
 
 [libraries]
 # User libraries
@@ -33,10 +33,11 @@ accompanist-swiperefresh = { group = "com.google.accompanist", name = "accompani
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
 accompanist-adaptive = { group = "com.google.accompanist", name = "accompanist-adaptive", version.ref = "accompanist" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
-coil-compose = { group = "io.coil-kt", name = "coil-compose", version = "2.4.0" }
-coil-gif = { group = "io.coil-kt", name = "coil-gif", version = "2.4.0" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-gif = { group = "io.coil-kt", name = "coil-gif", version.ref = "coil" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "converter-gson" }
+converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+converter-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
 material = { group = "androidx.compose.material", name = "material" }
 paging-runtime = { group = "androidx.paging", name = "paging-runtime", version.ref = "paging-runtime" }
 paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging-compose" }
@@ -45,6 +46,8 @@ jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
 
 # Default libraries
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }

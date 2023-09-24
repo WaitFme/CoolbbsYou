@@ -73,7 +73,6 @@ interface ApiService {
         @Query("lastItem") lastItem: Int?,
         @Query("page") page: Int,
         @Query("firstLaunch") firstLaunch: Int = 0
-
     ): IndexModel
 
     @Headers(Constants.HEADER_REQUEST_WIDTH, Constants.HEADER_APP_ID)

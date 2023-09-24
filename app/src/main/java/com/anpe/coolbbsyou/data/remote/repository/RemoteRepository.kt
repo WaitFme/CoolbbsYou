@@ -14,30 +14,30 @@ class RemoteRepository(context: Context = MyApplication.context) {
     private val api = ApiService.getSerVice(context)
     private val apiCall = ApiServiceTwo.getSerVice(context)
 
+    // index
+    private var firstItem: Int? = null
+    private var lastItem: Int? = null
     private val installTime = getLastingInstallTime(context)
 
-    suspend fun getIndex(
-        page: Int,
-        firstItem: Int? = null,
-        lastItem: Int? = null
-    ) = api.getIndex(
+    suspend fun getIndex(page: Int) = api.getIndex(
         page = page,
         firstItem = firstItem,
         lastItem = lastItem,
         installTime = installTime,
-    )
+    ).apply {
+        val first = data[data.indexOfFirst { it.entityType == "feed" }].id
+        val last = data[data.indexOfLast { it.entityType == "feed" }].id
 
-    fun getRequestHash() = apiCall.getRequestHash()
+        if (page == 1) {
+            firstItem = first
+        }
 
-    suspend fun getRequestHashTest(): String? {
-        val response = CoroutineScope(Dispatchers.Default).async {
-            apiCall.getRequestHash().execute()
-        }.await()
-
-        val body = response.body()?.string()!!
-
-        return body.getRequestHash()
+        lastItem = last
     }
+
+    suspend fun getRequestHash() = CoroutineScope(Dispatchers.Default).async {
+        apiCall.getRequestHash().execute()
+    }.await().body()?.string()?.getRequestHash()
 
     suspend fun getDetails(id: Int) = api.getDetails(id = id)
 
@@ -59,8 +59,7 @@ class RemoteRepository(context: Context = MyApplication.context) {
 
     suspend fun getProfile(uid: Int) = api.getProfile(uid = uid)
 
-    suspend fun getReply(id: Int, page: Int, listType: String = "lastupdate_desc") =
-        api.getReply(id = id, listType = listType, page = page)
+    suspend fun getReply(id: Int, page: Int, listType: String = "lastupdate_desc") = api.getReply(id = id, listType = listType, page = page)
 
     suspend fun getLike(id: Int) = api.getLike(id = id)
 

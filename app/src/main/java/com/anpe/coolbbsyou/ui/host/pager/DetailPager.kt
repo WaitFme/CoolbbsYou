@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -38,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -56,8 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
@@ -77,27 +76,26 @@ import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 @Composable
 fun DetailPager(
     modifier: Modifier = Modifier,
-    entity: DetailsModel,
+    detailsModel: DetailsModel,
     windowSizeClass: WindowSizeClass,
-    setIsDetailOpen: (Boolean) -> Unit
+    setIsDetailOpen: (Boolean) -> Unit,
+    viewModel: MainViewModel
 ) {
     Surface(modifier = Modifier.offset(1.dp)) {
-        val viewModel: MainViewModel = viewModel()
+        val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
+
+        LaunchedEffect(key1 = true, block = {
+            viewModel.sendIntent(MainEvent.GetReply(detailsModel.data.id))
+        })
 
         val replyState by viewModel.replyState.collectAsState()
 
-        LaunchedEffect(key1 = true, block = {
-            viewModel.sendIntent(MainEvent.GetReply(entity.data.id))
-        })
+        val lazyPagingItems = (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
 
         MyScaffold(
-            topBar = { TopBar(entity = entity, setIsDetailOpen = setIsDetailOpen) },
+            topBar = { TopBar(entity = detailsModel, setIsDetailOpen = setIsDetailOpen) },
             content = {
-                Column(
-                    modifier = modifier.padding(top = it.calculateTopPadding())
-                ) {
-                    val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
-
+                Column(modifier = modifier.padding(top = it.calculateTopPadding())) {
                     when (widthSizeClass) {
                         WindowWidthSizeClass.Expanded -> {
                             Row {
@@ -105,89 +103,31 @@ fun DetailPager(
                                     modifier = Modifier
                                         .weight(1.5f)
                                         .verticalScroll(rememberScrollState()),
-                                    entity = entity
+                                    detailsModel = detailsModel
                                 )
 
-                                Box(
+                                Column(
                                     modifier = Modifier
                                         .weight(1f)
-                                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                                        .offset(1.dp)
+                                        .background(MaterialTheme.colorScheme.surface)
+                                        .fillMaxHeight()
                                 ) {
-                                    var pagingItems by remember {
-                                        mutableStateOf<LazyPagingItems<Data>?>(null)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(15.dp)
+                                            .alpha(0.5f)
+                                    ) {
+                                        Text(
+                                            modifier = Modifier.align(Alignment.CenterStart),
+                                            text = "共${detailsModel.data.replynum}回复"
+                                        )
                                     }
-
-                                    when (replyState) {
-                                        is ReplyState.Error -> {}
-                                        is ReplyState.Idle -> {}
-                                        is ReplyState.Loading -> {}
-                                        is ReplyState.Success -> {
-                                            pagingItems =
-                                                (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
-                                        }
-                                    }
-
-                                    if (pagingItems != null) {
-                                        Column(
-                                            modifier = Modifier
-                                                .background(MaterialTheme.colorScheme.surface)
-                                                .fillMaxSize()
-                                        ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(15.dp)
-                                                    .alpha(0.5f)
-                                            ) {
-                                                Text(
-                                                    modifier = Modifier.align(Alignment.CenterStart),
-                                                    text = "共${entity.data.replynum}回复"
-                                                )
-                                            }
-                                            LazyColumn(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                contentPadding = PaddingValues(bottom = 15.dp),
-                                                content = {
-                                                    items(pagingItems!!) {
-                                                        it?.apply {
-                                                            ReplyItem(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                data = this,
-                                                                itemPadding = PaddingValues(
-                                                                    15.dp,
-                                                                    7.dp,
-                                                                    15.dp,
-                                                                    15.dp
-                                                                )
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        else -> {
-                            when (replyState) {
-                                is ReplyState.Error -> {}
-                                is ReplyState.Idle -> {}
-                                is ReplyState.Loading -> {}
-                                is ReplyState.Success -> {
-                                    val pagingItems =
-                                        (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
-
                                     LazyColumn(
                                         modifier = Modifier.fillMaxWidth(),
                                         contentPadding = PaddingValues(bottom = 15.dp),
                                         content = {
-                                            item {
-                                                ContentBlock(modifier = Modifier, entity = entity)
-                                            }
-                                            items(pagingItems) {
+                                            items(lazyPagingItems) {
                                                 it?.apply {
                                                     ReplyItem(
                                                         modifier = Modifier.fillMaxWidth(),
@@ -206,6 +146,32 @@ fun DetailPager(
                                 }
                             }
                         }
+
+                        else -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(bottom = 15.dp),
+                                content = {
+                                    item {
+                                        ContentBlock(modifier = Modifier, detailsModel = detailsModel)
+                                    }
+                                    items(lazyPagingItems) {
+                                        it?.apply {
+                                            ReplyItem(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                data = this,
+                                                itemPadding = PaddingValues(
+                                                    15.dp,
+                                                    7.dp,
+                                                    15.dp,
+                                                    15.dp
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             },
@@ -214,32 +180,31 @@ fun DetailPager(
 }
 
 @Composable
-private fun ContentBlock(modifier: Modifier = Modifier, entity: DetailsModel) {
+private fun ContentBlock(modifier: Modifier = Modifier, detailsModel: DetailsModel) {
     Column(modifier = modifier) {
         var status by remember {
             mutableStateOf(false)
         }
 
         var initialPage by remember {
-            mutableStateOf(0)
+            mutableIntStateOf(0)
         }
 
         HtmlText(
             modifier = Modifier
                 .padding(15.dp, 15.dp, 15.dp, 0.dp),
             fontSize = 16.sp,
-            htmlText = entity.data.message, openLink = {
+            htmlText = detailsModel.data.message, openLink = {
                 println(it)
             }
         )
 
-        if (entity.data.picArr.isNotEmpty()) {
+        if (detailsModel.data.picArr.isNotEmpty()) {
             NineImageGrid(
                 modifier = Modifier
                     .padding(13.dp, 10.dp, 13.dp, 0.dp)
-//                    .fillMaxWidth()
                     .width(500.dp),
-                list = entity.data.picArr,
+                list = detailsModel.data.picArr,
                 itemPadding = PaddingValues(2.dp),
                 itemClip = RoundedCornerShape(10.dp),
                 onClick = {
@@ -252,12 +217,12 @@ private fun ContentBlock(modifier: Modifier = Modifier, entity: DetailsModel) {
         Text(
             modifier = Modifier
                 .padding(15.dp, 10.dp, 15.dp, 15.dp),
-            text = "${(entity.data.createTime.toLong() * 1000).timeStampInterval(System.currentTimeMillis())} 发布于${entity.data.ipLocation}",
+            text = "${(detailsModel.data.createTime.toLong() * 1000).timeStampInterval(System.currentTimeMillis())} 发布于${detailsModel.data.ipLocation} 共${detailsModel.data.replynum}回复",
             fontSize = 12.sp
         )
 
         if (status) {
-            DialogImage(entity.data.picArr, initialPage, onDismissRequest = {
+            DialogImage(detailsModel.data.picArr, initialPage, onDismissRequest = {
                 status = false
             })
         }
@@ -319,7 +284,7 @@ private fun ReplyItem(
             fontSize = 14.sp, // 13sp
             lineHeight = 20.sp,
             htmlText = data.message,
-            openLink = {},
+            openLink = { },
             color = if (!isSystemInDarkTheme()) Color.Black else Color.White
         )
 
@@ -396,7 +361,8 @@ private fun TopBar(
     TopAppBar(
         modifier = modifier
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .offset(0.dp, (-1).dp),
+//            .offset(0.dp, (-1).dp)
+        ,
         navigationIcon = {
             if (!configuration.isTable()) {
                 IconButton(onClick = { setIsDetailOpen(false) }) {

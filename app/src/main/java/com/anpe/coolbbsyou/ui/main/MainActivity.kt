@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.anpe.coolbbsyou.ui.host.screen.FullImageScreen
 import com.anpe.coolbbsyou.ui.host.screen.LoginScreen
 import com.anpe.coolbbsyou.ui.host.screen.MainScreen
 import com.anpe.coolbbsyou.ui.host.screen.SplashScreen
@@ -69,6 +70,12 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(route = ScreenManager.LoginScreen.route) {
                                 LoginScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.FullImageScreen.route) {
+                                FullImageScreen(
                                     navControllerScreen = navControllerScreen,
                                     viewModel = viewModel
                                 )

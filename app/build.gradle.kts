@@ -14,7 +14,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = 1
-        versionName = "0.23.0815"
+        versionName = "0.23.0919"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -45,7 +45,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
+        kotlinCompilerExtensionVersion = "1.5.1" // previous version 1.4.3
     }
     packaging {
         resources {
@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.coil.gif)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.converter.moshi)
     implementation(libs.material)
     implementation(libs.paging.runtime)
     implementation(libs.paging.compose)
@@ -90,5 +91,8 @@ dependencies {
     implementation(libs.jsoup)
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
+    implementation(libs.moshi.kotlin)
+
     ksp(libs.room.compiler)
+    ksp(libs.moshi.kotlin.codegen)
 }

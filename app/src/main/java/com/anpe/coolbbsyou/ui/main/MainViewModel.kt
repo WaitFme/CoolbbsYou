@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavHostController
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
@@ -28,6 +29,8 @@ import com.anpe.coolbbsyou.intent.state.ReplyState
 import com.anpe.coolbbsyou.intent.state.SearchState
 import com.anpe.coolbbsyou.intent.state.SuggestState
 import com.anpe.coolbbsyou.intent.state.TodayState
+import com.anpe.coolbbsyou.ui.host.screen.FullScreenItem
+import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,6 +82,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _replyState = MutableStateFlow<ReplyState>(ReplyState.Idle)
     val replyState: StateFlow<ReplyState> = _replyState
+
+    private val _picArray = MutableStateFlow(FullScreenItem())
+    val picArray: StateFlow<FullScreenItem> = _picArray
 
     var isLogin = false
 
@@ -380,5 +386,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun sendIntent(intent: MainEvent) {
         channel.send(intent)
+    }
+
+    fun displayFullScreenImage(initialCount: Int = 0, picArr: List<String>, navHostControllerScreen: NavHostController) {
+        viewModelScope.launch {
+            _picArray.emit(FullScreenItem(initialCount = initialCount, picArray = picArr))
+            navHostControllerScreen.navigate(ScreenManager.FullImageScreen.route)
+        }
     }
 }
