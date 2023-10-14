@@ -1,8 +1,8 @@
-package com.anpe.coolbbsyou.data.remote.domain.loginState
+package com.anpe.coolbbsyou.data.remote.domain.loginInfo
 import com.google.gson.annotations.SerializedName
 
 
-data class LoginStateModel(
+data class LoginInfoModel(
     @SerializedName("data")
     val `data`: Data,
     @SerializedName("status")

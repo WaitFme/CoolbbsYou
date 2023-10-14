@@ -1,16 +1,19 @@
 package com.anpe.coolbbsyou.data.remote.domain.like
 
-import com.google.gson.annotations.SerializedName
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
+
+@JsonClass(generateAdapter = true)
 data class LikeModel(
-    @SerializedName("data")
-    val data: Int,
-    @SerializedName("status")
-    val status: Int,
-    @SerializedName("error")
-    val error: Int,
-    @SerializedName("message")
-    val message: String,
-    @SerializedName("messageStatus")
-    val messageStatus: Int
+    @Json(name = "data")
+    val data: Int = -1,
+    @Json(name = "status")
+    val status: Int = 0,
+    @Json(name = "error")
+    val error: Int = 0,
+    @Json(name = "message")
+    val message: String = "",
+    @Json(name = "messageStatus")
+    val messageStatus: Int = 0
 )

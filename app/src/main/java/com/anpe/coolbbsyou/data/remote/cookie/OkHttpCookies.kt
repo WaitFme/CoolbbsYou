@@ -6,16 +6,9 @@ import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
 
-class OkHttpCookies(cookies: Cookie): Serializable {
-    @Transient
-    private val cookies: Cookie
-
+class OkHttpCookies(@Transient private val cookies: Cookie): Serializable {
     @Transient
     private var clientCookies: Cookie? = null
-
-    init {
-        this.cookies = cookies
-    }
 
     fun getCookies(): Cookie? {
         var bestCookies: Cookie? = cookies

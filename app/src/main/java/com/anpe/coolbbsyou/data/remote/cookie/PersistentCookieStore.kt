@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 open class PersistentCookieStore(context: Context) {
     companion object {
-        private val TAG = this::class.java.simpleName
+        private val TAG = PersistentCookieStore::class.java.simpleName
     }
 
     private val cookies: MutableMap<String, ConcurrentHashMap<String, Cookie>> = hashMapOf()
@@ -46,18 +46,22 @@ open class PersistentCookieStore(context: Context) {
         }
     }
 
-    private fun Cookie.getCookieToken() = "${this.name}@${this.domain}"
+    private fun Cookie.getCookieToken() = "${name}@${domain}"
 
     fun add(url: HttpUrl, cookie: Cookie) {
         val name = cookie.getCookieToken()
 
         // 将cookies缓存到内存中 如果缓存过期 就重置此cookie
         if (!cookie.persistent) {
+            // 查询缓存有无此cookie
             if (!cookies.containsKey(url.host)) {
+                // 添加此cookie到缓存
                 cookies[url.host] = ConcurrentHashMap<String, Cookie>()
             }
+            // 设置cookie名称
             cookies[url.host]!![name] = cookie
         } else {
+            // 如果cookie存在则移除该cookie
             if (cookies.containsKey(url.host)) {
                 cookies[url.host]!!.remove(name)
             }
@@ -69,6 +73,7 @@ open class PersistentCookieStore(context: Context) {
         // 问题处
         cookiePrefs.getString(url.host, null).apply {
             if (this == null) {
+                // 如果cookie为空则添加
                 prefsWriter.putString(url.host, name)
             } else {
                 val list = this.split(",")

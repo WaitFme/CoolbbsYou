@@ -5,21 +5,21 @@ import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
 
-class CookieManger(context: Context): CookieJar {
+class CookieManager(context: Context): CookieJar {
     companion object {
-        private val TAG = this::class.java.simpleName
+        private val TAG = CookieManager::class.simpleName
     }
 
-    private val cookieStore = PersistentCookieStore(context)
+    private val myCookieStore = MyCookieStore()
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        return cookieStore[url]
+        return myCookieStore.get(url)
     }
 
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        if (cookies.isNotEmpty()) {
-            for (item in cookies) {
-                cookieStore.add(url, item)
+        cookies.forEach {
+            if (it.value != "deleted") {
+                myCookieStore.add(url, it)
             }
         }
     }

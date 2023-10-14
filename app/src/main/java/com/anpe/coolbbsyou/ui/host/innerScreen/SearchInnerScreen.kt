@@ -70,6 +70,7 @@ import com.anpe.coolbbsyou.data.remote.domain.search.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.SearchState
 import com.anpe.coolbbsyou.intent.state.SuggestState
+import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText
@@ -168,7 +169,13 @@ fun SearchInnerScreen(
                                                                         10.dp
                                                                     ),
                                                                 avatarUrl = entity.userAvatar,
-                                                                userName = entity.username
+                                                                userName = entity.username,
+                                                                onClick = {
+                                                                    scope.launch {
+                                                                        viewModel.channel.send(MainEvent.GetSpace(entity.uid.toInt()))
+                                                                        navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
+                                                                    }
+                                                                }
                                                             )
                                                         }
                                                     }
@@ -198,7 +205,13 @@ fun SearchInnerScreen(
                                                         topicUrl = entity.logo,
                                                         title = entity.title,
                                                         hotNum = entity.hotNumTxt,
-                                                        feedNum = entity.feednum
+                                                        feedNum = entity.feednum,
+                                                        onTopic = {
+                                                            scope.launch {
+                                                                viewModel.channel.send(MainEvent.GetTopic(it))
+                                                                navControllerInnerScreen.navigate(InnerScreenManager.TopicInnerScreen.route)
+                                                            }
+                                                        }
                                                     )
                                                 }
 
@@ -215,15 +228,19 @@ fun SearchInnerScreen(
                                     }
 
                                     if (it?.entityType == "feed") {
-                                        var likeNum by remember {
-                                            mutableStateOf(it.likenum)
-                                        }
-                                        var likeStatus by remember {
-                                            /*mutableStateOf(userAction?.let {
+                                        val likeState by viewModel.likeState.collectAsState()
+
+                                        val likeNum = if (likeState.likeModel.data == 0) it.likenum else likeState.likeModel.data
+
+                                        /*var likeStatus by remember {
+                                            *//*mutableStateOf(userAction?.let {
                                                 userAction.like == 1
-                                            } ?: false)*/
+                                            } ?: false)*//*
                                             mutableStateOf( false)
-                                        }
+                                        }*/
+
+                                        val likeStatus = likeState.isLike
+
                                         FeedItem(
                                             modifier = Modifier.padding(15.dp, 5.dp, 15.dp, 5.dp),
                                             data = it,
@@ -233,26 +250,15 @@ fun SearchInnerScreen(
                                             onClick = {
                                                 scope.launch {
                                                     viewModel.channel.send(MainEvent.GetDetails(it.id))
+                                                    viewModel.channel.send(MainEvent.GetReply(it.id))
                                                     setIsDetailOpen(true)
                                                 }
                                             },
                                             onLike = {
                                                 scope.launch {
-                                                    if (likeStatus) {
-                                                        viewModel.getUnlike(it.id)?.apply {
-                                                            if (data != null) {
-                                                                likeNum = data
-                                                                likeStatus = false
-                                                            }
-                                                        }
-                                                    } else {
-                                                        viewModel.getLike(it.id)?.apply {
-                                                            if (data != null) {
-                                                                likeNum = data
-                                                                likeStatus = true
-                                                            }
-                                                        }
-                                                    }
+                                                    viewModel.channel.send(
+                                                        if (likeStatus) MainEvent.Unlike(it.id) else MainEvent.Like(it.id)
+                                                    )
                                                 }
                                             }
                                         )
@@ -392,10 +398,17 @@ private fun TopBar(
 }
 
 @Composable
-private fun UserItem(modifier: Modifier = Modifier, avatarUrl: String, userName: String) {
+private fun UserItem(
+    modifier: Modifier = Modifier,
+    avatarUrl: String,
+    userName: String,
+    onClick: () -> Unit
+) {
     val context = LocalContext.current
 
-    Column(modifier = modifier.width(50.dp)) {
+    Column(modifier = modifier.width(50.dp).clickableNoRipple {
+        onClick()
+    }) {
         AsyncImage(
             modifier = Modifier
                 .size(50.dp)
@@ -422,7 +435,14 @@ private fun UserItem(modifier: Modifier = Modifier, avatarUrl: String, userName:
 }
 
 @Composable
-private fun TopicItem(modifier: Modifier = Modifier, topicUrl: String, title: String, hotNum: String, feedNum: String) {
+private fun TopicItem(
+    modifier: Modifier = Modifier,
+    topicUrl: String,
+    title: String,
+    hotNum: String,
+    feedNum: String,
+    onTopic: (String) -> Unit = {}
+) {
     val context = LocalContext.current
 
     val imgLoader = ImageLoader.Builder(context)
@@ -437,7 +457,9 @@ private fun TopicItem(modifier: Modifier = Modifier, topicUrl: String, title: St
 
     val mPainter = rememberAsyncImagePainter(topicUrl, imgLoader)
 
-    Row(modifier = modifier.height(50.dp)) {
+    Row(modifier = modifier.height(50.dp).clickableNoRipple {
+        onTopic(title)
+    }) {
         Image(
             modifier = Modifier
                 .size(50.dp)
@@ -447,7 +469,9 @@ private fun TopicItem(modifier: Modifier = Modifier, topicUrl: String, title: St
             contentDescription = "logo"
         )
         Column(
-            modifier = Modifier.fillMaxHeight().padding(start = 10.dp),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(start = 10.dp),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
@@ -457,7 +481,9 @@ private fun TopicItem(modifier: Modifier = Modifier, topicUrl: String, title: St
                 maxLines = 1,
             )
             Text(
-                modifier = Modifier.fillMaxWidth().padding(top = 5.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 5.dp),
                 text = "${hotNum}热度 ${feedNum}讨论",
                 fontSize = 13.sp,
                 maxLines = 1,

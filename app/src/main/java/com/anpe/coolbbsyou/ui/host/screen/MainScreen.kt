@@ -24,8 +24,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,8 +46,10 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -59,7 +63,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -75,7 +78,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.Popup
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
@@ -87,11 +89,14 @@ import androidx.window.layout.DisplayFeature
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
+import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.SuggestState
 import com.anpe.coolbbsyou.ui.host.innerScreen.SearchInnerScreen
 import com.anpe.coolbbsyou.ui.host.innerScreen.TodaySelectionInnerScreen
+import com.anpe.coolbbsyou.ui.host.innerScreen.TopicInnerScreen
+import com.anpe.coolbbsyou.ui.host.innerScreen.UserSpaceInnerScreen
 import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.host.pager.DetailPager
 import com.anpe.coolbbsyou.ui.host.pager.HomePager
@@ -102,9 +107,11 @@ import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.CustomProgress
 import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
+import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getBoolean
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getInt
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getString
+import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToastString
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
@@ -151,7 +158,7 @@ fun MainScreen(
         displayFeatures = displayFeatures,
         railBar = {
             var index by rememberSaveable {
-                mutableStateOf(0)
+                mutableIntStateOf(0)
             }
 
             RailBar(
@@ -161,7 +168,7 @@ fun MainScreen(
                     val uid = getInt("uid")
                     if (uid != -1) {
                         scope.launch {
-                            viewModel.sendIntent(MainEvent.GetProfile(uid))
+                            viewModel.channel.send(MainEvent.GetProfile(uid))
                         }
                     }
                     dialog = !dialog
@@ -176,126 +183,10 @@ fun MainScreen(
                         launchSingleTop = true
                         restoreState = true
                     }
-                    /*if (currentDestinationInner?.hierarchy?.any { it.route == InnerScreenManager.HomeInnerScreen.route } == false) {
-                        navControllerInnerScreen.popBackStack()
-                        navControllerInnerScreen.navigate(InnerScreenManager.HomeInnerScreen.route) {
-                            popUpTo(navControllerInnerScreen.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }*/
                 }
             )
         },
         list = {
-            /*NavHost(
-                modifier = Modifier,
-                navController = navControllerInnerScreen,
-                startDestination = InnerScreenManager.HomeInnerScreen.route,
-                builder = {
-                    composable(route = InnerScreenManager.HomeInnerScreen.route) {
-                        Scaffold(
-                            topBar = {
-                                TopBar(
-                                    onAvatarClick = {
-                                        val uid = getInt("uid")
-                                        if (uid != -1) {
-                                            scope.launch {
-                                                viewModel.sendIntent(MainEvent.GetProfile(uid))
-                                            }
-                                        }
-                                        dialog = !dialog
-                                    },
-                                    onSearch = {
-                                        scope.launch {
-                                            viewModel.channel.send(MainEvent.GetSearch(it))
-                                        }
-                                        navControllerInnerScreen.navigate(InnerScreenManager.SearchInnerScreen.route)
-                                    },
-                                    viewModel = viewModel
-                                )
-                            },
-                            floatingActionButton = {
-                                val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
-                                val currentDestination = navBackStackEntry?.destination
-                                if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                                    FloatingActionButton(onClick = { }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = null
-                                        )
-                                    }
-                                }
-                            },
-                            bottomBar = {
-                                if (configuration.screenWidthDp < 800) {
-//                                    BottomBar(navController = navControllerPager, items)
-                                    var index by rememberSaveable {
-                                        mutableStateOf(0)
-                                    }
-
-                                    BottomBar(
-                                        items = items,
-                                        selectedItemIndex = index,
-                                        onNavigate = {
-                                            index = it
-                                            navControllerPager.navigate(items[index].route) {
-                                                popUpTo(navControllerPager.graph.findStartDestination().id) {
-                                                    saveState = true
-                                                }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        }
-                                    )
-                                }
-                            },
-                        ) {
-                            NavHost(
-                                modifier = Modifier.padding(it),
-                                navController = navControllerPager,
-                                startDestination = PagerManager.HomePager.route,
-                                builder = {
-                                    composable(route = PagerManager.HomePager.route) {
-                                        HomePager(
-                                            navControllerScreen = navControllerScreen,
-                                            navControllerInnerScreen = navControllerInnerScreen,
-                                            navControllerPager = navControllerPager,
-                                            setIsDetailOpen = {
-                                                isDetailOpen = it
-                                            },
-                                            viewModel = viewModel
-                                        )
-                                    }
-                                    composable(route = PagerManager.MessagePager.route) {
-                                        MessagePager(viewModel = viewModel)
-                                    }
-                                    composable(route = PagerManager.SettingsPager.route) {
-                                        SettingsPager(viewModel = viewModel)
-                                    }
-                                }
-                            )
-                        }
-                    }
-
-                    composable(route = InnerScreenManager.TodaySelectionInnerScreen.route) {
-                        TodaySelectionInnerScreen(
-                            navControllerScreen = navControllerScreen,
-                            navControllerInnerScreen = navControllerInnerScreen,
-                            viewModel = viewModel
-                        )
-                    }
-
-                    composable(route = InnerScreenManager.SearchInnerScreen.route) {
-                        SearchInnerScreen(
-                            navControllerInnerScreen = navControllerInnerScreen,
-                            viewModel = viewModel
-                        )
-                    }
-                }
-            )*/
             ListBlock(
                 navControllerScreen = navControllerScreen,
                 navControllerInnerScreen = navControllerInnerScreen,
@@ -309,6 +200,7 @@ fun MainScreen(
         },
         detail = {
             DetailBlock(
+                navControllerInnerScreen = navControllerInnerScreen,
                 windowSizeClass = windowSizeClass,
                 setIsDetailOpen = { isDetailOpen = it },
                 viewModel = viewModel
@@ -322,7 +214,20 @@ fun MainScreen(
         }
         CustomDialog(
             onDismissRequest = { dialog = false },
-            navControllerScreen = navControllerScreen
+            onLogout = {
+                scope.launch {
+                    viewModel.channel.send(MainEvent.LogoutAccount)
+                    dialog = false
+                    MyApplication.context.showToastString("已退出登陆")
+                }
+            },
+            onLogin = {
+                if (!getBoolean(name = Constants.CONFIG_PREFS, key = "LOGIN_STATUS")) {
+                    dialog = false
+                    navControllerScreen.navigate(ScreenManager.LoginScreen.route)
+                }
+            },
+            viewModel = viewModel
         )
     }
 }
@@ -351,11 +256,12 @@ private fun ListBlock(
                 Scaffold(
                     topBar = {
                         TopBar(
+                            widthSizeClass = widthSizeClass,
                             onAvatarClick = {
                                 val uid = getInt("uid")
                                 if (uid != -1) {
                                     scope.launch {
-                                        viewModel.sendIntent(MainEvent.GetProfile(uid))
+                                        viewModel.channel.send(MainEvent.GetProfile(uid))
                                     }
                                 }
                                 showDialog(true)
@@ -370,15 +276,35 @@ private fun ListBlock(
                         )
                     },
                     floatingActionButton = {
+                        var dialog by remember {
+                            mutableStateOf(false)
+                        }
+
                         val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
                         val currentDestination = navBackStackEntry?.destination
                         if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                            FloatingActionButton(onClick = { }) {
+                            FloatingActionButton(onClick = { navControllerScreen.navigate(ScreenManager.PostScreen.route) }) {
                                 Icon(
                                     imageVector = Icons.Default.Add,
                                     contentDescription = null
                                 )
                             }
+                        }
+
+                        AnimatedVisibility(visible = dialog) {
+                            AlertDialog(
+                                onDismissRequest = { dialog = false },
+                                confirmButton = {
+                                    Button(onClick = {
+                                        dialog = false
+                                        scope.launch {
+                                            viewModel.channel.send(MainEvent.CreateFeed("SEND TIME: ${System.currentTimeMillis()}"))
+                                        }
+                                    }) {
+                                        Text(text = "sub")
+                                    }
+                                }
+                            )
                         }
                     },
                     bottomBar = {
@@ -450,12 +376,29 @@ private fun ListBlock(
                     viewModel = viewModel
                 )
             }
+
+            composable(route = InnerScreenManager.UserSpaceInnerScreen.route) {
+                UserSpaceInnerScreen(
+                    navControllerInnerScreen = navControllerInnerScreen,
+                    setIsDetailOpen = setIsDetailOpen,
+                    viewModel = viewModel
+                )
+            }
+
+            composable(route = InnerScreenManager.TopicInnerScreen.route) {
+                TopicInnerScreen(
+                    navControllerInnerScreen = navControllerInnerScreen,
+                    setIsDetailOpen = setIsDetailOpen,
+                    viewModel = viewModel
+                )
+            }
         }
     )
 }
 
 @Composable
 private fun DetailBlock(
+    navControllerInnerScreen: NavHostController,
     windowSizeClass: WindowSizeClass,
     setIsDetailOpen: (Boolean) -> Unit,
     viewModel: MainViewModel
@@ -506,11 +449,16 @@ private fun DetailBlock(
             }
 
             is DetailsState.Success -> {
-                val detailsEntity = (detailsState as DetailsState.Success).detailsEntity
+                val detailsModel = (detailsState as DetailsState.Success).detailsEntity
+
+                LaunchedEffect(key1 = detailsModel) {
+                    viewModel.channel.send(MainEvent.GetReply(detailsModel.data.id))
+                }
 
                 DetailPager(
                     modifier = Modifier.fillMaxWidth(),
-                    detailsModel = detailsEntity,
+                    navControllerInnerScreen = navControllerInnerScreen,
+                    detailsModel = detailsModel,
                     windowSizeClass = windowSizeClass,
                     setIsDetailOpen = setIsDetailOpen,
                     viewModel = viewModel
@@ -523,11 +471,11 @@ private fun DetailBlock(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TopBar(
+    widthSizeClass: WindowWidthSizeClass,
     onAvatarClick: () -> Unit,
     onSearch: (String) -> Unit,
-    viewModel: MainViewModel = viewModel()
+    viewModel: MainViewModel
 ) {
-    val configuration = LocalConfiguration.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -582,49 +530,23 @@ private fun TopBar(
                             Icon(imageVector = Icons.Default.Clear, contentDescription = "")
                         }
                     }
-                    if (configuration.screenWidthDp < 800) {
-                        /*IconButton(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(Color.Gray),
-                            onClick = {
-                                val uid = getInt("uid")
-                                if (uid != -1) {
-                                    scope.launch {
-                                        viewModel.sendIntent(MainIntent.GetProfile(uid))
-                                    }
-                                }
-                                dialog = !dialog
-                            }
-                        ) {
-                            AsyncImage(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(10.dp)),
-                                model = ImageRequest.Builder(context)
-                                    .data(
-                                        getString("userAvatar")
-                                            ?: R.drawable.ic_user_avatar
-                                    )
-                                    .crossfade(true)
-                                    .build(),
-                                contentDescription = null
-                            )
-                        }*/
 
+                    if (widthSizeClass == WindowWidthSizeClass.Compact) {
                         AsyncImage(
                             modifier = Modifier
                                 .padding(6.dp, 6.dp, 2.dp, 6.dp)
                                 .fillMaxHeight()
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .background(Color.Gray)
                                 .clickableNoRipple {
                                     onAvatarClick()
                                 },
                             model = ImageRequest.Builder(context)
                                 .data(
-                                    getString("userAvatar")
-                                        ?: R.drawable.ic_user_avatar
+                                    getString(
+                                        key = "USER_AVATAR",
+                                        name = Constants.USER_INFO_PREFS
+                                    ) ?: R.drawable.ic_user_background
                                 )
                                 .crossfade(true)
                                 .build(),
@@ -785,8 +707,10 @@ private fun RailBar(
                     .clip(RoundedCornerShape(7.dp)),
                 model = ImageRequest.Builder(context)
                     .data(
-                        getString("userAvatar")
-                            ?: R.drawable.baseline_supervised_user_circle_24
+                        getString(
+                            key = "USER_AVATAR",
+                            name = Constants.USER_INFO_PREFS
+                        ) ?: R.drawable.ic_user_background
                     )
                     .crossfade(true)
                     .build(),
@@ -864,7 +788,9 @@ private fun BottomBar(
 @Composable
 private fun CustomDialog(
     onDismissRequest: () -> Unit,
-    navControllerScreen: NavHostController
+    onLogout: () -> Unit,
+    onLogin: () -> Unit,
+    viewModel: MainViewModel
 ) {
     Dialog(onDismissRequest = { onDismissRequest() }) {
         Column(
@@ -875,6 +801,14 @@ private fun CustomDialog(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val context = LocalContext.current
+
+            getInt(name = Constants.USER_INFO_PREFS, key = "UID", defValue = -1).apply {
+                if (this != -1) {
+                    LaunchedEffect(key1 = true, block = {
+                        viewModel.channel.send(MainEvent.GetProfile(this@apply))
+                    })
+                }
+            }
 
             Text(
                 modifier = Modifier
@@ -905,20 +839,17 @@ private fun CustomDialog(
                     modifier = Modifier
                         .size(35.dp)
                         .clip(CircleShape)
+                        .clickableNoRipple {
+                            onLogin()
+                        }
                         .constrainAs(avatarRef) {
                             start.linkTo(parent.start, 15.dp)
                             top.linkTo(parent.top, 15.dp)
-                        }
-                        .clickableNoRipple {
-                            if (!getBoolean("isLogin")) {
-                                onDismissRequest()
-                            }
-                            navControllerScreen.navigate(ScreenManager.LoginScreen.route)
                         },
                     model = ImageRequest.Builder(context)
                         .data(
-                            getString("userAvatar")
-                                ?: R.drawable.baseline_supervised_user_circle_24
+                            getString(key = "USER_AVATAR", name = Constants.USER_INFO_PREFS)
+                                ?: R.drawable.ic_user_background
                         )
                         .crossfade(true)
                         .build(),
@@ -931,7 +862,11 @@ private fun CustomDialog(
                             start.linkTo(avatarRef.end, 10.dp)
                             top.linkTo(avatarRef.top)
                         },
-                    text = getString("username") ?: "游客",
+                    text = getString(
+                        key = "USER_NAME",
+                        defValue = "游客",
+                        name = Constants.USER_INFO_PREFS
+                    )!!,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -943,7 +878,13 @@ private fun CustomDialog(
                             start.linkTo(avatarRef.end, 10.dp)
                             top.linkTo(usernameRef.bottom, 5.dp)
                         },
-                    text = "Lv.${getInt("level")}",
+                    text = "Lv.${
+                        getInt(
+                            key = "LEVEL",
+                            defValue = -1,
+                            name = Constants.USER_INFO_PREFS
+                        )
+                    }", // level
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -955,7 +896,19 @@ private fun CustomDialog(
                             start.linkTo(userLevelRef.end, 25.dp)
                             top.linkTo(userLevelRef.top)
                         },
-                    text = "${getInt("experience")}/${getInt("next_level_experience")}",
+                    text = "${
+                        getInt(
+                            key = "EXPERIENCE",
+                            defValue = 0,
+                            name = Constants.USER_INFO_PREFS
+                        )
+                    }/${
+                        getInt(
+                            key = "NEXT_LEVEL_EXPERIENCE",
+                            defValue = 100,
+                            name = Constants.USER_INFO_PREFS
+                        )
+                    }",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -969,9 +922,17 @@ private fun CustomDialog(
                             end.linkTo(experienceRef.end)
                             width = Dimension.fillToConstraints
                         },
-                    currentValue = getInt("experience"),
+                    currentValue = getInt(
+                        key = "EXPERIENCE",
+                        defValue = 0,
+                        name = Constants.USER_INFO_PREFS
+                    ),
                     strokeWidth = 10f,
-                    maxValue = getInt("next_level_experience"),
+                    maxValue = getInt(
+                        key = "NEXT_LEVEL_EXPERIENCE",
+                        defValue = 100,
+                        name = Constants.USER_INFO_PREFS
+                    ),
                     primaryColor = MaterialTheme.colorScheme.primary,
                     secondaryColor = MaterialTheme.colorScheme.primaryContainer
                 )
@@ -988,19 +949,19 @@ private fun CustomDialog(
                 ) {
                     val follow = buildAnnotatedString {
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(getInt("follow").toString())
+                            append(getInt(name = Constants.USER_INFO_PREFS, key = "FOLLOW", defValue = -1).toString())
                         }
                         append("\n${stringResource(id = R.string.follow)}")
                     }
                     val fans = buildAnnotatedString {
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(getInt("fans").toString())
+                            append(getInt(name = Constants.USER_INFO_PREFS, key = "FANS", defValue = -1).toString())
                         }
                         append("\n${stringResource(id = R.string.fans)}")
                     }
                     val feed = buildAnnotatedString {
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(getInt("feed").toString())
+                            append(getInt(name = Constants.USER_INFO_PREFS, key = "FEED", defValue = -1).toString())
                         }
                         append("\n${stringResource(id = R.string.feed)}")
                     }
@@ -1052,8 +1013,14 @@ private fun CustomDialog(
                     IconText(text = "我的话题", icon = R.drawable.baseline_label_24)
                     IconText(text = "浏览历史", icon = R.drawable.baseline_history_24)
                     IconText(text = "我的收藏", icon = R.drawable.baseline_star_24)
-                    if (getBoolean("isLogin")) {
-                        IconText(text = "退出登陆", icon = R.drawable.baseline_exit_to_app_24)
+                    if (getBoolean(name = Constants.CONFIG_PREFS, key = "LOGIN_STATUS")) {
+                        IconText(
+                            modifier = Modifier.clickableNoRipple {
+                                onLogout()
+                            },
+                            text = "退出登陆",
+                            icon = R.drawable.baseline_exit_to_app_24
+                        )
                     }
                 }
             }

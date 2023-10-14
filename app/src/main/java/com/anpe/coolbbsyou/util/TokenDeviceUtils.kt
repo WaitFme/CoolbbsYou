@@ -4,14 +4,13 @@ import android.content.Context
 import android.os.Build
 import android.provider.Settings
 import com.anpe.coolbbsyou.constant.Constants
-import com.anpe.coolbbsyou.data.local.entity.deviceInfo.DeviceInfoEntity
 import com.anpe.coolbbsyou.util.Utils.Companion.getBase64
 import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
 
 class TokenDeviceUtils {
     companion object {
-        private fun DeviceInfoEntity.createDeviceCode(isRaw: Boolean = true) =
-            "$aid; ; ; $mac; $manuFactor; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
+        private fun createDeviceCode(aid: String, mac: String, manufacturer: String, brand: String, model: String, buildNumber: String, isRaw: Boolean = true
+        ) = "$aid; ; ; $mac; $manufacturer; $brand; $model; $buildNumber".getBase64(isRaw).reversed()
 
         private fun getDeviceCode(context: Context): String {
             val aid = Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
@@ -21,7 +20,7 @@ class TokenDeviceUtils {
             val model = Build.MODEL
             val buildNumber = "CoolbbsYou ${Build.VERSION.RELEASE}"
 
-            return DeviceInfoEntity(aid, mac, manuFactor, brand, model, buildNumber).createDeviceCode()
+            return createDeviceCode(aid, mac, manuFactor, brand, model, buildNumber)
         }
 
         fun String.getTokenV2(): String {
@@ -31,7 +30,8 @@ class TokenDeviceUtils {
             val md5TimeStamp = timeStamp.getMD5()
             val md5DeviceCode = this.getMD5()
 
-            val token = "${Constants.APP_LABEL}?$md5TimeStamp$$md5DeviceCode&${Constants.APP_ID}"
+            val token =
+                "${Constants.APP_LABEL}?$md5TimeStamp$$md5DeviceCode&${Constants.APP_ID_VALUE}"
             val base64Token = token.getBase64()
             val md5Base64Token = base64Token.getMD5()
             val md5Token = token.getMD5()
@@ -43,7 +43,7 @@ class TokenDeviceUtils {
         }
 
         fun getLastingDeviceCode(context: Context): String {
-            val sp = context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
+            val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
             return sp.getString("DEVICE_CODE", null).let {
                 it ?: getDeviceCode(context).apply {
                     sp.edit().putString("DEVICE_CODE", this).apply()
@@ -51,8 +51,34 @@ class TokenDeviceUtils {
             }
         }
 
+        fun getDeviceCodeNew(context: Context): String {
+            val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
+
+            val aid = sp.getString("AID", let {
+                val aid =
+                    Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+                sp.edit().putString("AID", aid).apply()
+                aid
+            })
+
+            val buildNumber = sp.getString("BUILD_NUMBER", let {
+                val bn = "CoolbbsYou ${Build.VERSION.RELEASE}"
+                sp.edit().putString("BUILD_NUMBER", bn).apply()
+                bn
+            })
+
+            return createDeviceCode(
+                aid!!,
+                Utils.randomMacAddress(),
+                sp.getString("MANUFACTURER", Build.MANUFACTURER)!!,
+                sp.getString("BRAND", Build.BRAND)!!,
+                sp.getString("MODEL", Build.MODEL)!!,
+                buildNumber!!
+            )
+        }
+
         fun getLastingInstallTime(context: Context): String {
-            val sp = context.getSharedPreferences(context.packageName, Context.MODE_PRIVATE)
+            val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
             return sp.getString("INSTALL_TIME", null).let {
                 it ?: System.currentTimeMillis().toString().apply {
                     sp.edit().putString("INSTALL_TIME", this).apply()

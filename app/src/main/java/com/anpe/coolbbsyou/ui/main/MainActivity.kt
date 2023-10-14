@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.anpe.coolbbsyou.ui.host.screen.FullImageScreen
 import com.anpe.coolbbsyou.ui.host.screen.LoginScreen
 import com.anpe.coolbbsyou.ui.host.screen.MainScreen
+import com.anpe.coolbbsyou.ui.host.screen.PostScreen
 import com.anpe.coolbbsyou.ui.host.screen.SplashScreen
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.theme.CoolbbsYouTheme
@@ -76,6 +77,12 @@ class MainActivity : ComponentActivity() {
                             }
                             composable(route = ScreenManager.FullImageScreen.route) {
                                 FullImageScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.PostScreen.route) {
+                                PostScreen(
                                     navControllerScreen = navControllerScreen,
                                     viewModel = viewModel
                                 )

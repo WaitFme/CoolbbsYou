@@ -18,15 +18,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,12 +36,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,11 +53,13 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.navigation.NavHostController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
@@ -65,113 +68,162 @@ import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
 import com.anpe.coolbbsyou.data.remote.domain.reply.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.ReplyState
+import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.MyScaffold
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
+import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
+import kotlinx.coroutines.launch
 
 @Composable
 fun DetailPager(
     modifier: Modifier = Modifier,
+    navControllerInnerScreen: NavHostController,
     detailsModel: DetailsModel,
     windowSizeClass: WindowSizeClass,
     setIsDetailOpen: (Boolean) -> Unit,
     viewModel: MainViewModel
 ) {
     Surface(modifier = Modifier.offset(1.dp)) {
-        val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
-
-        LaunchedEffect(key1 = true, block = {
-            viewModel.sendIntent(MainEvent.GetReply(detailsModel.data.id))
-        })
+        val scope = rememberCoroutineScope()
 
         val replyState by viewModel.replyState.collectAsState()
 
+        val followModel by viewModel.followState.collectAsState()
+
+        val likeState by viewModel.likeState.collectAsState()
+
+        val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
+
         val lazyPagingItems = (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
 
+        val followStatus = detailsModel.data.userAction.follow or followModel.data == 1
+
         MyScaffold(
-            topBar = { TopBar(entity = detailsModel, setIsDetailOpen = setIsDetailOpen) },
-            content = {
-                Column(modifier = modifier.padding(top = it.calculateTopPadding())) {
-                    when (widthSizeClass) {
-                        WindowWidthSizeClass.Expanded -> {
-                            Row {
-                                ContentBlock(
-                                    modifier = Modifier
-                                        .weight(1.5f)
-                                        .verticalScroll(rememberScrollState()),
-                                    detailsModel = detailsModel
+            topBar = {
+                TopBar(
+                    userAvatar = detailsModel.data.userAvatar,
+                    username = detailsModel.data.username,
+                    deviceTitle = detailsModel.data.deviceTitle,
+                    followStatus = followStatus,
+                    likeStatus = detailsModel.data.userAction.like == 1 || likeState.isLike,
+                    setIsDetailOpen = setIsDetailOpen,
+                    onFollow = {
+                        scope.launch {
+                            viewModel.channel.send(
+                                if (followStatus) MainEvent.Unfollow(detailsModel.data.uid) else MainEvent.Follow(
+                                    detailsModel.data.uid
                                 )
-
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .background(MaterialTheme.colorScheme.surface)
-                                        .fillMaxHeight()
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(15.dp)
-                                            .alpha(0.5f)
-                                    ) {
-                                        Text(
-                                            modifier = Modifier.align(Alignment.CenterStart),
-                                            text = "共${detailsModel.data.replynum}回复"
-                                        )
-                                    }
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        contentPadding = PaddingValues(bottom = 15.dp),
-                                        content = {
-                                            items(lazyPagingItems) {
-                                                it?.apply {
-                                                    ReplyItem(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        data = this,
-                                                        itemPadding = PaddingValues(
-                                                            15.dp,
-                                                            7.dp,
-                                                            15.dp,
-                                                            15.dp
-                                                        )
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        else -> {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(bottom = 15.dp),
-                                content = {
-                                    item {
-                                        ContentBlock(modifier = Modifier, detailsModel = detailsModel)
-                                    }
-                                    items(lazyPagingItems) {
-                                        it?.apply {
-                                            ReplyItem(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                data = this,
-                                                itemPadding = PaddingValues(
-                                                    15.dp,
-                                                    7.dp,
-                                                    15.dp,
-                                                    15.dp
-                                                )
-                                            )
-                                        }
-                                    }
-                                }
                             )
                         }
+                    },
+                    onLike = {
+                        scope.launch {
+                            viewModel.channel.send(
+                                if (it) MainEvent.Unlike(detailsModel.data.id) else MainEvent.Like(
+                                    detailsModel.data.id
+                                )
+                            )
+                        }
+                    },
+                    onClickUser = {
+                        scope.launch {
+                            viewModel.channel.send(MainEvent.GetSpace(detailsModel.data.uid))
+                            navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
+                        }
+                    }
+                )
+            },
+            content = {
+                Column(
+                    modifier = modifier
+                        .padding(top = it.calculateTopPadding())
+                ) {
+                    if (widthSizeClass == WindowWidthSizeClass.Expanded) {
+                        Row {
+                            ContentBlock(
+                                modifier = Modifier
+                                    .weight(1.5f)
+                                    .verticalScroll(rememberScrollState()),
+                                detailsModel = detailsModel
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .background(MaterialTheme.colorScheme.surface)
+                                    .fillMaxHeight()
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(15.dp)
+                                        .alpha(0.5f)
+                                ) {
+                                    Text(
+                                        modifier = Modifier.align(Alignment.CenterStart),
+                                        text = "共${detailsModel.data.replynum}回复"
+                                    )
+                                }
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(bottom = 15.dp),
+                                    content = {
+                                        items(lazyPagingItems) {
+                                            it?.apply {
+                                                ReplyItem(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    data = this,
+                                                    itemPadding = PaddingValues(
+                                                        15.dp,
+                                                        7.dp,
+                                                        15.dp,
+                                                        15.dp
+                                                    ),
+                                                    onClickUser = {
+                                                        scope.launch {
+                                                            viewModel.channel.send(MainEvent.GetSpace(it))
+                                                            navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
+                                                        }
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(bottom = 15.dp),
+                            content = {
+                                item {
+                                    ContentBlock(
+                                        modifier = Modifier,
+                                        detailsModel = detailsModel
+                                    )
+                                }
+                                items(lazyPagingItems) {
+                                    it?.apply {
+                                        ReplyItem(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            data = this,
+                                            itemPadding = PaddingValues(
+                                                15.dp,
+                                                7.dp,
+                                                15.dp,
+                                                15.dp
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        )
                     }
                 }
             },
@@ -180,7 +232,10 @@ fun DetailPager(
 }
 
 @Composable
-private fun ContentBlock(modifier: Modifier = Modifier, detailsModel: DetailsModel) {
+private fun ContentBlock(
+    modifier: Modifier = Modifier,
+    detailsModel: DetailsModel
+) {
     Column(modifier = modifier) {
         var status by remember {
             mutableStateOf(false)
@@ -192,7 +247,7 @@ private fun ContentBlock(modifier: Modifier = Modifier, detailsModel: DetailsMod
 
         HtmlText(
             modifier = Modifier
-                .padding(15.dp, 15.dp, 15.dp, 0.dp),
+                .padding(15.dp, 10.dp, 15.dp, 0.dp),
             fontSize = 16.sp,
             htmlText = detailsModel.data.message, openLink = {
                 println(it)
@@ -233,15 +288,27 @@ private fun ContentBlock(modifier: Modifier = Modifier, detailsModel: DetailsMod
 private fun ReplyItem(
     modifier: Modifier = Modifier,
     data: Data,
-    itemPadding: PaddingValues = PaddingValues(15.dp, 5.dp, 15.dp, 0.dp)
+    itemPadding: PaddingValues = PaddingValues(15.dp, 5.dp, 15.dp, 0.dp),
+    onClickUser: (Int) -> Unit = {},
+    onClickReply: (Int) -> Unit = {}
 ) {
     ConstraintLayout(modifier = modifier.padding(itemPadding)) {
         val (avatarRef, usernameRef, messageRef, picRef, funRef, replyRowsRef) = createRefs()
+
+        val verifyColor = when (data.userInfo.verifyIcon) {
+            "v_yellow" -> Color.Yellow
+            "v_green" -> Color.Green
+            "v_blue" -> Color.Blue
+            else -> MaterialTheme.colorScheme.primary
+        }
 
         AsyncImage(
             modifier = Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(10.dp))
+                .clickableNoRipple {
+                    onClickUser(data.uid)
+                }
                 .constrainAs(avatarRef) {
                     start.linkTo(parent.start)
                     top.linkTo(parent.top)
@@ -261,15 +328,7 @@ private fun ReplyItem(
                 },
             fontSize = 15.sp,
             text = data.username,
-            color = if (data.userInfo.verifyStatus == 1) {
-                if (data.userInfo.verifyTitle == "酷安认证: 酷安员工") {
-                    Color.Green
-                } else {
-                    Color.Yellow
-                }
-            } else {
-                MaterialTheme.colorScheme.primary
-            }
+            color = verifyColor
         )
 
         HtmlText(
@@ -325,7 +384,7 @@ private fun ReplyItem(
             ) {
                 Column(modifier = Modifier.padding(5.dp)) {
                     data.replyRows.forEach {
-                        Text(
+                        ClickableText(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape((7.5).dp))
@@ -336,10 +395,14 @@ private fun ReplyItem(
                                     append(it.username)
                                 }
                                 append(": ${it.message}")
-
                             },
-                            fontSize = 13.sp,
-                            lineHeight = 17.sp
+                            onClick = {index->
+                                if (index >= 1 && index < it.username.length + 1) {
+                                    onClickUser(it.uid)
+                                } else {
+                                    onClickReply(-1)
+                                }
+                            }
                         )
                     }
                 }
@@ -352,17 +415,25 @@ private fun ReplyItem(
 @Composable
 private fun TopBar(
     modifier: Modifier = Modifier,
-    entity: DetailsModel,
-    setIsDetailOpen: (Boolean) -> Unit
+    userAvatar: String,
+    username: String,
+    deviceTitle: String,
+    followStatus: Boolean,
+    likeStatus: Boolean,
+    setIsDetailOpen: (Boolean) -> Unit,
+    onFollow: () -> Unit,
+    onClickUser: () -> Unit,
+    onLike: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
 
+    var likeStatusInner by remember {
+        mutableStateOf(likeStatus)
+    }
+
     TopAppBar(
-        modifier = modifier
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-//            .offset(0.dp, (-1).dp)
-        ,
+        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
         navigationIcon = {
             if (!configuration.isTable()) {
                 IconButton(onClick = { setIsDetailOpen(false) }) {
@@ -379,9 +450,12 @@ private fun TopBar(
                     modifier = Modifier
                         .padding(end = 5.dp)
                         .size(35.dp)
-                        .clip(CircleShape),
+                        .clip(CircleShape)
+                        .clickableNoRipple {
+                            onClickUser()
+                        },
                     model = ImageRequest.Builder(context)
-                        .data(entity.data.userAvatar)
+                        .data(userAvatar)
                         .crossfade(true)
                         .build(),
                     contentDescription = "userAvatar"
@@ -389,12 +463,18 @@ private fun TopBar(
 
                 Column {
                     Text(
-                        text = entity.data.username,
-                        fontSize = 16.sp
+                        text = username,
+                        minLines = 1,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 14.sp
                     )
                     Text(
-                        text = entity.data.deviceTitle,
-                        fontSize = 12.sp
+                        text = deviceTitle,
+                        minLines = 1,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        fontSize = 10.sp
                     )
                 }
             }
@@ -403,25 +483,32 @@ private fun TopBar(
             /*IconButton(onClick = { *//*TODO*//* }) {
                 Icon(imageVector = Icons.Default.Add, contentDescription = "add")
             }*/
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(imageVector = Icons.Default.ThumbUp, contentDescription = "add")
+            IconButton(onClick = {
+                onLike(likeStatusInner)
+                likeStatusInner = !likeStatusInner
+            }) {
+                Icon(
+                    imageVector = Icons.Default.ThumbUp,
+                    contentDescription = "add",
+                    tint = if (likeStatusInner) MaterialTheme.colorScheme.primary else LocalContentColor.current
+                )
             }
             /*IconButton(onClick = { *//*TODO*//* }) {
                 Icon(imageVector = Icons.Default.FavoriteBorder, contentDescription = "add")
             }*/
-            IconButton(onClick = { /*TODO*/ }) {
+            /*IconButton(onClick = { *//*TODO*//* }) {
                 Icon(imageVector = Icons.Default.Send, contentDescription = "add")
-            }
+            }*/
 
             TextButton(
                 modifier = Modifier
                     .padding(end = 12.dp),
                 contentPadding = PaddingValues(2.dp),
-                onClick = {
-                    // 订阅
-                }) {
-                Text(modifier = Modifier, text = "订阅")
-            }
+                onClick = onFollow,
+                content = {
+                    Text(modifier = Modifier, text = if (followStatus) "已订阅" else "订阅")
+                }
+            )
         }
     )
 }

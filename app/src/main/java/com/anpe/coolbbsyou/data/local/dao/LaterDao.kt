@@ -15,9 +15,9 @@ interface LaterDao {
     @Delete
     fun deleteLater(vararg laterEntity: LaterEntity)
 
-    @Query("DELETE FROM LaterEntity")
+    @Query("DELETE FROM later_table")
     fun deleteAllLater()
 
-    @Query("SELECT * FROM LaterEntity")
+    @Query("SELECT * FROM later_table")
     fun getAllLater(): Flow<List<LaterEntity>>
 }

@@ -2,7 +2,6 @@ package com.anpe.coolbbsyou.ui.main
 
 import android.app.Application
 import android.content.Context
-import android.content.SharedPreferences
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,17 +9,21 @@ import androidx.navigation.NavHostController
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
+import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.data.page.IndexSource
 import com.anpe.coolbbsyou.data.page.NotificationSource
 import com.anpe.coolbbsyou.data.page.ReplySource
 import com.anpe.coolbbsyou.data.page.SearchPaging
-import com.anpe.coolbbsyou.data.remote.domain.like.LikeModel
+import com.anpe.coolbbsyou.data.remote.cookie.MyCookieStore
+import com.anpe.coolbbsyou.data.remote.domain.createFeed.CreateFeedModel
+import com.anpe.coolbbsyou.data.remote.domain.follow.FollowModel
 import com.anpe.coolbbsyou.data.remote.domain.profile.ProfileModel
 import com.anpe.coolbbsyou.data.remote.repository.RemoteRepository
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.IndexImageState
 import com.anpe.coolbbsyou.intent.state.IndexState
+import com.anpe.coolbbsyou.intent.state.LikeState
 import com.anpe.coolbbsyou.intent.state.LoginInfoState
 import com.anpe.coolbbsyou.intent.state.LoginState
 import com.anpe.coolbbsyou.intent.state.NotificationState
@@ -29,24 +32,37 @@ import com.anpe.coolbbsyou.intent.state.ReplyState
 import com.anpe.coolbbsyou.intent.state.SearchState
 import com.anpe.coolbbsyou.intent.state.SuggestState
 import com.anpe.coolbbsyou.intent.state.TodayState
+import com.anpe.coolbbsyou.intent.state.feedList.FeedListState
+import com.anpe.coolbbsyou.intent.state.space.SpaceState
+import com.anpe.coolbbsyou.intent.state.topic.TopicState
 import com.anpe.coolbbsyou.ui.host.screen.FullScreenItem
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
+import com.anpe.coolbbsyou.util.LoginUtils.Companion.getRequestHash
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
         private val TAG = MainViewModel::class.simpleName
+
+        fun Exception.message() = this.localizedMessage ?: "UNKNOWN"
     }
 
     private val repository = RemoteRepository()
 
-    private val sp: SharedPreferences =
-        application.getSharedPreferences(application.packageName, Context.MODE_PRIVATE)
+    private val configSp =
+        application.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
+
+    private val userInfoSp =
+        application.getSharedPreferences(Constants.USER_INFO_PREFS, Context.MODE_PRIVATE)
+
+    private val cookieSp =
+        application.getSharedPreferences(Constants.COOKIE_PREFS, Context.MODE_PRIVATE)
 
     val channel = Channel<MainEvent>(Channel.UNLIMITED)
 
@@ -83,13 +99,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _replyState = MutableStateFlow<ReplyState>(ReplyState.Idle)
     val replyState: StateFlow<ReplyState> = _replyState
 
+    private val _createFeedState = MutableStateFlow(CreateFeedModel())
+    val createFeedState = _createFeedState.asStateFlow()
+
+    private val _spaceState = MutableStateFlow<SpaceState>(SpaceState.Idle)
+    val spaceState = _spaceState.asStateFlow()
+
+    private val _topicState = MutableStateFlow<TopicState>(TopicState.Idle)
+    val topicState = _topicState.asStateFlow()
+
+    private val _feedListState = MutableStateFlow<FeedListState>(FeedListState.Idle)
+    val feedListState = _feedListState.asStateFlow()
+
+    private val _followState = MutableStateFlow(FollowModel())
+    val followState = _followState.asStateFlow()
+
+    private val _likeState = MutableStateFlow(LikeState())
+    val likeState = _likeState.asStateFlow()
+
     private val _picArray = MutableStateFlow(FullScreenItem())
     val picArray: StateFlow<FullScreenItem> = _picArray
 
-    var isLogin = false
+    private val isLogin = configSp.getBoolean("LOGIN_STATUS", false)
+
+    var requestHash: String? = null
 
     init {
-        isNineGrid(sp.getBoolean("IS_NINE_GRID", false))
+        isNineGrid(configSp.getBoolean("IS_NINE_GRID", false))
+
+        getLoginInfo()
 
         getIndexState()
 
@@ -107,16 +145,69 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     is MainEvent.GetSearch -> getSearch(it.keyword)
                     is MainEvent.GetTodayCool -> getTodayCool(it.url, it.page)
                     is MainEvent.LoginAccount -> loginAccount(it.account, it.passwd, it.requestHash)
+                    is MainEvent.LogoutAccount -> logoutAccount()
                     is MainEvent.GetLoginInfo -> getLoginInfo()
                     is MainEvent.GetProfile -> getProfile(it.uid)
                     is MainEvent.GetNotification -> getNotification()
                     is MainEvent.GetReply -> getReply(it.id)
-                    is MainEvent.Follow -> {}
-                    is MainEvent.Like -> {}
-                    is MainEvent.Unfollow -> {}
-                    is MainEvent.Unlike -> {}
+                    is MainEvent.Like -> getLike(it.id)
+                    is MainEvent.Unlike -> getUnlike(it.id)
+                    is MainEvent.Follow -> getFollow(it.uid)
+                    is MainEvent.Unfollow -> getUnFollow(it.uid)
+                    is MainEvent.CreateFeed -> createFeed(it.message)
+                    is MainEvent.GetSpace -> getUserSpace(it.uid)
+                    is MainEvent.GetTopic -> getTopic(it.topic)
+                    is MainEvent.GetFeedList -> getFeedList(it.uid, it.page)
                     else -> {}
                 }
+            }
+        }
+    }
+
+    private fun getFeedList(uid: Int, page: Int) {
+        viewModelScope.launch {
+            _feedListState.emit(FeedListState.Loading)
+            try {
+                val feedListModel = repository.getFeedList(uid, page)
+                _feedListState.emit(FeedListState.Success(feedListModel))
+            } catch (e: Exception) {
+                _feedListState.emit(FeedListState.Error(e.message()))
+            }
+        }
+    }
+
+    private fun getTopic(topic: String) {
+        viewModelScope.launch {
+            try {
+                _topicState.emit(TopicState.Loading)
+                val topicModel = repository.getTopic(topic)
+                _topicState.emit(TopicState.Success(topicModel))
+            } catch (e: Exception) {
+                println(e)
+                _topicState.emit(TopicState.Error(e.message()))
+            }
+        }
+    }
+
+    private fun getUserSpace(uid: Int) {
+        viewModelScope.launch {
+            _spaceState.emit(SpaceState.Loading)
+            try {
+                val spaceModel = repository.getSpace(uid)
+                _spaceState.emit(SpaceState.Success(spaceModel))
+            } catch (e: Exception) {
+                _spaceState.emit(SpaceState.Error(e.message()))
+            }
+        }
+    }
+
+    private fun createFeed(message: String) {
+        viewModelScope.launch {
+            try {
+                val feedModel = repository.createFeed(message)
+                _createFeedState.emit(feedModel)
+            } catch (e: Exception) {
+                Log.e(TAG, "createFeed: ${e.localizedMessage}")
             }
         }
     }
@@ -153,7 +244,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     IndexImageState.ImageRow
                 }
             )
-            sp.edit().putBoolean("IS_NINE_GRID", isNineGrid).apply()
+            configSp.edit().putBoolean("IS_NINE_GRID", isNineGrid).apply()
         }
     }
 
@@ -249,7 +340,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _loginState.emit(LoginState.LoggingIn)
             _loginState.emit(
                 try {
-                    LoginState.Success(repository.postAccount(requestHash, account, passwd))
+                    val postAccount = repository.postAccount(requestHash, account, passwd)
+                    Log.d(TAG, "loginAccount: $postAccount")
+                    LoginState.Success(postAccount)
                 } catch (e: Exception) {
                     LoginState.Error(e.localizedMessage ?: "UNKNOWN")
                 }
@@ -258,28 +351,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
+     * 退出账户
+     */
+    private fun logoutAccount() {
+        configSp.edit().putBoolean("LOGIN_STATUS", false).apply()
+        userInfoSp.edit().clear().apply()
+        MyCookieStore().removeAll()
+    }
+
+    /**
      * 登陆信息状态流
      */
     private fun getLoginInfo() {
         viewModelScope.launch {
             _loginInfoState.emit(LoginInfoState.Loading)
-            _loginInfoState.emit(
-                try {
-                    val loginStateEntity = repository.getLoginState()
-                    if (loginStateEntity.error == -1) {
-                        isLogin = false
-                        sp.edit().putBoolean("isLogin", isLogin).apply()
-                        LoginInfoState.Error("${loginStateEntity.message}+请登陆")
-                    } else {
-                        isLogin = true
-                        sp.edit().putInt("uid", loginStateEntity.data.uid.toInt()).apply()
-                        sp.edit().putBoolean("isLogin", isLogin).apply()
-                        LoginInfoState.Success(loginStateEntity)
-                    }
-                } catch (e: Exception) {
-                    LoginInfoState.Error(e.localizedMessage ?: "UNKNOWN")
+            try {
+                val loginInfoModel = repository.getLoginInfo()
+
+                var loginStatus = false
+
+                Log.d(TAG, "getLoginInfo: $loginInfoModel")
+
+                if (loginInfoModel.error == -1) {
+                    loginStatus = false
+                    _loginInfoState.emit(LoginInfoState.Error("${loginInfoModel.message}; 请登陆"))
+                } else {
+                    loginStatus = true
+                    userInfoSp.edit().putInt("UID", loginInfoModel.data.uid.toInt()).apply()
+                    _loginInfoState.emit(LoginInfoState.Success(loginInfoModel))
                 }
-            )
+                configSp.edit().putBoolean("LOGIN_STATUS", loginStatus).apply()
+            } catch (e: Exception) {
+                _loginInfoState.emit(LoginInfoState.Error(e.localizedMessage ?: "UNKNOWN"))
+            }
         }
     }
 
@@ -290,19 +394,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun getProfile(uid: Int) {
         viewModelScope.launch {
             _profileState.emit(ProfileState.Loading)
-            _profileState.emit(
-                try {
-                    if (isLogin) {
-                        val profileEntity = repository.getProfile(uid)
-                        saveProfile(profileEntity)
-                        ProfileState.Success(profileEntity)
-                    } else {
-                        ProfileState.Error("UN LOGIN")
-                    }
-                } catch (e: Exception) {
-                    ProfileState.Error(e.localizedMessage ?: "UNKNOWN")
+            try {
+                if (configSp.getBoolean("LOGIN_STATUS", false)) {
+                    val profileModel = repository.getProfile(uid)
+                    saveProfile(profileModel)
+                    _profileState.emit(ProfileState.Success(profileModel))
+                } else {
+                    _profileState.emit(ProfileState.UnLogin("UN LOGIN"))
                 }
-            )
+            } catch (e: Exception) {
+                _profileState.emit(ProfileState.Error(e.localizedMessage ?: "UNKNOWN"))
+            }
         }
     }
 
@@ -312,16 +414,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun saveProfile(profileModel: ProfileModel) {
         profileModel.data.apply {
-            sp.edit().putInt("uid", uid).apply()
-            sp.edit().putString("username", username).apply()
-            sp.edit().putInt("level", level).apply()
-            sp.edit().putInt("experience", experience).apply()
-            sp.edit().putInt("next_level_experience", nextLevelExperience).apply()
-            sp.edit().putInt("feed", feed).apply()
-            sp.edit().putInt("follow", follow).apply()
-            sp.edit().putInt("fans", fans).apply()
-            sp.edit().putString("next_level_percentage", nextLevelPercentage).apply()
-            sp.edit().putString("userAvatar", userAvatar).apply()
+            userInfoSp.edit().putInt("UID", uid).apply()
+            userInfoSp.edit().putString("USER_NAME", username).apply()
+            userInfoSp.edit().putInt("LEVEL", level).apply()
+            userInfoSp.edit().putInt("EXPERIENCE", experience).apply()
+            userInfoSp.edit().putInt("NEXT_LEVEL_EXPERIENCE", nextLevelExperience).apply()
+            userInfoSp.edit().putInt("FEED", feed).apply()
+            userInfoSp.edit().putInt("FOLLOW", follow).apply()
+            userInfoSp.edit().putInt("FANS", fans).apply()
+            userInfoSp.edit().putString("NEXT_LEVEL_PERCENTAGE", nextLevelPercentage).apply()
+            userInfoSp.edit().putString("USER_AVATAR", userAvatar).apply()
         }
     }
 
@@ -368,30 +470,70 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    suspend fun getLike(id: Int): LikeModel? {
-        return if (isLogin) {
-            repository.getLike(id = id)
-        } else {
-            null
+    private fun getFollow(uid: Int) {
+        viewModelScope.launch {
+            try {
+                val followModel = repository.getFollow(uid)
+                _followState.emit(followModel)
+            } catch (e: Exception) {
+                Log.e(TAG, "getFollow: ${e.localizedMessage}")
+            }
         }
     }
 
-    suspend fun getUnlike(id: Int): LikeModel? {
-        return if (isLogin) {
-            repository.getUnlike(id = id)
-        } else {
-            null
+    private fun getUnFollow(uid: Int) {
+        viewModelScope.launch {
+            try {
+                val followModel = repository.getUnFollow(uid)
+                _followState.emit(followModel)
+            } catch (e: Exception) {
+                Log.e(TAG, "getFollow: ${e.localizedMessage}")
+            }
         }
     }
 
-    suspend fun sendIntent(intent: MainEvent) {
-        channel.send(intent)
+    private fun getLike(id: Int) {
+        viewModelScope.launch {
+            try {
+                val likeModel = repository.getLike(id = id)
+                val likeState = LikeState(isLike = true, likeModel = likeModel)
+                _likeState.emit(likeState)
+            } catch (e: Exception) {
+                Log.e(TAG, "getLike: ${e.localizedMessage}")
+            }
+        }
     }
 
-    fun displayFullScreenImage(initialCount: Int = 0, picArr: List<String>, navHostControllerScreen: NavHostController) {
+    private fun getUnlike(id: Int) {
+        viewModelScope.launch {
+            try {
+                val likeModel = repository.getUnlike(id = id)
+                val likeState = LikeState(isLike = false, likeModel = likeModel)
+                _likeState.emit(likeState)
+            } catch (e: Exception) {
+                Log.e(TAG, "getUnlike: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun displayFullScreenImage(
+        initialCount: Int = 0,
+        picArr: List<String>,
+        navHostControllerScreen: NavHostController
+    ) {
         viewModelScope.launch {
             _picArray.emit(FullScreenItem(initialCount = initialCount, picArray = picArr))
             navHostControllerScreen.navigate(ScreenManager.FullImageScreen.route)
+        }
+    }
+
+    fun getRequestHash() {
+        viewModelScope.launch {
+            try {
+                requestHash = repository.getRequestHash().body()!!.string().getRequestHash()!!
+            } catch (e: Exception) {
+                Log.e(TAG, "getRequestHashTest: ${e.localizedMessage}")
+            }
         }
     }
 }

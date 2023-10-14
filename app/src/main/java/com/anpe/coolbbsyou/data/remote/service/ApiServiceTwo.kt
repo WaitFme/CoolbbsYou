@@ -1,19 +1,18 @@
 package com.anpe.coolbbsyou.data.remote.service
 
 import android.content.Context
-import com.anpe.coolbbsyou.data.remote.cookie.CookieManger
+import com.anpe.coolbbsyou.constant.Constants
+import com.anpe.coolbbsyou.data.remote.cookie.CookieManager
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Retrofit
 import retrofit2.http.GET
-import retrofit2.http.Header
+import retrofit2.http.Headers
 import java.util.concurrent.TimeUnit
 
 interface ApiServiceTwo {
     companion object {
-        private const val API_URL = "https://api.coolapk.com"
-        private const val API2_URL = "https://api2.coolapk.com"
         private const val ACCOUNT_URL = "https://account.coolapk.com"
 
         private var service: ApiServiceTwo? = null
@@ -21,7 +20,7 @@ interface ApiServiceTwo {
         fun getSerVice(context: Context): ApiServiceTwo {
             if (service == null) {
                 val client = OkHttpClient.Builder()
-                    .cookieJar(CookieManger(context))
+                    .cookieJar(CookieManager(context))
                     .callTimeout(5, TimeUnit.SECONDS)
                     .build()
 
@@ -37,8 +36,7 @@ interface ApiServiceTwo {
         }
     }
 
+    @Headers("User-Agent:${Constants.USER_AGENT_BAK}")
     @GET("/auth/loginByCoolApk")
-    fun getRequestHash(
-        @Header("X-Requested-With") requestedWith: String = "com.coolapk.market"
-    ): Call<ResponseBody>
+    fun getRequestHash(): Call<ResponseBody>
 }

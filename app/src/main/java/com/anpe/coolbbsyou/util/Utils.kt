@@ -196,6 +196,9 @@ class Utils {
         fun String.richToString(htmlCompat: Int = HtmlCompat.FROM_HTML_MODE_LEGACY) =
             HtmlCompat.fromHtml(this, htmlCompat).toString()
 
+        /**
+         * 用户群组
+         */
         fun ColorScheme.verifyColor(verifyStatus: Int, verifyTitle: String): Color {
             return if (verifyStatus == 1) {
                 if (verifyTitle == "酷安认证: 酷安员工") {
@@ -205,6 +208,23 @@ class Utils {
                 }
             } else {
                 this.primary
+            }
+        }
+
+        /**
+         * 数据简写
+         *
+         * @receiver 源数据
+         */
+        fun Int.numberAbbreviations(): String {
+            return if (this <= 2000) {
+                "$this"
+            } else if (this <= 10000000) {
+                val format = "%.2f".format(this / 1000f)
+                "${format}K"
+            } else {
+                val format = "%.2f".format(this / 1000000f)
+                "${format}M"
             }
         }
     }

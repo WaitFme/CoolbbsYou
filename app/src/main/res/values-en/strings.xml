@@ -25,6 +25,6 @@
     <string name="feed">feed</string>
     <string name="search_tip">CoolbbsYou</string>
 
-    <string name="account_label">Account</string>
-    <string name="passwd_label">Password</string>
+    <string name="account_label">Account Number</string>
+    <string name="passwd_label">Pass Word</string>
 </resources>

@@ -103,7 +103,7 @@ fun TwoPaneResponsiveLayout(
                 list = list,
                 detail = detail,
                 twoPaneStrategy = HorizontalTwoPaneStrategy(
-                    splitFraction = 1f / 3.2f,
+                    splitFraction = (1f / 3.2f),
                 ),
                 displayFeatures = displayFeatures
             )

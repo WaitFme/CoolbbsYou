@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +65,7 @@ import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.DialogImage
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
+import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
@@ -80,6 +82,8 @@ fun HomePager(
     val scope = rememberCoroutineScope()
 
     val indexState by viewModel.indexState.collectAsState()
+
+    val indexStateT = viewModel.indexState
 
     val lazyPagingItems = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
 
@@ -174,20 +178,16 @@ fun HomePager(
                                     }
 
                                     "feed" -> {
-                                        var likeNum by remember {
-                                            mutableStateOf(likenum)
-                                        }
-                                        var likeStatus by remember {
-                                            mutableStateOf(userAction?.let {
-                                                userAction.like == 1
-                                            } ?: false)
-                                        }
+                                        val likeState by viewModel.likeState.collectAsState()
+
+                                        val likeNum = if (likeState.likeModel.data == -1) it.likenum else likeState.likeModel.data
+
                                         FeedItem(
                                             modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
                                             data = this,
                                             isNineGrid = isNineGrid,
                                             likeNum = likeNum,
-                                            likeStatus = likeStatus,
+                                            likeStatus = this?.userAction?.like == 1 || likeState.isLike,
                                             onClick = {
                                                 scope.launch {
                                                     viewModel.channel.send(MainEvent.GetDetails(id)) // 48449942
@@ -197,25 +197,25 @@ fun HomePager(
                                             },
                                             onLike = {
                                                 scope.launch {
-                                                    if (likeStatus) {
-                                                        viewModel.getUnlike(it.id)?.apply {
-                                                            if (data != null) {
-                                                                likeNum = data
-                                                                likeStatus = false
-                                                            }
-                                                        }
-                                                    } else {
-                                                        viewModel.getLike(it.id)?.apply {
-                                                            if (data != null) {
-                                                                likeNum = data
-                                                                likeStatus = true
-                                                            }
-                                                        }
-                                                    }
+                                                    viewModel.channel.send(
+                                                        if (it) MainEvent.Unlike(id) else MainEvent.Like(id)
+                                                    )
                                                 }
                                             },
                                             onClickPic = {
                                                 viewModel.displayFullScreenImage(it, picArr, navControllerScreen)
+                                            },
+                                            onAvatar = {
+                                                scope.launch {
+                                                    viewModel.channel.send(MainEvent.GetSpace(it))
+                                                    navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
+                                                }
+                                            },
+                                            openLink = {
+                                                scope.launch {
+                                                    viewModel.channel.send(MainEvent.GetTopic(it))
+                                                    navControllerInnerScreen.navigate(InnerScreenManager.TopicInnerScreen.route)
+                                                }
                                             }
                                         )
                                     }
@@ -258,6 +258,7 @@ private fun BannerItem(modifier: Modifier = Modifier, data: Data, onClick: () ->
     val context = LocalContext.current
 
     val list = mutableListOf<String>()
+
     data.entities.forEach {
         when (it.title) {
             "今日酷安" -> {
@@ -269,28 +270,30 @@ private fun BannerItem(modifier: Modifier = Modifier, data: Data, onClick: () ->
         }
     }
 
-    val state = rememberPagerState(initialPage = 0) {
-        list.size
-    }
-    HorizontalPager(
-        modifier = modifier
-            .padding(bottom = 5.dp)
-            .clip(RoundedCornerShape(15.dp)),
-        state = state,
-//        pageSpacing = 10.dp
-    ) {
-        AsyncImage(
-            modifier = Modifier
-                .clip(RoundedCornerShape(15.dp))
-                .clickableNoRipple {
-                    onClick()
-                },
-            model = ImageRequest.Builder(context)
-                .data(list[it])
-                .build(),
-            contentScale = ContentScale.Crop,
-            contentDescription = "image"
-        )
+    if (list.isNotEmpty()) {
+        val state = rememberPagerState(initialPage = 0) {
+            list.size
+        }
+
+        HorizontalPager(
+            modifier = modifier
+                .padding(bottom = 5.dp)
+                .clip(RoundedCornerShape(15.dp)),
+            state = state,
+        ) {
+            AsyncImage(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(15.dp))
+                    .clickableNoRipple {
+                        onClick()
+                    },
+                model = ImageRequest.Builder(context)
+                    .data(list[it])
+                    .build(),
+                contentScale = ContentScale.Crop,
+                contentDescription = "image"
+            )
+        }
     }
 }
 
@@ -300,14 +303,16 @@ private fun FeedItem(
     data: Data,
     isNineGrid: Boolean,
     likeNum: Int = data.likenum,
-    likeStatus: Boolean = false,
+    likeStatus: Boolean,
     replyNum: Int = data.replynum,
     shareNum: Int = data.shareNum,
     onClick: () -> Unit,
-    onLike: (Data) -> Unit = {},
+    onLike: (Boolean) -> Unit = {},
     onReply: (Int) -> Unit = {},
     onShare: (Int) -> Unit = {},
-    onClickPic: (Int) -> Unit = {}
+    onClickPic: (Int) -> Unit = {},
+    onAvatar: (Int) -> Unit = {},
+    openLink: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -317,6 +322,10 @@ private fun FeedItem(
 
     var initialPage by remember {
         mutableStateOf(0)
+    }
+
+    var likeStatus by remember {
+        mutableStateOf(likeStatus)
     }
 
     Card(
@@ -343,6 +352,9 @@ private fun FeedItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
+                    .clickableNoRipple {
+                        onAvatar(data.uid)
+                    }
                     .constrainAs(proPicRef) {
                         start.linkTo(parent.start, 10.dp)
                         top.linkTo(parent.top, 10.dp)
@@ -362,26 +374,30 @@ private fun FeedItem(
                         top.linkTo(proPicRef.top)
                     },
                 text = data.username,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Bold,
                 fontSize = 15.sp
             )
 
-            Text(
+            HtmlText(
                 modifier = Modifier.constrainAs(infoHtmlRef) {
                     start.linkTo(nameRef.start)
                     top.linkTo(nameRef.bottom)
                 },
-                text = data.infoHtml,
-                fontSize = 11.sp
+                htmlText = data.infoHtml,
+                fontSize = 11.sp,
+                openLink = {}
             )
 
-            Text(
+            HtmlText(
                 modifier = Modifier
                     .constrainAs(deviceRef) {
                         start.linkTo(infoHtmlRef.end, 5.dp)
                         top.linkTo(infoHtmlRef.top)
                     },
-                text = data.deviceTitle,
-                fontSize = 11.sp
+                htmlText = data.deviceTitle,
+                fontSize = 11.sp,
+                openLink = {}
             )
 
             HtmlText(
@@ -394,7 +410,8 @@ private fun FeedItem(
                     },
                 htmlText = data.message,
                 openLink = {
-
+                    it.showToast()
+                    openLink(it)
                 }
             )
 
@@ -503,12 +520,13 @@ private fun FeedItem(
                     modifier = Modifier
                         .weight(1f)
                         .clickableNoRipple {
-                            onLike(data)
+                            onLike(likeStatus)
+                            likeStatus = !likeStatus
                         },
                     text = likeNum.toString(),
                     textDirection = TextDirection.Bottom,
                     iconId = R.drawable.baseline_thumb_up_alt_24,
-                    iconTint = if (likeStatus) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceTint
+                    iconTint = if (likeStatus) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
                 )
                 TextIcon(
                     modifier = Modifier
@@ -519,14 +537,14 @@ private fun FeedItem(
                     text = replyNum.toString(),
                     textDirection = TextDirection.Bottom,
                     iconId = R.drawable.baseline_chat_bubble_24,
-                    iconTint = MaterialTheme.colorScheme.surfaceTint
+                    iconTint = MaterialTheme.colorScheme.secondary
                 )
                 TextIcon(
                     modifier = Modifier.weight(1f),
                     iconId = R.drawable.baseline_share_24,
                     text = shareNum.let { if (it == 0) "Share" else it.toString() },
                     textDirection = TextDirection.Bottom,
-                    iconTint = MaterialTheme.colorScheme.surfaceTint
+                    iconTint = MaterialTheme.colorScheme.secondary
                 )
             }
         }
