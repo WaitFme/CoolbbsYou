@@ -5,9 +5,9 @@ import com.anpe.coolbbsyou.data.remote.domain.index.Data
 import kotlinx.coroutines.flow.Flow
 
 sealed class IndexState {
-    object Idle: IndexState()
+    data object Idle: IndexState()
 
-    object Loading: IndexState()
+    data object Loading: IndexState()
 
     data class Success(val pager: Flow<PagingData<Data>>): IndexState()
 

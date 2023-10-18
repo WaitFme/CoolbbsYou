@@ -93,15 +93,10 @@ import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.SuggestState
-import com.anpe.coolbbsyou.ui.host.innerScreen.SearchInnerScreen
-import com.anpe.coolbbsyou.ui.host.innerScreen.TodaySelectionInnerScreen
-import com.anpe.coolbbsyou.ui.host.innerScreen.TopicInnerScreen
-import com.anpe.coolbbsyou.ui.host.innerScreen.UserSpaceInnerScreen
-import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
-import com.anpe.coolbbsyou.ui.host.pager.DetailPager
+import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.host.pager.HomePager
 import com.anpe.coolbbsyou.ui.host.pager.MessagePager
-import com.anpe.coolbbsyou.ui.host.pager.SettingsPager
+import com.anpe.coolbbsyou.ui.host.pager.MyPager
 import com.anpe.coolbbsyou.ui.host.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
@@ -124,7 +119,6 @@ fun MainScreen(
 ) {
     val scope = rememberCoroutineScope()
 
-    val navControllerInnerScreen = rememberNavController()
     val navControllerPager = rememberNavController()
 
     val homeItem = NavigationItem(
@@ -138,9 +132,9 @@ fun MainScreen(
         route = PagerManager.MessagePager.route,
     )
     val settingItem = NavigationItem(
-        title = stringResource(id = PagerManager.SettingsPager.resourceId),
+        title = stringResource(id = PagerManager.MyPager.resourceId),
         icon = painterResource(id = R.drawable.baseline_settings_24),
-        route = PagerManager.SettingsPager.route,
+        route = PagerManager.MyPager.route,
     )
 
     val items = listOf(homeItem, messageItem, settingItem)
@@ -183,13 +177,15 @@ fun MainScreen(
                         launchSingleTop = true
                         restoreState = true
                     }
+                },
+                onSetting = {
+                    navControllerScreen.navigate(ScreenManager.SettingScreen.route)
                 }
             )
         },
         list = {
             ListBlock(
                 navControllerScreen = navControllerScreen,
-                navControllerInnerScreen = navControllerInnerScreen,
                 navControllerPager = navControllerPager,
                 items = items,
                 windowSizeClass = windowSizeClass,
@@ -200,7 +196,7 @@ fun MainScreen(
         },
         detail = {
             DetailBlock(
-                navControllerInnerScreen = navControllerInnerScreen,
+                navControllerScreen = navControllerScreen,
                 windowSizeClass = windowSizeClass,
                 setIsDetailOpen = { isDetailOpen = it },
                 viewModel = viewModel
@@ -235,7 +231,6 @@ fun MainScreen(
 @Composable
 private fun ListBlock(
     navControllerScreen: NavHostController,
-    navControllerInnerScreen: NavHostController,
     navControllerPager: NavHostController,
     items: List<NavigationItem>,
     windowSizeClass: WindowSizeClass,
@@ -247,158 +242,119 @@ private fun ListBlock(
 
     val widthSizeClass by rememberUpdatedState(windowSizeClass.widthSizeClass)
 
-    NavHost(
-        modifier = Modifier,
-        navController = navControllerInnerScreen,
-        startDestination = InnerScreenManager.HomeInnerScreen.route,
-        builder = {
-            composable(route = InnerScreenManager.HomeInnerScreen.route) {
-                Scaffold(
-                    topBar = {
-                        TopBar(
-                            widthSizeClass = widthSizeClass,
-                            onAvatarClick = {
-                                val uid = getInt("uid")
-                                if (uid != -1) {
-                                    scope.launch {
-                                        viewModel.channel.send(MainEvent.GetProfile(uid))
-                                    }
-                                }
-                                showDialog(true)
-                            },
-                            onSearch = {
-                                scope.launch {
-                                    viewModel.channel.send(MainEvent.GetSearch(it))
-                                }
-                                navControllerInnerScreen.navigate(InnerScreenManager.SearchInnerScreen.route)
-                            },
-                            viewModel = viewModel
-                        )
-                    },
-                    floatingActionButton = {
-                        var dialog by remember {
-                            mutableStateOf(false)
+    Scaffold(
+        topBar = {
+            TopBar(
+                widthSizeClass = widthSizeClass,
+                onAvatarClick = {
+                    val uid = getInt("uid")
+                    if (uid != -1) {
+                        scope.launch {
+                            viewModel.channel.send(MainEvent.GetProfile(uid))
                         }
+                    }
+                    showDialog(true)
+                },
+                onSearch = {
+                    scope.launch {
+                        viewModel.channel.send(MainEvent.GetSearch(it))
+                    }
+                    navControllerScreen.navigate(ScreenManager.SearchScreen.route)
+                },
+                viewModel = viewModel
+            )
+        },
+        floatingActionButton = {
+            var dialog by remember {
+                mutableStateOf(false)
+            }
 
-                        val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
-                        if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                            FloatingActionButton(onClick = { navControllerScreen.navigate(ScreenManager.PostScreen.route) }) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null
-                                )
-                            }
-                        }
-
-                        AnimatedVisibility(visible = dialog) {
-                            AlertDialog(
-                                onDismissRequest = { dialog = false },
-                                confirmButton = {
-                                    Button(onClick = {
-                                        dialog = false
-                                        scope.launch {
-                                            viewModel.channel.send(MainEvent.CreateFeed("SEND TIME: ${System.currentTimeMillis()}"))
-                                        }
-                                    }) {
-                                        Text(text = "sub")
-                                    }
-                                }
-                            )
-                        }
-                    },
-                    bottomBar = {
-                        when (widthSizeClass) {
-                            WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> {
-                                var index by rememberSaveable {
-                                    mutableStateOf(0)
-                                }
-
-                                BottomBar(
-                                    items = items,
-                                    selectedItemIndex = index,
-                                    onNavigate = {
-                                        index = it
-                                        navControllerPager.navigate(items[index].route) {
-                                            popUpTo(navControllerPager.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                )
-                            }
-
-                            WindowWidthSizeClass.Expanded -> {}
-                            else -> {}
-                        }
-                    },
-                ) {
-                    NavHost(
-                        modifier = Modifier.padding(it),
-                        navController = navControllerPager,
-                        startDestination = PagerManager.HomePager.route,
-                        builder = {
-                            composable(route = PagerManager.HomePager.route) {
-                                HomePager(
-                                    navControllerScreen = navControllerScreen,
-                                    navControllerInnerScreen = navControllerInnerScreen,
-                                    navControllerPager = navControllerPager,
-                                    setIsDetailOpen = setIsDetailOpen,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = PagerManager.MessagePager.route) {
-                                MessagePager(viewModel = viewModel)
-                            }
-                            composable(route = PagerManager.SettingsPager.route) {
-                                SettingsPager(viewModel = viewModel)
-                            }
-                        }
+            val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
+                FloatingActionButton(onClick = { navControllerScreen.navigate(ScreenManager.PostScreen.route) }) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null
                     )
                 }
             }
 
-            composable(route = InnerScreenManager.TodaySelectionInnerScreen.route) {
-                TodaySelectionInnerScreen(
-                    navControllerScreen = navControllerScreen,
-                    navControllerInnerScreen = navControllerInnerScreen,
-                    setIsDetailOpen = setIsDetailOpen,
-                    viewModel = viewModel
+            AnimatedVisibility(visible = dialog) {
+                AlertDialog(
+                    onDismissRequest = { dialog = false },
+                    confirmButton = {
+                        Button(onClick = {
+                            dialog = false
+                            scope.launch {
+                                viewModel.channel.send(MainEvent.CreateFeed("SEND TIME: ${System.currentTimeMillis()}"))
+                            }
+                        }) {
+                            Text(text = "sub")
+                        }
+                    }
                 )
             }
+        },
+        bottomBar = {
+            when (widthSizeClass) {
+                WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> {
+                    var index by rememberSaveable {
+                        mutableStateOf(0)
+                    }
 
-            composable(route = InnerScreenManager.SearchInnerScreen.route) {
-                SearchInnerScreen(
-                    navControllerInnerScreen = navControllerInnerScreen,
-                    setIsDetailOpen = setIsDetailOpen,
-                    viewModel = viewModel
-                )
-            }
+                    BottomBar(
+                        items = items,
+                        selectedItemIndex = index,
+                        onNavigate = {
+                            index = it
+                            navControllerPager.navigate(items[index].route) {
+                                popUpTo(navControllerPager.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
 
-            composable(route = InnerScreenManager.UserSpaceInnerScreen.route) {
-                UserSpaceInnerScreen(
-                    navControllerInnerScreen = navControllerInnerScreen,
-                    setIsDetailOpen = setIsDetailOpen,
-                    viewModel = viewModel
-                )
+                WindowWidthSizeClass.Expanded -> {}
+                else -> {}
             }
-
-            composable(route = InnerScreenManager.TopicInnerScreen.route) {
-                TopicInnerScreen(
-                    navControllerInnerScreen = navControllerInnerScreen,
-                    setIsDetailOpen = setIsDetailOpen,
-                    viewModel = viewModel
-                )
+        },
+    ) {
+        NavHost(
+            modifier = Modifier.padding(it),
+            navController = navControllerPager,
+            startDestination = PagerManager.HomePager.route,
+            builder = {
+                composable(route = PagerManager.HomePager.route) {
+                    HomePager(
+                        navControllerScreen = navControllerScreen,
+                        navControllerPager = navControllerPager,
+                        setIsDetailOpen = setIsDetailOpen,
+                        viewModel = viewModel
+                    )
+                }
+                composable(route = PagerManager.MessagePager.route) {
+                    MessagePager(viewModel = viewModel)
+                }
+                composable(route = PagerManager.MyPager.route) {
+                    MyPager(
+                        navControllerScreen = navControllerScreen,
+                        navControllerPager = navControllerPager,
+                        viewModel = viewModel
+                    )
+                }
             }
-        }
-    )
+        )
+    }
 }
 
 @Composable
 private fun DetailBlock(
-    navControllerInnerScreen: NavHostController,
+    navControllerScreen: NavHostController,
     windowSizeClass: WindowSizeClass,
     setIsDetailOpen: (Boolean) -> Unit,
     viewModel: MainViewModel
@@ -457,7 +413,7 @@ private fun DetailBlock(
 
                 DetailPager(
                     modifier = Modifier.fillMaxWidth(),
-                    navControllerInnerScreen = navControllerInnerScreen,
+                    navControllerScreen = navControllerScreen,
                     detailsModel = detailsModel,
                     windowSizeClass = windowSizeClass,
                     setIsDetailOpen = setIsDetailOpen,
@@ -679,7 +635,8 @@ private fun RailBar(
     items: List<NavigationItem>,
     selectedItemIndex: Int,
     avatarClick: () -> Unit,
-    onNavigate: (Int) -> Unit
+    onNavigate: (Int) -> Unit,
+    onSetting: () -> Unit ={}
 ) {
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -722,6 +679,7 @@ private fun RailBar(
             ConstraintLayout(modifier = Modifier.fillMaxHeight()) {
                 val (homeRef, messageRef, settingRef) = createRefs()
                 val refList = listOf(homeRef, messageRef, settingRef)
+                val testRef = createRef()
 
                 items.forEachIndexed { index, item ->
                     NavigationRailItem(
@@ -743,8 +701,8 @@ private fun RailBar(
 
                                     2 -> {
                                         start.linkTo(parent.start)
+                                        top.linkTo(settingRef.bottom)
                                         end.linkTo(parent.end)
-                                        bottom.linkTo(parent.bottom)
                                     }
 
                                     else -> {}
@@ -761,6 +719,26 @@ private fun RailBar(
                         onClick = { onNavigate(index) }
                     )
                 }
+
+                NavigationRailItem(
+                    modifier = Modifier
+                        .padding(top = 5.dp, bottom = 5.dp)
+                        .constrainAs(testRef) {
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
+                        },
+                    selected = false,
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_settings_24),
+                            contentDescription = "Setting"
+                        )
+                    },
+                    label = null,
+                    alwaysShowLabel = true,
+                    onClick = { onSetting() }
+                )
             }
         }
     )

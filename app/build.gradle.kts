@@ -92,7 +92,6 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.moshi.kotlin)
-    implementation(libs.toolbar.compose)
 
     ksp(libs.room.compiler)
     ksp(libs.moshi.kotlin.codegen)

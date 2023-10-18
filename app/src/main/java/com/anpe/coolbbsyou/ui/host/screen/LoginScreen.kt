@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,9 +73,13 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
             )
         },
         content = { pv ->
+            val context = LocalContext.current
+
             val scope = rememberCoroutineScope()
 
-            val context = LocalContext.current
+            val loginState by viewModel.loginState.collectAsState()
+
+            val globalState by viewModel.globalState.collectAsState()
 
             ConstraintLayout(
                 modifier = Modifier
@@ -193,12 +198,14 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                                 context.showToastString("请输入完整账号密码！")
                                 return@launch
                             }
-                            viewModel.requestHash?.let {
+                            val requestHash = globalState.requestHash
+
+                            if (requestHash.isNotEmpty()) {
                                 viewModel.channel.send(
                                     MainEvent.LoginAccount(
                                         account = account.text,
                                         passwd = passwd.text,
-                                        requestHash = it,
+                                        requestHash = requestHash,
                                         captcha = ""
                                     )
                                 )
@@ -219,12 +226,14 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                                     context.showToastString("请输入完整账号密码！")
                                     return@launch
                                 }
-                                viewModel.requestHash?.let {
+                                val requestHash = globalState.requestHash
+
+                                if (requestHash.isNotEmpty()) {
                                     viewModel.channel.send(
                                         MainEvent.LoginAccount(
                                             account = account.text,
                                             passwd = passwd.text,
-                                            requestHash = it,
+                                            requestHash = requestHash,
                                             captcha = ""
                                         )
                                     )
@@ -240,7 +249,7 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                 )
             }
 
-            LaunchedEffect(key1 = true, block = {
+            LaunchedEffect(key1 = loginState, block = {
                 val configSp = context.getSharedPreferences(Constants.CONFIG_PREFS, 0)
                 viewModel.loginState.collect {
                     when (it) {

@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -42,29 +41,27 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.data.local.entity.device.DeviceEntity
 import com.anpe.coolbbsyou.intent.event.MainEvent
-import com.anpe.coolbbsyou.intent.state.IndexImageState
+import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsPager(viewModel: MainViewModel = viewModel()) {
+fun MyPager(
+    navControllerScreen: NavHostController,
+    navControllerPager: NavHostController,
+    viewModel: MainViewModel
+) {
     val scope = rememberCoroutineScope()
 
     val context = LocalContext.current
 
     val configSp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
 
-    val indexImageState by viewModel.indexImageState.collectAsState()
-
-    val isNineGrid = when (indexImageState) {
-        IndexImageState.ImageRow -> false
-        IndexImageState.NineGrid -> true
-    }
+    val globalState by viewModel.globalState.collectAsState()
 
     Column(
         Modifier
@@ -72,7 +69,7 @@ fun SettingsPager(viewModel: MainViewModel = viewModel()) {
             .verticalScroll(rememberScrollState())
     ) {
         var checked by remember {
-            mutableStateOf(isNineGrid)
+            mutableStateOf(globalState.isNineGrid)
         }
 
         SettingsSwitchItem(
@@ -218,6 +215,13 @@ fun SettingsPager(viewModel: MainViewModel = viewModel()) {
                 }
             }
         }
+
+        SettingsItem(
+            title = "设置",
+            onClick = {
+                navControllerScreen.navigate(ScreenManager.SettingScreen.route)
+            }
+        )
     }
 }
 

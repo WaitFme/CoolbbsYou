@@ -125,9 +125,9 @@ data class Entity(
     @SerializedName("price_currency")
     val priceCurrency: String = "",
     @SerializedName("price_max")
-    val priceMax: Int = 0,
+    val priceMax: Float = 0f, // Int
     @SerializedName("price_min")
-    val priceMin: Int = 0,
+    val priceMin: Float = 0f, // Int
     @SerializedName("rank_status")
     val rankStatus: Int = 0,
     @SerializedName("rating_average_score")

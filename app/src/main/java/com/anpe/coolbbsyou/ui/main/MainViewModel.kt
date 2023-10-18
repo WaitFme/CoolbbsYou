@@ -33,9 +33,10 @@ import com.anpe.coolbbsyou.intent.state.SearchState
 import com.anpe.coolbbsyou.intent.state.SuggestState
 import com.anpe.coolbbsyou.intent.state.TodayState
 import com.anpe.coolbbsyou.intent.state.feedList.FeedListState
+import com.anpe.coolbbsyou.intent.state.global.GlobalState
+import com.anpe.coolbbsyou.intent.state.global.ImageArray
 import com.anpe.coolbbsyou.intent.state.space.SpaceState
 import com.anpe.coolbbsyou.intent.state.topic.TopicState
-import com.anpe.coolbbsyou.ui.host.screen.FullScreenItem
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.util.LoginUtils.Companion.getRequestHash
 import kotlinx.coroutines.async
@@ -117,12 +118,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _likeState = MutableStateFlow(LikeState())
     val likeState = _likeState.asStateFlow()
 
-    private val _picArray = MutableStateFlow(FullScreenItem())
-    val picArray: StateFlow<FullScreenItem> = _picArray
-
-    private val isLogin = configSp.getBoolean("LOGIN_STATUS", false)
-
-    var requestHash: String? = null
+    private val _globalState = MutableStateFlow(GlobalState())
+    val globalState = _globalState.asStateFlow()
 
     init {
         isNineGrid(configSp.getBoolean("IS_NINE_GRID", false))
@@ -237,6 +234,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun isNineGrid(isNineGrid: Boolean) {
         viewModelScope.launch {
+            _globalState.value.isNineGrid = isNineGrid
             _indexImageState.emit(
                 if (isNineGrid) {
                     IndexImageState.NineGrid
@@ -435,7 +433,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _notificationState.emit(NotificationState.Loading)
             _notificationState.emit(
                 try {
-                    if (isLogin) {
+                    if (globalState.value.isLogin) {
                         NotificationState.Success(Pager(
                             PagingConfig(pageSize = 50, prefetchDistance = 10),
                             pagingSourceFactory = { NotificationSource(repository) }
@@ -516,21 +514,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun displayFullScreenImage(
+    fun showImage(
         initialCount: Int = 0,
         picArr: List<String>,
-        navHostControllerScreen: NavHostController
+        navControllerScreen: NavHostController
     ) {
         viewModelScope.launch {
-            _picArray.emit(FullScreenItem(initialCount = initialCount, picArray = picArr))
-            navHostControllerScreen.navigate(ScreenManager.FullImageScreen.route)
+            _globalState.value.imageArray =
+                ImageArray(initialCount = initialCount, picArray = picArr)
+            navControllerScreen.navigate(ScreenManager.ImageScreen.route)
         }
     }
 
     fun getRequestHash() {
         viewModelScope.launch {
             try {
-                requestHash = repository.getRequestHash().body()!!.string().getRequestHash()!!
+                _globalState.value.requestHash =
+                    repository.getRequestHash().body()!!.string().getRequestHash()!!
             } catch (e: Exception) {
                 Log.e(TAG, "getRequestHashTest: ${e.localizedMessage}")
             }

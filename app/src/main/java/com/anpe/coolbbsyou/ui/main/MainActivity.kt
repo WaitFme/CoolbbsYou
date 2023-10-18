@@ -16,11 +16,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.anpe.coolbbsyou.ui.host.screen.FullImageScreen
+import com.anpe.coolbbsyou.ui.host.screen.ImageScreen
 import com.anpe.coolbbsyou.ui.host.screen.LoginScreen
 import com.anpe.coolbbsyou.ui.host.screen.MainScreen
+import com.anpe.coolbbsyou.ui.host.screen.NewsScreen
 import com.anpe.coolbbsyou.ui.host.screen.PostScreen
+import com.anpe.coolbbsyou.ui.host.screen.SearchScreen
+import com.anpe.coolbbsyou.ui.host.screen.SettingScreen
+import com.anpe.coolbbsyou.ui.host.screen.SpaceScreen
 import com.anpe.coolbbsyou.ui.host.screen.SplashScreen
+import com.anpe.coolbbsyou.ui.host.screen.TopicScreen
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.theme.CoolbbsYouTheme
 import com.google.accompanist.adaptive.calculateDisplayFeatures
@@ -75,8 +80,8 @@ class MainActivity : ComponentActivity() {
                                     viewModel = viewModel
                                 )
                             }
-                            composable(route = ScreenManager.FullImageScreen.route) {
-                                FullImageScreen(
+                            composable(route = ScreenManager.ImageScreen.route) {
+                                ImageScreen(
                                     navControllerScreen = navControllerScreen,
                                     viewModel = viewModel
                                 )
@@ -84,6 +89,44 @@ class MainActivity : ComponentActivity() {
                             composable(route = ScreenManager.PostScreen.route) {
                                 PostScreen(
                                     navControllerScreen = navControllerScreen,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.SettingScreen.route) {
+                                SettingScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.SpaceScreen.route) {
+                                SpaceScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    windowSizeClass = windowSizeClass,
+                                    displayFeatures = displayFeatures,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.TopicScreen.route) {
+                                TopicScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    windowSizeClass = windowSizeClass,
+                                    displayFeatures = displayFeatures,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.TopicScreen.route) {
+                                NewsScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    windowSizeClass = windowSizeClass,
+                                    displayFeatures = displayFeatures,
+                                    viewModel = viewModel
+                                )
+                            }
+                            composable(route = ScreenManager.TopicScreen.route) {
+                                SearchScreen(
+                                    navControllerScreen = navControllerScreen,
+                                    windowSizeClass = windowSizeClass,
+                                    displayFeatures = displayFeatures,
                                     viewModel = viewModel
                                 )
                             }

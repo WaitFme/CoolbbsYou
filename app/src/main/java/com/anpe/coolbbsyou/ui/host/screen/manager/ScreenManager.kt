@@ -10,7 +10,17 @@ sealed class ScreenManager(val route: String, @StringRes val resourceId: Int) {
 
     data object LoginScreen: ScreenManager("LoginScreen", R.string.login_screen)
 
-    data object FullImageScreen: ScreenManager("FullImageScreen", R.string.full_image_screen)
+    data object ImageScreen: ScreenManager("ImageScreen", R.string.image_screen)
 
-    data object PostScreen: ScreenManager("PostScreen", R.string.full_image_screen)
+    data object PostScreen: ScreenManager("PostScreen", R.string.post_screen)
+
+    data object SettingScreen: ScreenManager("SettingScreen", R.string.setting_screen)
+
+    data object SpaceScreen: ScreenManager("SpaceScreen", R.string.space_screen)
+
+    data object TopicScreen: ScreenManager("TopicScreen", R.string.topic_screen)
+
+    data object SearchScreen: ScreenManager("SearchScreen", R.string.search_screen)
+
+    data object NewsScreen: ScreenManager("NewsScreen", R.string.news_screen)
 }

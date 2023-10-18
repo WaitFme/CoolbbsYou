@@ -27,11 +27,11 @@ import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun FullImageScreen(
+fun ImageScreen(
     navControllerScreen: NavHostController,
     viewModel: MainViewModel
 ) {
-    val list by viewModel.picArray.collectAsState()
+    val globalState by viewModel.globalState.collectAsState()
 
     var animateState by remember {
         mutableStateOf(true)
@@ -43,8 +43,8 @@ fun FullImageScreen(
         exit = fadeOut()
     ) {
         Surface {
-            val state = rememberPagerState(initialPage = list.initialCount) {
-                list.picArray.size
+            val state = rememberPagerState(initialPage = globalState.imageArray.initialCount) {
+                globalState.imageArray.picArray.size
             }
 
             HorizontalPager(
@@ -61,7 +61,7 @@ fun FullImageScreen(
                             navControllerScreen.popBackStack()
                         },
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(list.picArray[it])
+                        .data(globalState.imageArray.picArray[it])
                         .crossfade(true)
                         .build(),
                     contentDescription = null

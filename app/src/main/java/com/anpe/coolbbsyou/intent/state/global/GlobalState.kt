@@ -1,15 +1,19 @@
 package com.anpe.coolbbsyou.intent.state.global
 
-sealed class GlobalState {
-    data object NoInitial: GlobalState()
-
-    data object Initialing: GlobalState()
-
-    data class InitSuccess(
-        val s: String
-    ): GlobalState()
-}
-
-data class GlobalData(
-    var isNineGrid: Boolean = false
+data class GlobalState(
+    var isNineGrid: Boolean = false,
+    var isLogin: Boolean = false,
+    var requestHash: String = "",
+    var imageArray: ImageArray = ImageArray(),
+    var imageArrayType: ImageArrayType = if (isNineGrid) ImageArrayType.NineGrid else ImageArrayType.ImageRow
 )
+
+data class ImageArray(
+    val initialCount: Int = 0,
+    val picArray: List<String> = listOf()
+)
+
+enum class ImageArrayType{
+    NineGrid,
+    ImageRow
+}

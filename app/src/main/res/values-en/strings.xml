@@ -5,15 +5,13 @@
     <string name="splash_screen">Splash</string>
     <string name="main_screen">Main</string>
     <string name="login_screen">Login</string>
-    <string name="full_image_screen">Full screen image</string>
-
-    <!--INNER SCREEN-->
-    <string name="home_inner_screen">Home</string>
-    <string name="details_inner_screen">Details</string>
-    <string name="today_selection_inner_screen">Today selection</string>
-    <string name="search_inner_screen">Search</string>
-    <string name="user_space_inner_screen">User space</string>
-    <string name="topic_inner_screen">Topic screen</string>
+    <string name="image_screen">Full screen image</string>
+    <string name="post_screen">Post</string>
+    <string name="setting_screen">Setting</string>
+    <string name="space_screen">user space</string>
+    <string name="topic_screen">topic</string>
+    <string name="news_screen">news</string>
+    <string name="search_screen">search</string>
 
     <!--PAGER-->
     <string name="home_pager">Home</string>

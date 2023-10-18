@@ -1,4 +1,4 @@
-package com.anpe.coolbbsyou.ui.host.pager
+package com.anpe.coolbbsyou.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,12 +68,8 @@ import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
 import com.anpe.coolbbsyou.data.remote.domain.reply.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.ReplyState
-import com.anpe.coolbbsyou.ui.host.innerScreen.manager.InnerScreenManager
+import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
-import com.anpe.coolbbsyou.ui.view.DialogImage
-import com.anpe.coolbbsyou.ui.view.HtmlText
-import com.anpe.coolbbsyou.ui.view.MyScaffold
-import com.anpe.coolbbsyou.ui.view.NineImageGrid
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
@@ -82,7 +78,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun DetailPager(
     modifier: Modifier = Modifier,
-    navControllerInnerScreen: NavHostController,
+    navControllerScreen: NavHostController,
     detailsModel: DetailsModel,
     windowSizeClass: WindowSizeClass,
     setIsDetailOpen: (Boolean) -> Unit,
@@ -133,7 +129,7 @@ fun DetailPager(
                     onClickUser = {
                         scope.launch {
                             viewModel.channel.send(MainEvent.GetSpace(detailsModel.data.uid))
-                            navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
+                            navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
                         }
                     }
                 )
@@ -187,7 +183,7 @@ fun DetailPager(
                                                     onClickUser = {
                                                         scope.launch {
                                                             viewModel.channel.send(MainEvent.GetSpace(it))
-                                                            navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
+                                                            navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
                                                         }
                                                     }
                                                 )

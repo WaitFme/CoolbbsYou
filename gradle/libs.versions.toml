@@ -12,7 +12,6 @@ jbcrypt = "0.4"
 jsoup = "1.16.1"
 room = "2.5.2"
 moshi = "1.15.0"
-toolbar-compose = "2.3.5"
 
 # Default version
 ksp = "1.9.0-1.0.13"
@@ -49,7 +48,6 @@ room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
 moshi-kotlin-codegen = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
-toolbar-compose = { group = "me.onebone", name = "toolbar-compose", version.ref = "toolbar-compose" }
 
 # Default libraries
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
