@@ -59,13 +59,14 @@ fun HomePager(
 
     val indexState by viewModel.indexState.collectAsState()
 
-    val lazyPagingItems = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
-
     val globalState by viewModel.globalState.collectAsState()
+
+    val lazyPagingItems = (indexState as IndexState.Success).pager.collectAsLazyPagingItems()
 
     var refreshing by remember {
         mutableStateOf(false)
     }
+
     val refreshState = rememberPullRefreshState(refreshing = refreshing, onRefresh = {
         scope.launch {
             refreshing = true
@@ -91,9 +92,7 @@ fun HomePager(
 
             is IndexState.Success -> {
                 LazyColumn(
-                    modifier = Modifier
-                        .pullRefresh(refreshState)
-                        .fillMaxHeight(),
+                    modifier = Modifier.pullRefresh(refreshState),
                     contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
                 ) {
                     items(lazyPagingItems) {data ->
@@ -120,16 +119,12 @@ fun HomePager(
                             }
 
                             "feed" -> {
-                                val likeState by viewModel.likeState.collectAsState()
-
-                                val likeNum = if (likeState.likeModel.data == -1) data.likenum else likeState.likeModel.data
-
                                 FeedItem(
                                     modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
                                     data = data,
                                     imageType = globalState.imageArrayType,
-                                    likeNum = likeNum,
-                                    likeStatus = data?.userAction?.like == 1 || likeState.isLike,
+                                    likeNum = data.likenum,
+                                    likeStatus = data?.userAction?.like == 1,
                                     onClick = {
                                         scope.launch {
                                             viewModel.channel.send(MainEvent.GetDetails(data.id)) // 48449942
@@ -138,11 +133,11 @@ fun HomePager(
                                         }
                                     },
                                     onLike = {
-                                        scope.launch {
+                                        /*scope.launch {
                                             viewModel.channel.send(
                                                 if (it) MainEvent.Unlike(data.id) else MainEvent.Like(data.id)
                                             )
-                                        }
+                                        }*/
                                     },
                                     onClickPic = {
                                         viewModel.showImage(it, data.picArr, navControllerScreen)
@@ -150,11 +145,10 @@ fun HomePager(
                                     onAvatar = {
                                         scope.launch {
                                             viewModel.channel.send(MainEvent.GetSpace(it))
-//                                                    navControllerInnerScreen.navigate(InnerScreenManager.UserSpaceInnerScreen.route)
                                             navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
                                         }
                                     },
-                                    openLink = {
+                                    onTopic = {
                                         scope.launch {
                                             viewModel.channel.send(MainEvent.GetTopic(it))
                                             navControllerScreen.navigate(ScreenManager.TopicScreen.route)
@@ -168,13 +162,6 @@ fun HomePager(
                                     modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
                                     data = data,
                                     onClick = {
-                                        scope.launch {
-//                                                id = 48068410
-                                            /*viewModel.channel.send(MainIntent.GetDetails(id))
-                                            if (!configuration.isTable()) {
-                                                navControllerScreen.navigate(ScreenManager.DetailsScreen.route)
-                                            }*/
-                                        }
                                     }
                                 )
                             }

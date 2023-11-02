@@ -2,6 +2,7 @@ package com.anpe.coolbbsyou.ui.main
 
 import android.app.Application
 import android.content.Context
+import android.provider.Settings
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -39,6 +40,7 @@ import com.anpe.coolbbsyou.intent.state.space.SpaceState
 import com.anpe.coolbbsyou.intent.state.topic.TopicState
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.util.LoginUtils.Companion.getRequestHash
+import com.anpe.coolbbsyou.util.Utils
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +56,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         fun Exception.message() = this.localizedMessage ?: "UNKNOWN"
     }
 
-    private val repository = RemoteRepository()
+    private val repository = RemoteRepository(application)
 
     private val configSp =
         application.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
@@ -122,12 +124,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val globalState = _globalState.asStateFlow()
 
     init {
-        isNineGrid(configSp.getBoolean("IS_NINE_GRID", false))
-
-        getLoginInfo()
-
-        getIndexState()
-
         channelHandler(channel)
     }
 
@@ -512,6 +508,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 Log.e(TAG, "getUnlike: ${e.localizedMessage}")
             }
         }
+    }
+
+    fun createSystemInfo(context: Context) {
+        if (configSp.getString("AID", null) == null) {
+            configSp.edit().putString(
+                "AID",
+                Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            ).apply()
+        }
+
+        if (configSp.getString("MAC", null) == null) {
+            configSp.edit().putString("MAC", Utils.randomMacAddress()).apply()
+        }
+
+        if (configSp.getString("INSTALL_TIME", null) == null) {
+            configSp.edit().putString("INSTALL_TIME", System.currentTimeMillis().toString()).apply()
+        }
+
     }
 
     fun showImage(

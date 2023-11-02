@@ -425,6 +425,15 @@ private fun Content(
                                     likeStatus = false,
                                     onClick = {
                                         onClickFeed(it.id)
+                                    },
+                                    onAvatar = {
+
+                                    },
+                                    onClickPic = {
+
+                                    },
+                                    onTopic = {
+
                                     }
                                 )
                             }
@@ -663,6 +672,15 @@ private fun ContentTest(
                     likeStatus = false,
                     onClick = {
                         onClickFeed(it.id)
+                    },
+                    onAvatar = {
+
+                    },
+                    onClickPic = {
+
+                    },
+                    onTopic = {
+
                     }
                 )
             }

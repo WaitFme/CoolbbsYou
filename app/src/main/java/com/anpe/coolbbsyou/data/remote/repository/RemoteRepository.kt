@@ -1,12 +1,12 @@
 package com.anpe.coolbbsyou.data.remote.repository
 
 import android.content.Context
+import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.data.remote.service.Api2Service
 import com.anpe.coolbbsyou.data.remote.service.ApiService
 import com.anpe.coolbbsyou.data.remote.service.ApiServiceTwo
 import com.anpe.coolbbsyou.data.remote.service.LoginService
 import com.anpe.coolbbsyou.util.MyApplication
-import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getLastingInstallTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -14,15 +14,18 @@ import okhttp3.ResponseBody
 import retrofit2.Response
 
 class RemoteRepository(context: Context = MyApplication.context) {
+    private val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
+
     private val api = ApiService.getSerVice(context)
     private val api2 = Api2Service.getService(context)
     private val apiLogin = LoginService.getService(context)
     private val apiCall = ApiServiceTwo.getSerVice(context)
 
+    private val installTime: String = sp.getString("INSTALL_TIME", System.currentTimeMillis().toString())!!
+
     // index
     private var firstItem: Int? = null
     private var lastItem: Int? = null
-    private val installTime = getLastingInstallTime(context)
 
     suspend fun getIndex(page: Int) = api2.getIndex(
         page = page,

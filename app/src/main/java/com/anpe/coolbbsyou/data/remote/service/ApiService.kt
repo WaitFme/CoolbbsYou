@@ -33,23 +33,20 @@ interface ApiService {
     companion object {
         private const val BASE_API = "https://api.coolapk.com"
 
-        private var deviceCode: String? = null
-
         private var service: ApiService? = null
 
         fun getSerVice(context: Context): ApiService {
             if (service == null) {
-                if (deviceCode == null) {
-                    deviceCode = TokenDeviceUtils.getDeviceCodeNew(context)
-                }
+                val deviceCode = TokenDeviceUtils.getDeviceCode(context)
+
                 val client = OkHttpClient.Builder()
                     .cookieJar(CookieManager(context))
                     .callTimeout(5, TimeUnit.SECONDS)
                     .addInterceptor {
                         val request = it.request().newBuilder()
-                            .addHeader("User-Agent", Constants.USER_AGENT)
-                            .addHeader(Constants.DEVICE_CODE_KEY, deviceCode!!)
-                            .addHeader(Constants.DEVICE_TOKEN_KEY, deviceCode!!.getTokenV2())
+                            .addHeader(Constants.USER_AGENT_KEY, System.getProperty("http.agent") ?: Constants.USER_AGENT_VALUE)
+                            .addHeader(Constants.DEVICE_CODE_KEY, deviceCode)
+                            .addHeader(Constants.DEVICE_TOKEN_KEY, deviceCode.getTokenV2())
                             .addHeader(Constants.REQUEST_WIDTH_KEY, Constants.REQUEST_WIDTH_VALUE)
                             .addHeader(Constants.APP_ID_KEY, Constants.APP_ID_VALUE)
                             .build()

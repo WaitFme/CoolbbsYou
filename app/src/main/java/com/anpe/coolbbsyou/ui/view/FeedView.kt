@@ -105,13 +105,13 @@ fun FeedView(
     isNineGrid: Boolean,
     likeStatus: Boolean,
     onClick: () -> Unit,
-    onAvatar: (Int) -> Unit = {},
+    onAvatar: (Int) -> Unit,
+    onClickPic: (Int) -> Unit,
+    onTopic: (String) -> Unit,
     onLike: (Boolean) -> Unit = {},
     onReply: (Int) -> Unit = {},
     onShare: (Int) -> Unit = {},
-    onClickPic: (Int) -> Unit = {},
-    onFunction: (String) -> Unit = {},
-    onTopic: (String) -> Unit = {}
+    onFunction: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -336,13 +336,13 @@ fun FeedView(
     isNineGrid: Boolean,
     likeStatus: Boolean,
     onClick: () -> Unit,
-    onAvatar: (Int) -> Unit = {},
+    onAvatar: (Int) -> Unit,
+    onClickPic: (Int) -> Unit,
+    onTopic: (String) -> Unit,
     onLike: (Boolean) -> Unit = {},
     onReply: (Int) -> Unit = {},
     onShare: (Int) -> Unit = {},
-    onClickPic: (Int) -> Unit = {},
-    onFunction: (String) -> Unit = {},
-    onTopic: (String) -> Unit = {}
+    onFunction: (String) -> Unit = {}
 ) {
     FeedView(
         modifier = modifier,
@@ -370,26 +370,15 @@ fun FeedItem(
     replyNum: Int = data.replynum,
     shareNum: Int = data.shareNum,
     onClick: () -> Unit,
-    onLike: (Boolean) -> Unit = {},
+    onAvatar: (Int) -> Unit,
+    onClickPic: (Int) -> Unit,
+    onTopic: (String) -> Unit,
+    onLike: () -> Unit = {},
     onReply: (Int) -> Unit = {},
     onShare: (Int) -> Unit = {},
-    onClickPic: (Int) -> Unit = {},
-    onAvatar: (Int) -> Unit = {},
-    openLink: (String) -> Unit = {}
+    onFunction: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-
-    var status by remember {
-        mutableStateOf(false)
-    }
-
-    var initialPage by remember {
-        mutableIntStateOf(0)
-    }
-
-    var likeStatus by remember {
-        mutableStateOf(likeStatus)
-    }
 
     Card(
         modifier = modifier
@@ -401,7 +390,7 @@ fun FeedItem(
     ) {
         ConstraintLayout {
             val (
-                proPicRef,
+                avatarRef,
                 nameRef,
                 messageRef,
                 infoHtmlRef,
@@ -418,7 +407,7 @@ fun FeedItem(
                     .clickableNoRipple {
                         onAvatar(data.uid)
                     }
-                    .constrainAs(proPicRef) {
+                    .constrainAs(avatarRef) {
                         start.linkTo(parent.start, 10.dp)
                         top.linkTo(parent.top, 10.dp)
                     },
@@ -427,14 +416,14 @@ fun FeedItem(
                     .size(100)
                     .crossfade(true)
                     .build(),
-                contentDescription = ""
+                contentDescription = "avatar"
             )
 
             Text(
                 modifier = Modifier
                     .constrainAs(nameRef) {
-                        start.linkTo(proPicRef.end, 10.dp)
-                        top.linkTo(proPicRef.top)
+                        start.linkTo(avatarRef.end, 10.dp)
+                        top.linkTo(avatarRef.top)
                     },
                 text = data.username,
                 color = MaterialTheme.colorScheme.primary,
@@ -467,14 +456,14 @@ fun FeedItem(
                 modifier = Modifier
                     .constrainAs(messageRef) {
                         start.linkTo(parent.start, 10.dp)
-                        top.linkTo(proPicRef.bottom, 10.dp)
+                        top.linkTo(avatarRef.bottom, 10.dp)
                         end.linkTo(parent.end, 10.dp)
                         this.width = Dimension.matchParent
                     },
                 htmlText = data.message,
                 openLink = {
                     it.showToast()
-                    openLink(it)
+                    onTopic(it)
                 }
             )
 
@@ -493,11 +482,11 @@ fun FeedItem(
                                 },
                             list = data.picArr,
                             onClick = {
-                                initialPage = it
-                                status = !status
+                                onClickPic(it)
                             }
                         )
                     }
+
                     ImageArrayType.ImageRow -> {
                         LazyRow(
                             modifier = Modifier
@@ -513,8 +502,6 @@ fun FeedItem(
                                         AsyncImage(
                                             modifier = Modifier
                                                 .clickableNoRipple {
-                                                    initialPage = num
-                                                    status = !status
                                                     onClickPic(num)
                                                 }
                                                 .size(100.dp)
@@ -587,8 +574,7 @@ fun FeedItem(
                     modifier = Modifier
                         .weight(1f)
                         .clickableNoRipple {
-                            onLike(likeStatus)
-                            likeStatus = !likeStatus
+                            onLike()
                         },
                     text = likeNum.toString(),
                     textDirection = TextDirection.Bottom,
@@ -615,11 +601,5 @@ fun FeedItem(
                 )
             }
         }
-    }
-
-    if (status) {
-        DialogImage(data.picArr, initialPage, onDismissRequest = {
-            status = false
-        })
     }
 }

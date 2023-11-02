@@ -19,22 +19,19 @@ interface Api2Service {
     companion object {
         private const val BASE_API = "https://api2.coolapk.com"
 
-        private var deviceCode: String? = null
-
         private var service: Api2Service? = null
 
         fun getService(context: Context): Api2Service {
             if (service == null) {
-                if (deviceCode == null) {
-                    deviceCode = TokenDeviceUtils.getDeviceCodeNew(context)
-                }
+                val deviceCode = TokenDeviceUtils.getDeviceCode(context)
+
                 val client = OkHttpClient.Builder()
                     .cookieJar(CookieManager(context))
                     .callTimeout(5, TimeUnit.SECONDS)
                     .addInterceptor {
                         val request = it.request().newBuilder()
-                            .addHeader(Constants.DEVICE_CODE_KEY, deviceCode!!)
-                            .addHeader(Constants.DEVICE_TOKEN_KEY, deviceCode!!.getTokenV2())
+                            .addHeader(Constants.DEVICE_CODE_KEY, deviceCode)
+                            .addHeader(Constants.DEVICE_TOKEN_KEY, deviceCode.getTokenV2())
                             .addHeader(Constants.REQUEST_WIDTH_KEY, Constants.REQUEST_WIDTH_VALUE)
                             .addHeader(Constants.APP_ID_KEY, Constants.APP_ID_VALUE)
                             .build()

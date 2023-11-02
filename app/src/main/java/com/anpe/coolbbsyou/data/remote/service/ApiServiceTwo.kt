@@ -3,6 +3,7 @@ package com.anpe.coolbbsyou.data.remote.service
 import android.content.Context
 import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.data.remote.cookie.CookieManager
+import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getTokenV2
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -22,6 +23,12 @@ interface ApiServiceTwo {
                 val client = OkHttpClient.Builder()
                     .cookieJar(CookieManager(context))
                     .callTimeout(5, TimeUnit.SECONDS)
+                    .addInterceptor {
+                        val request = it.request().newBuilder()
+                            .addHeader(Constants.USER_AGENT_KEY, System.getProperty("http.agent") ?: Constants.USER_AGENT_VALUE)
+                            .build()
+                        it.proceed(request)
+                    }
                     .build()
 
                 val retrofit = Retrofit.Builder()
@@ -36,7 +43,6 @@ interface ApiServiceTwo {
         }
     }
 
-    @Headers("User-Agent:${Constants.USER_AGENT_BAK}")
     @GET("/auth/loginByCoolApk")
     fun getRequestHash(): Call<ResponseBody>
 }

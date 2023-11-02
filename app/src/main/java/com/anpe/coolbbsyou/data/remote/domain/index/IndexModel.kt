@@ -266,7 +266,7 @@ data class Data(
     @SerializedName("vote_score")
     val voteScore: Int,
     @SerializedName("userAction")
-    val userAction: UserAction
+    val userAction: UserAction = UserAction()
 )
 
 data class Entity(
@@ -649,11 +649,11 @@ data class UserInfoXX(
 
 data class UserAction(
     @SerializedName("like")
-    val like: Int,
+    val like: Int = 0,
     @SerializedName("favorite")
-    val favorite: Int,
+    val favorite: Int = 0,
     @SerializedName("follow")
-    val follow: Int,
+    val follow: Int = 0,
     @SerializedName("collect")
-    val collect: Int,
+    val collect: Int = 0,
 )

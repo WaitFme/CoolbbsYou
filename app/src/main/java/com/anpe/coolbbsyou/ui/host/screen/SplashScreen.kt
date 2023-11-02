@@ -1,5 +1,6 @@
 package com.anpe.coolbbsyou.ui.host.screen
 
+import android.content.Context
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -22,12 +23,18 @@ import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
+import com.anpe.coolbbsyou.constant.Constants
+import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(navControllerScreen: NavController, viewModel: MainViewModel) {
+    val context = LocalContext.current
+
+    val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
+
     var startAnimation by remember {
         mutableStateOf(false)
     }
@@ -37,11 +44,21 @@ fun SplashScreen(navControllerScreen: NavController, viewModel: MainViewModel) {
         animationSpec = tween(durationMillis = 500), label = ""
     )
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(key1 = Unit) {
         startAnimation = true
         delay(1000)
         navControllerScreen.popBackStack()
         navControllerScreen.navigate(ScreenManager.MainScreen.route)
+    }
+
+    LaunchedEffect(key1 = Unit) {
+        viewModel.createSystemInfo(context)
+
+        viewModel.channel.send(MainEvent.OpenNineGrid(sp.getBoolean("IS_NINE_GRID", false)))
+
+        viewModel.channel.send(MainEvent.GetLoginInfo)
+
+        viewModel.channel.send(MainEvent.GetIndex)
     }
 
     Splash(alphaAnim.value)

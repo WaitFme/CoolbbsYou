@@ -1,5 +1,7 @@
 package com.anpe.coolbbsyou
 
+import android.os.Build
+import android.provider.Settings
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 
