@@ -54,7 +54,6 @@ import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.LoginState
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast
-import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToastString
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
@@ -195,7 +194,7 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                     keyboardActions = KeyboardActions(onDone = {
                         scope.launch {
                             if (account.text.isEmpty() || passwd.text.isEmpty()) {
-                                context.showToastString("请输入完整账号密码！")
+                                context.showToast("请输入完整账号密码！")
                                 return@launch
                             }
                             val requestHash = globalState.requestHash
@@ -223,7 +222,7 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                         .clickableNoRipple {
                             scope.launch {
                                 if (account.text.isEmpty() || passwd.text.isEmpty()) {
-                                    context.showToastString("请输入完整账号密码！")
+                                    context.showToast("请输入完整账号密码！")
                                     return@launch
                                 }
                                 val requestHash = globalState.requestHash
@@ -258,7 +257,7 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                         }
 
                         is LoginState.LoggingIn -> {
-                            context.showToastString("登陆中，请稍后...")
+                            context.showToast("登陆中，请稍后...")
                         }
 
                         is LoginState.Success -> {
@@ -266,14 +265,14 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                                 configSp.edit().putBoolean("LOGIN_STATUS", true).apply()
                                 viewModel.channel.send(MainEvent.GetProfile(it.loginModel.sESSION.uid))
                                 navControllerScreen.popBackStack()
-                                context.showToastString("登陆成功！")
+                                context.showToast("登陆成功！")
                             } else {
-                                context.showToastString("账号或密码错误！${it.loginModel.status}")
+                                context.showToast("账号或密码错误！${it.loginModel.status}")
                             }
                         }
 
                         is LoginState.Error -> {
-                            "登陆失败: ${it.error}".showToast(context)
+                            context.showToast("登陆失败: ${it.error}")
                         }
                     }
                 }

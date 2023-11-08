@@ -79,7 +79,11 @@ fun HomePager(
         when (indexState) {
             is IndexState.Error -> {
                 val error = (indexState as IndexState.Error).error
-                Text(modifier = Modifier.align(Alignment.Center), text = error)
+                Text(modifier = Modifier.align(Alignment.Center).clickableNoRipple {
+                    refreshing = true
+                    lazyPagingItems.refresh()
+                    refreshing = false
+                }, text = "$error\n点击重试")
             }
 
             is IndexState.Idle -> {
@@ -127,8 +131,9 @@ fun HomePager(
                                     likeStatus = data?.userAction?.like == 1,
                                     onClick = {
                                         scope.launch {
-                                            viewModel.channel.send(MainEvent.GetDetails(data.id)) // 48449942
+                                            viewModel.channel.send(MainEvent.GetDetails(data.id))
                                             viewModel.channel.send(MainEvent.GetReply(data.id))
+//                                            viewModel.channel.send(MainEvent.GetReply(50814749)) // 50819773
                                             setIsDetailOpen(true)
                                         }
                                     },
@@ -141,6 +146,7 @@ fun HomePager(
                                     },
                                     onClickPic = {
                                         viewModel.showImage(it, data.picArr, navControllerScreen)
+//                                        viewModel.showImageTest(it, data.picArr)
                                     },
                                     onAvatar = {
                                         scope.launch {

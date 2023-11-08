@@ -2,12 +2,13 @@ package com.anpe.coolbbsyou.ui.view
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,7 +24,9 @@ import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -34,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
-import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -46,8 +49,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -60,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavHostController
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
@@ -68,8 +72,10 @@ import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
 import com.anpe.coolbbsyou.data.remote.domain.reply.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.ReplyState
+import com.anpe.coolbbsyou.intent.state.replyDetail.ReplyDetailState
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import com.anpe.coolbbsyou.util.Utils.Companion.isTable
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
@@ -87,7 +93,11 @@ fun DetailPager(
     Surface(modifier = Modifier.offset(1.dp)) {
         val scope = rememberCoroutineScope()
 
+        val configuration = LocalConfiguration.current
+
         val replyState by viewModel.replyState.collectAsState()
+
+        val replyDetailState by viewModel.replyDetailState.collectAsState()
 
         val followModel by viewModel.followState.collectAsState()
 
@@ -95,142 +105,238 @@ fun DetailPager(
 
         val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
 
-        val lazyPagingItems = (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
-
         val followStatus = detailsModel.data.userAction.follow or followModel.data == 1
 
-        MyScaffold(
-            topBar = {
-                TopBar(
-                    userAvatar = detailsModel.data.userAvatar,
-                    username = detailsModel.data.username,
-                    deviceTitle = detailsModel.data.deviceTitle,
-                    followStatus = followStatus,
-                    likeStatus = detailsModel.data.userAction.like == 1 || likeState.isLike,
-                    setIsDetailOpen = setIsDetailOpen,
-                    onFollow = {
-                        scope.launch {
-                            viewModel.channel.send(
-                                if (followStatus) MainEvent.Unfollow(detailsModel.data.uid) else MainEvent.Follow(
-                                    detailsModel.data.uid
-                                )
-                            )
-                        }
-                    },
-                    onLike = {
-                        scope.launch {
-                            viewModel.channel.send(
-                                if (it) MainEvent.Unlike(detailsModel.data.id) else MainEvent.Like(
-                                    detailsModel.data.id
-                                )
-                            )
-                        }
-                    },
-                    onClickUser = {
-                        scope.launch {
-                            viewModel.channel.send(MainEvent.GetSpace(detailsModel.data.uid))
-                            navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
-                        }
-                    }
-                )
-            },
-            content = {
-                Column(
-                    modifier = modifier
-                        .padding(top = it.calculateTopPadding())
-                ) {
-                    if (widthSizeClass == WindowWidthSizeClass.Expanded) {
-                        Row {
-                            ContentBlock(
-                                modifier = Modifier
-                                    .weight(1.5f)
-                                    .verticalScroll(rememberScrollState()),
-                                detailsModel = detailsModel
-                            )
+        var visible by remember {
+            mutableStateOf(false)
+        }
 
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .background(MaterialTheme.colorScheme.surface)
-                                    .fillMaxHeight()
-                            ) {
+        val context = LocalContext.current
+
+        Box {
+            MyScaffold(
+                topBar = {
+                    TopBar(
+                        userAvatar = detailsModel.data.userAvatar,
+                        username = detailsModel.data.username,
+                        deviceTitle = detailsModel.data.deviceTitle,
+                        followStatus = followStatus,
+                        likeStatus = detailsModel.data.userAction.like == 1 || likeState.isLike,
+                        setIsDetailOpen = setIsDetailOpen,
+                        onFollow = {
+                            scope.launch {
+                                viewModel.channel.send(
+                                    if (followStatus) MainEvent.Unfollow(detailsModel.data.uid) else MainEvent.Follow(
+                                        detailsModel.data.uid
+                                    )
+                                )
+                            }
+                        },
+                        onLike = {
+                            scope.launch {
+                                viewModel.channel.send(
+                                    if (it) MainEvent.Unlike(detailsModel.data.id) else MainEvent.Like(
+                                        detailsModel.data.id
+                                    )
+                                )
+                            }
+                        },
+                        onClickUser = {
+                            scope.launch {
+                                viewModel.channel.send(MainEvent.GetSpace(detailsModel.data.uid))
+                                navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
+                            }
+                        }
+                    )
+                },
+                content = { paddingValues ->
+                    Column(
+                        modifier = modifier
+                            .padding(top = paddingValues.calculateTopPadding())
+                    ) {
+                        if (configuration.screenWidthDp > 1125) {
+                            Row {
+                                ContentBlock(
+                                    modifier = Modifier
+                                        .weight(1.4f)
+                                        .verticalScroll(rememberScrollState()),
+                                    detailsModel = detailsModel,
+                                    onClickPic = {
+                                        viewModel.showImage(
+                                            it,
+                                            detailsModel.data.picArr,
+                                            navControllerScreen
+                                        )
+                                    }
+                                )
+
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(15.dp)
-                                        .alpha(0.5f)
+                                        .weight(1f)
                                 ) {
-                                    Text(
-                                        modifier = Modifier.align(Alignment.CenterStart),
-                                        text = "共${detailsModel.data.replynum}回复"
+                                    Column(
+                                        modifier = Modifier
+//                                            .weight(1f)
+                                            .background(MaterialTheme.colorScheme.surface)
+                                            .fillMaxHeight()
+                                    ) {
+                                        if (replyState is ReplyState.Success) {
+                                            val lazyPagingItems =
+                                                (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
+
+                                            LazyColumn(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                contentPadding = PaddingValues(bottom = 15.dp),
+                                                content = {
+                                                    items(lazyPagingItems) { data ->
+                                                        if (data != null) {
+                                                            ReplyItem(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                data = data,
+                                                                itemPadding = PaddingValues(
+                                                                    15.dp,
+                                                                    7.dp,
+                                                                    15.dp,
+                                                                    15.dp
+                                                                ),
+                                                                onClickUser = {
+                                                                    scope.launch {
+                                                                        viewModel.channel.send(
+                                                                            MainEvent.GetSpace(
+                                                                                it
+                                                                            )
+                                                                        )
+                                                                        navControllerScreen.navigate(
+                                                                            ScreenManager.SpaceScreen.route
+                                                                        )
+                                                                    }
+                                                                },
+                                                                onClickPic = {
+                                                                    viewModel.showImage(
+                                                                        it,
+                                                                        data.picArr,
+                                                                        navControllerScreen
+                                                                    )
+                                                                },
+                                                                onClickReply = {
+                                                                    scope.launch {
+                                                                        viewModel.channel.send(
+                                                                            MainEvent.GetReplyDetail(
+                                                                                it
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                    visible = true
+                                                                }
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    BottomSheetDialog(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxSize(),
+                                        visible = visible,
+                                        onDismissRequest = { visible = false },
+                                        content = {
+                                            BottomSheetContent(replyDetailState)
+                                        }
                                     )
                                 }
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentPadding = PaddingValues(bottom = 15.dp),
-                                    content = {
-                                        items(lazyPagingItems) {
-                                            it?.apply {
+                            }
+                        } else {
+                            var lazyPagingItems by remember {
+                                mutableStateOf<LazyPagingItems<Data>?>(null)
+                            }
+
+                            if (replyState is ReplyState.Success) {
+                                lazyPagingItems =
+                                    (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
+                            }
+
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(bottom = 15.dp),
+                                content = {
+                                    item {
+                                        ContentBlock(
+                                            modifier = Modifier,
+                                            detailsModel = detailsModel,
+                                            onClickPic = {
+                                                viewModel.showImage(
+                                                    it,
+                                                    detailsModel.data.picArr,
+                                                    navControllerScreen
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                    if (lazyPagingItems != null) {
+                                        items(lazyPagingItems!!) { data ->
+                                            if (data != null) {
                                                 ReplyItem(
                                                     modifier = Modifier.fillMaxWidth(),
-                                                    data = this,
+                                                    data = data,
                                                     itemPadding = PaddingValues(
                                                         15.dp,
                                                         7.dp,
                                                         15.dp,
                                                         15.dp
                                                     ),
-                                                    onClickUser = {
+                                                    onClickPic = {
+                                                        viewModel.showImage(
+                                                            it,
+                                                            data.picArr,
+                                                            navControllerScreen
+                                                        )
+                                                    },
+                                                    onClickReply = {
                                                         scope.launch {
-                                                            viewModel.channel.send(MainEvent.GetSpace(it))
-                                                            navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
+                                                            viewModel.channel.send(
+                                                                MainEvent.GetReplyDetail(
+                                                                    it
+                                                                )
+                                                            )
                                                         }
+                                                        visible = true
                                                     }
                                                 )
                                             }
                                         }
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(bottom = 15.dp),
-                            content = {
-                                item {
-                                    ContentBlock(
-                                        modifier = Modifier,
-                                        detailsModel = detailsModel
-                                    )
-                                }
-                                items(lazyPagingItems) {
-                                    it?.apply {
-                                        ReplyItem(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            data = this,
-                                            itemPadding = PaddingValues(
-                                                15.dp,
-                                                7.dp,
-                                                15.dp,
-                                                15.dp
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        )
                     }
-                }
-            },
-        )
+                },
+            )
+
+            if (configuration.screenWidthDp <= 1125) {
+                BottomSheetDialog(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxSize(),
+                    visible = visible,
+                    onDismissRequest = { visible = false },
+                    content = {
+                        BottomSheetContent(replyDetailState)
+                    }
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun ContentBlock(
     modifier: Modifier = Modifier,
-    detailsModel: DetailsModel
+    detailsModel: DetailsModel,
+    onClickPic: (Int) -> Unit = {}
 ) {
     Column(modifier = modifier) {
         var status by remember {
@@ -244,7 +350,7 @@ private fun ContentBlock(
         HtmlText(
             modifier = Modifier
                 .padding(15.dp, 10.dp, 15.dp, 0.dp),
-            fontSize = 16.sp,
+            fontSize = 14.sp,
             htmlText = detailsModel.data.message, openLink = {
                 println(it)
             }
@@ -259,6 +365,7 @@ private fun ContentBlock(
                 itemPadding = PaddingValues(2.dp),
                 itemClip = RoundedCornerShape(10.dp),
                 onClick = {
+                    onClickPic(it)
                     initialPage = it
                     status = !status
                 }
@@ -286,10 +393,15 @@ private fun ReplyItem(
     data: Data,
     itemPadding: PaddingValues = PaddingValues(15.dp, 5.dp, 15.dp, 0.dp),
     onClickUser: (Int) -> Unit = {},
-    onClickReply: (Int) -> Unit = {}
+    onClickReply: (Int) -> Unit = {},
+    onClickPic: (Int) -> Unit = {}
 ) {
     ConstraintLayout(modifier = modifier.padding(itemPadding)) {
-        val (avatarRef, usernameRef, messageRef, picRef, funRef, replyRowsRef) = createRefs()
+        val (avatarRef, usernameRef, messageRef, picRef, funRef, funRelyRef, funLikeRef, timeRef, replyRowsRef) = createRefs()
+
+        val currentTime = System.currentTimeMillis()
+
+        val context = LocalContext.current
 
         val verifyColor = when (data.userInfo.verifyIcon) {
             "v_yellow" -> Color.Yellow
@@ -309,7 +421,7 @@ private fun ReplyItem(
                     start.linkTo(parent.start)
                     top.linkTo(parent.top)
                 },
-            model = ImageRequest.Builder(LocalContext.current)
+            model = ImageRequest.Builder(context)
                 .data(data.userAvatar)
                 .crossfade(true)
                 .build(),
@@ -322,7 +434,7 @@ private fun ReplyItem(
                     start.linkTo(avatarRef.end, 10.dp)
                     top.linkTo(avatarRef.top)
                 },
-            fontSize = 15.sp,
+            fontSize = 14.sp,
             text = data.username,
             color = verifyColor
         )
@@ -336,29 +448,113 @@ private fun ReplyItem(
                     end.linkTo(parent.end)
                     width = Dimension.preferredWrapContent
                 },
-            fontSize = 14.sp, // 13sp
+            fontSize = 13.sp,
             lineHeight = 20.sp,
             htmlText = data.message,
-            openLink = { },
-            color = if (!isSystemInDarkTheme()) Color.Black else Color.White
+            openLink = {
+                context.showToast(it)
+            },
         )
 
         if (data.pic.isNotEmpty()) {
-            AsyncImage(
+            LazyRow(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
                     .height(150.dp)
+                    .fillMaxWidth()
                     .constrainAs(picRef) {
                         start.linkTo(avatarRef.end, 10.dp)
                         top.linkTo(messageRef.bottom, 10.dp)
-//                            end.linkTo(parent.end)
-//                            width = Dimension.preferredWrapContent
+                        end.linkTo(parent.end)
+                        width = Dimension.preferredWrapContent
                     },
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(data.pic)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "reply pic"
+            ) {
+                items(data.picArr.size) {
+                    AsyncImage(
+                        modifier = Modifier
+                            .padding(end = 5.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .height(150.dp)
+                            .clickableNoRipple {
+                                onClickPic(it)
+                            },
+                        model = ImageRequest.Builder(context)
+                            .data(data.pic)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = "reply pic"
+                    )
+                }
+            }
+        }
+
+        Text(
+            modifier = Modifier
+                .constrainAs(timeRef) {
+                    start.linkTo(avatarRef.end, 10.dp)
+                    top.linkTo(
+                        if (data.pic.isEmpty())
+                            messageRef.bottom
+                        else
+                            picRef.bottom,
+                        5.dp
+                    )
+                    bottom.linkTo(funRelyRef.bottom)
+                },
+            text = data.dateline.timeStampInterval(currentTime),
+            fontSize = 12.sp
+        )
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape((5).dp))
+                .constrainAs(funLikeRef) {
+                    top.linkTo(
+                        if (data.pic.isEmpty())
+                            messageRef.bottom
+                        else
+                            picRef.bottom,
+                        5.dp
+                    )
+                    end.linkTo(funRelyRef.start)
+                }
+                .clickable {
+
+                },
+        ) {
+            Icon(
+                modifier = Modifier
+                    .padding(5.dp)
+                    .size(15.dp, 15.dp),
+                imageVector = Icons.Default.ThumbUp,
+                tint = MaterialTheme.colorScheme.primaryContainer,
+                contentDescription = ""
+            )
+        }
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape((5).dp))
+                .constrainAs(funRelyRef) {
+                    top.linkTo(
+                        if (data.pic.isEmpty())
+                            messageRef.bottom
+                        else
+                            picRef.bottom,
+                        5.dp
+                    )
+                    end.linkTo(parent.end)
+                }
+                .clickable {
+
+                },
+        ) {
+            Icon(
+                modifier = Modifier
+                    .padding(5.dp)
+                    .size(15.dp, 15.dp),
+                imageVector = Icons.Default.MailOutline,
+                tint = MaterialTheme.colorScheme.primaryContainer,
+                contentDescription = ""
             )
         }
 
@@ -369,10 +565,7 @@ private fun ReplyItem(
                     .background(MaterialTheme.colorScheme.surface)
                     .constrainAs(replyRowsRef) {
                         start.linkTo(avatarRef.end, 10.dp)
-                        top.linkTo(
-                            if (data.pic.isEmpty()) messageRef.bottom else picRef.bottom,
-                            10.dp
-                        )
+                        top.linkTo(timeRef.bottom, 10.dp)
                         end.linkTo(parent.end)
                         width = Dimension.preferredWrapContent
                     },
@@ -384,21 +577,54 @@ private fun ReplyItem(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape((7.5).dp))
-                                .clickable { }
                                 .padding(3.dp, 2.dp, 3.dp, 2.dp),
                             text = buildAnnotatedString {
-                                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 13.sp
+                                    )
+                                ) {
                                     append(it.username)
                                 }
-                                append(": ${it.message}")
+                                if (it.rusername.isNotEmpty()) {
+                                    withStyle(style = SpanStyle(fontSize = 13.sp)) {
+                                        append("回复")
+                                    }
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontSize = 13.sp
+                                        )
+                                    ) {
+                                        append(it.rusername)
+                                    }
+                                }
+                                withStyle(style = SpanStyle(fontSize = 13.sp)) {
+                                    append(": ${it.message}")
+                                }
                             },
-                            onClick = {index->
+                            onClick = { index ->
                                 if (index >= 1 && index < it.username.length + 1) {
                                     onClickUser(it.uid)
                                 } else {
-                                    onClickReply(-1)
+                                    onClickReply(data.id)
                                 }
                             }
+                        )
+                    }
+                    if (data.replyRowsMore > 0) {
+                        Text(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape((7.5).dp))
+                                .clickable {
+                                    onClickReply(data.id)
+                                }
+                                .padding(3.dp, 2.dp, 3.dp, 2.dp),
+                            text = "查看更多回复(${data.replynum})",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp
                         )
                     }
                 }
@@ -507,4 +733,100 @@ private fun TopBar(
             )
         }
     )
+}
+
+@Composable
+private fun BottomSheetContent(
+    replyDetailState: ReplyState
+) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier
+            .fillMaxHeight(0.7f)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(15.dp, 15.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .height(30.dp)
+                .fillMaxWidth()
+        ) {
+            Spacer(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(70.dp, 8.dp)
+                    .background(Color.White, CircleShape)
+            )
+        }
+
+        if (replyDetailState is ReplyState.Success) {
+            val pagingItems = replyDetailState.pager.collectAsLazyPagingItems()
+
+            LazyColumn(
+                modifier = Modifier
+                    .padding(15.dp)
+            ) {
+                items(pagingItems) { data ->
+                    if (data != null) {
+                        Row(
+                            modifier = Modifier
+                                .padding(bottom = 10.dp)
+                        ) {
+                            AsyncImage(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(10.dp)),
+                                model = ImageRequest.Builder(context)
+                                    .data(data.userAvatar)
+                                    .crossfade(true)
+                                    .build(),
+                                contentDescription = "avatar"
+                            )
+
+                            Column(
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                            ) {
+                                Text(
+                                    text = buildAnnotatedString {
+                                        withStyle(
+                                            style = SpanStyle(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 13.sp
+                                            )
+                                        ) {
+                                            append(data.username)
+                                        }
+                                        withStyle(
+                                            style = SpanStyle(
+                                                fontSize = 13.sp
+                                            )
+                                        ) {
+                                            append("回复")
+                                        }
+                                        withStyle(
+                                            style = SpanStyle(
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 13.sp
+                                            )
+                                        ) {
+                                            append(data.rusername)
+                                        }
+                                    }
+                                )
+
+                                Text(
+                                    modifier = Modifier.padding(top = 5.dp),
+                                    text = data.message,
+                                    lineHeight = 18.sp,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

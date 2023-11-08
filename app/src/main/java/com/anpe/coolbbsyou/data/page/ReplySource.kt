@@ -5,7 +5,13 @@ import androidx.paging.PagingState
 import com.anpe.coolbbsyou.data.remote.domain.reply.Data
 import com.anpe.coolbbsyou.data.remote.repository.RemoteRepository
 
-class ReplySource(private val repository: RemoteRepository, val id: Int): PagingSource<Int, Data>() {
+class ReplySource(
+    private val repository: RemoteRepository,
+    private val id: Int,
+    private val feedType: String,
+    private val listType: String,
+    private val discussMode: Int,
+): PagingSource<Int, Data>() {
     override fun getRefreshKey(state: PagingState<Int, Data>): Int? {
         return null
     }
@@ -14,7 +20,13 @@ class ReplySource(private val repository: RemoteRepository, val id: Int): Paging
         return try{
             val currentPage = params.key ?: 1
 
-            val replyEntity = repository.getReply(id = id, page = currentPage)
+            val replyEntity = repository.getReply(
+                id = id,
+                page = currentPage,
+                listType = listType,
+                discussMode = discussMode,
+                feedType = feedType
+            )
 
             val nextPage = currentPage + 1
 

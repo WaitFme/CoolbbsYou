@@ -176,14 +176,52 @@ class Utils {
             val minuteOld = calendarOld.get(Calendar.MINUTE)
             val minuteNow = calendarNow.get(Calendar.MINUTE)
 
+            val secondOld = calendarOld.get(Calendar.SECOND)
+            val secondNow = calendarNow.get(Calendar.SECOND)
+
+            val x = currentTime - this
+            if (x < 60000) {
+
+            } else if (x < 60000 * 60) {
+
+            } else if (x < 60000 * 60 * 24) {
+
+            } else {
+
+            }
+
             return if (dayOld == dayNow) {
                 if (hourOld == hourNow) {
-                    "${minuteNow - minuteOld}分钟前"
+                    if (minuteOld == minuteNow) {
+                        "${secondNow - secondOld}秒前"
+                    } else {
+                        "${minuteNow - minuteOld}分钟前"
+                    }
                 } else {
                     "${hourNow - hourOld}小时前"
                 }
             } else {
                 "${dayNow - dayOld}天前"
+            }
+        }
+
+        /**
+         * 计算时间差
+         *
+         * @receiver old timestamp
+         * @param currentTime current timestamp
+         */
+        fun Int.timeStampInterval(currentTime: Long): String {
+            val intervalSecon = (currentTime / 1000) - this
+
+            return if (intervalSecon < 60) {
+                "${intervalSecon}秒前"
+            } else if (intervalSecon < 3600) {
+                "${intervalSecon / 60}分钟前"
+            } else if (intervalSecon < 86400) {
+                "${intervalSecon / 3600}小时前"
+            } else {
+                "${intervalSecon / 86400}天前"
             }
         }
 

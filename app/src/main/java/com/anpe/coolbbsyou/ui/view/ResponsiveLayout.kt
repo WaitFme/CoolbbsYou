@@ -94,6 +94,10 @@ fun TwoPaneResponsiveLayout(
                 railBar()
             }
 
+            val configuration = LocalConfiguration.current
+
+            val listWidth = (configuration.screenWidthDp / 3).coerceAtLeast(375).coerceAtMost(425)
+
             ListDetail(
                 modifier = modifier,
                 isDetailOpen = isDetailOpen,
@@ -103,7 +107,7 @@ fun TwoPaneResponsiveLayout(
                 list = list,
                 detail = detail,
                 twoPaneStrategy = HorizontalTwoPaneStrategy(
-                    splitFraction = (1f / 3.2f),
+                    splitOffset = listWidth.dp,
                 ),
                 displayFeatures = displayFeatures
             )

@@ -35,6 +35,7 @@ import com.anpe.bilibiliandyou.ui.view.TextIcon
 import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.data.remote.domain.index.Data
 import com.anpe.coolbbsyou.intent.state.global.ImageArrayType
+import com.anpe.coolbbsyou.ui.theme.Typography
 import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 
@@ -195,7 +196,7 @@ fun FeedView(
                 htmlText = data.feedMessage,
                 fontSize = 9.sp,
                 openLink = {
-                    it.showToast()
+                    context.showToast(it)
                 }
             )
 
@@ -461,8 +462,9 @@ fun FeedItem(
                         this.width = Dimension.matchParent
                     },
                 htmlText = data.message,
+                fontSize = 14.sp,
                 openLink = {
-                    it.showToast()
+                    context.showToast(it)
                     onTopic(it)
                 }
             )

@@ -102,6 +102,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _replyState = MutableStateFlow<ReplyState>(ReplyState.Idle)
     val replyState: StateFlow<ReplyState> = _replyState
 
+    private val _replyDetailState = MutableStateFlow<ReplyState>(ReplyState.Idle)
+    val replyDetailState: StateFlow<ReplyState> = _replyDetailState
+
     private val _createFeedState = MutableStateFlow(CreateFeedModel())
     val createFeedState = _createFeedState.asStateFlow()
 
@@ -143,6 +146,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     is MainEvent.GetProfile -> getProfile(it.uid)
                     is MainEvent.GetNotification -> getNotification()
                     is MainEvent.GetReply -> getReply(it.id)
+                    is MainEvent.GetReplyDetail -> getReplyDetail(it.id)
                     is MainEvent.Like -> getLike(it.id)
                     is MainEvent.Unlike -> getUnlike(it.id)
                     is MainEvent.Follow -> getFollow(it.uid)
@@ -214,7 +218,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             try {
                 val pagingDataFlow = Pager(
-                    config = PagingConfig(pageSize = 10, prefetchDistance = 3),
+                    config = PagingConfig(pageSize = 10, prefetchDistance = 1),
                     pagingSourceFactory = { IndexSource(repository) }
                 ).flow.cachedIn(viewModelScope)
                 _indexState.emit(IndexState.Success(pagingDataFlow))
@@ -454,8 +458,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _replyState.emit(
                 try {
                     ReplyState.Success(Pager(
-                        PagingConfig(pageSize = 50, prefetchDistance = 10),
-                        pagingSourceFactory = { ReplySource(repository, id) }
+                        PagingConfig(pageSize = 20, prefetchDistance = 5),
+                        pagingSourceFactory = { ReplySource(
+                            repository = repository,
+                            id = id,
+                            listType = "lastupdate_desc",
+                            discussMode = 1,
+                            feedType = "feed"
+                        ) }
+                    ).flow.cachedIn(viewModelScope))
+                } catch (e: Exception) {
+                    ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
+                }
+            )
+        }
+    }
+
+    private fun getReplyDetail(id: Int) {
+        viewModelScope.launch {
+            _replyDetailState.emit(ReplyState.Idle)
+            _replyDetailState.emit(
+                try {
+                    ReplyState.Success(Pager(
+                        PagingConfig(pageSize = 20, prefetchDistance = 5),
+                        pagingSourceFactory = { ReplySource(
+                            repository = repository,
+                            id = id,
+                            listType = "",
+                            discussMode = 0,
+                            feedType = "feed_reply"
+                        ) }
                     ).flow.cachedIn(viewModelScope))
                 } catch (e: Exception) {
                     ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
@@ -529,14 +561,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun showImage(
-        initialCount: Int = 0,
+        initialCount: Int,
         picArr: List<String>,
         navControllerScreen: NavHostController
     ) {
         viewModelScope.launch {
-            _globalState.value.imageArray =
-                ImageArray(initialCount = initialCount, picArray = picArr)
+            _globalState.value.isShow = true
+            _globalState.value.imageArray = ImageArray(
+                initialCount = initialCount,
+                picArray = picArr
+            )
             navControllerScreen.navigate(ScreenManager.ImageScreen.route)
+        }
+    }
+
+    fun showImageTest(
+        initialCount: Int,
+        picArr: List<String>,
+    ) {
+        viewModelScope.launch {
+            _globalState.value.isShow = true
+            _globalState.value.imageArray = ImageArray(
+                initialCount = initialCount,
+                picArray = picArr
+            )
+        }
+    }
+
+    fun closeImage() {
+        viewModelScope.launch {
+            _globalState.value.isShow = false
         }
     }
 

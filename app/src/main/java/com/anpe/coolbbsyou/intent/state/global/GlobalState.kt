@@ -4,6 +4,7 @@ data class GlobalState(
     var isNineGrid: Boolean = false,
     var isLogin: Boolean = false,
     var requestHash: String = "",
+    var isShow: Boolean = false,
     var imageArray: ImageArray = ImageArray(),
     var imageArrayType: ImageArrayType = if (isNineGrid) ImageArrayType.NineGrid else ImageArrayType.ImageRow
 )

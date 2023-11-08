@@ -69,8 +69,19 @@ class RemoteRepository(context: Context = MyApplication.context) {
 
     suspend fun getProfile(uid: Int) = api.getProfile(uid = uid)
 
-    suspend fun getReply(id: Int, page: Int, listType: String = "lastupdate_desc") =
-        api2.getReply(id = id, page = page, listType = listType)
+    suspend fun getReply(
+        id: Int,
+        page: Int,
+        listType: String = "lastupdate_desc",
+        discussMode: Int = 1,
+        feedType: String = "feed"
+    ) = api2.getReply(
+        id = id,
+        page = page,
+        listType = listType,
+        discussMode = discussMode,
+        feedType = feedType
+    )
 
     suspend fun getLike(id: Int) = api.getLike(id = id)
 

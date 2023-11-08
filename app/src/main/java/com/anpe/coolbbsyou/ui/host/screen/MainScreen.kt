@@ -106,7 +106,7 @@ import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getBoolean
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getInt
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getString
-import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToastString
+import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
 import kotlinx.coroutines.launch
 
@@ -214,7 +214,7 @@ fun MainScreen(
                 scope.launch {
                     viewModel.channel.send(MainEvent.LogoutAccount)
                     dialog = false
-                    MyApplication.context.showToastString("已退出登陆")
+                    MyApplication.context.showToast("已退出登陆")
                 }
             },
             onLogin = {
@@ -272,11 +272,15 @@ private fun ListBlock(
             val navBackStackEntry by navControllerPager.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             if (currentDestination?.hierarchy?.any { it.route == PagerManager.HomePager.route } == true) {
-                FloatingActionButton(onClick = { navControllerScreen.navigate(ScreenManager.PostScreen.route) }) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
-                    )
+                val globalState by viewModel.globalState.collectAsState()
+
+                if (globalState.isLogin) {
+                    FloatingActionButton(onClick = { navControllerScreen.navigate(ScreenManager.PostScreen.route) }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null
+                        )
+                    }
                 }
             }
 
@@ -300,7 +304,7 @@ private fun ListBlock(
             when (widthSizeClass) {
                 WindowWidthSizeClass.Compact, WindowWidthSizeClass.Medium -> {
                     var index by rememberSaveable {
-                        mutableStateOf(0)
+                        mutableIntStateOf(0)
                     }
 
                     BottomBar(
@@ -407,8 +411,8 @@ private fun DetailBlock(
             is DetailsState.Success -> {
                 val detailsModel = (detailsState as DetailsState.Success).detailsEntity
 
-                LaunchedEffect(key1 = detailsModel) {
-                    viewModel.channel.send(MainEvent.GetReply(detailsModel.data.id))
+                LaunchedEffect(key1 = Unit) {
+//                    viewModel.channel.send(MainEvent.GetReply(detailsModel.data.id))
                 }
 
                 DetailPager(

@@ -39,6 +39,9 @@ sealed class MainEvent {
     // 获取评论
     data class GetReply(val id: Int): MainEvent()
 
+    // 获取评论详情
+    data class GetReplyDetail(val id: Int): MainEvent()
+
     // 点赞
     data class Like(val id: Int): MainEvent()
 

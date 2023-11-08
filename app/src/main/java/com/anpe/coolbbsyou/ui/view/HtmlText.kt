@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -92,7 +93,8 @@ fun HtmlText(
     lineHeight: TextUnit = TextUnit.Unspecified,
     overflow: TextOverflow = TextOverflow.Ellipsis,
     softWrap: Boolean = true,
-    textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
+//    textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
+    textStyle: TextStyle = TextStyle(fontSize = fontSize, fontWeight = fontWeight, fontStyle = fontStyle, color = color),
     linkStyle: TextStyle = textStyle.copy(MaterialTheme.colorScheme.primary),
     linkResolver: (href: String) -> ResolvedLink = { ResolvedLink(it) },
 //  positionWrapper: PositionWrapper? = null,
@@ -145,7 +147,8 @@ fun HtmlText(
     lineHeight: TextUnit = TextUnit.Unspecified,
     overflow: TextOverflow = TextOverflow.Ellipsis,
     softWrap: Boolean = true,
-    textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
+//    textStyle: TextStyle = LocalTextStyle.current.copy(color = LocalContentColor.current.copy(alpha = LocalContentAlpha.current)),
+    textStyle: TextStyle = TextStyle(),
     linkStyle: TextStyle = textStyle.copy(MaterialTheme.colorScheme.primary),
     linkResolver: (href: String) -> ResolvedLink = { ResolvedLink(it) },
 //  positionWrapper: PositionWrapper? = null,
@@ -209,7 +212,7 @@ private fun RenderContent(
     lineHeight: TextUnit = TextUnit.Unspecified,
     overflow: TextOverflow = TextOverflow.Clip,
     softWrap: Boolean = true,
-//  positionWrapper: PositionWrapper? = null,
+//    positionWrapper: PositionWrapper? = null,
     onTextParsed: ((String) -> Unit)? = null,
 ) {
     val value = remember(document, linkResolver, textStyle, linkStyle) {
@@ -222,7 +225,9 @@ private fun RenderContent(
             onTextParsed?.invoke(toString())
         }
     }
+
     val layoutResult = remember { mutableStateOf<TextLayoutResult?>(null) }
+
     /*DisposableEffect(document) {
         positionWrapper?.action = { position ->
             layoutResult.value?.getOffsetForPosition(position)?.let {
@@ -236,6 +241,7 @@ private fun RenderContent(
             positionWrapper?.action = null
         }
     }*/
+
     if (value.text.isNotEmpty() && value.text.isNotBlank()) {
         Text(
             modifier = modifier.pointerInput(Unit) {
@@ -275,14 +281,12 @@ private fun RenderContent(
             inlineContent = mapOf(
                 ID_IMAGE to InlineTextContent(
                     Placeholder(
-//                        width = LocalTextStyle.current.fontSize,
-//                        height = LocalTextStyle.current.fontSize,
                         width = 15.sp,
                         height = 15.sp,
                         placeholderVerticalAlign = PlaceholderVerticalAlign.TextCenter,
                     ),
                 ) { target ->
-                    AsyncImage(model = painterResource(id = R.drawable.coolapk_emotion_1010), contentDescription = null)
+                    AsyncImage(model = target, contentDescription = null)
                 },
             ),
         )

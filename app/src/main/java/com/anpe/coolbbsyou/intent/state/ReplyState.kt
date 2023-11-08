@@ -5,9 +5,9 @@ import com.anpe.coolbbsyou.data.remote.domain.reply.Data
 import kotlinx.coroutines.flow.Flow
 
 sealed class ReplyState {
-    object Idle: ReplyState()
+    data object Idle: ReplyState()
 
-    object Loading: ReplyState()
+    data object Loading: ReplyState()
 
     data class Success(val pager: Flow<PagingData<Data>>): ReplyState()
 

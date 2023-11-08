@@ -68,8 +68,11 @@ interface Api2Service {
     @GET("/v6/feed/replyList")
     suspend fun getReply(
         @Query("id") id: Int,
-        @Query("discussMode") discussMode: Int = 1,
+        @Query("discussMode") discussMode: Int,
         @Query("listType") listType: String,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("feedType") feedType: String,
+        @Query("blockStatus") blockStatus: Int = 0,
+        @Query("fromFeedAuthor") fromFeedAuthor: Int = 0,
     ): ReplyModel
 }
