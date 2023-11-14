@@ -223,7 +223,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 ).flow.cachedIn(viewModelScope)
                 _indexState.emit(IndexState.Success(pagingDataFlow))
             } catch (e: Exception) {
-                _indexState.emit(IndexState.Error(e.toString() ?: "error"))
+                _indexState.emit(IndexState.Error(e.message()))
             }
         }
     }
@@ -257,7 +257,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 try {
                     DetailsState.Success(repository.getDetails(id = id))
                 } catch (e: Exception) {
-                    DetailsState.Error(e.localizedMessage ?: "error")
+                    DetailsState.Error(e.message())
                 }
             )
         }
@@ -272,11 +272,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _suggestState.emit(SuggestState.Loading)
             _suggestState.emit(
                 try {
-                    Log.d("TAG", "getSuggestSearch: $keyword")
                     SuggestState.Success(repository.getSuggestSearch(keyword = keyword))
                 } catch (e: Exception) {
-                    Log.d("TAG", "getSuggestSearch: $e")
-                    SuggestState.Error("${e.localizedMessage ?: "UNKNOWN ERROR"}; keyword: $keyword")
+                    SuggestState.Error("${e.message()}; keyword: $keyword")
                 }
             )
         }
@@ -303,7 +301,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         )
                     }.await())
                 } catch (e: Exception) {
-                    SearchState.Error(e.localizedMessage ?: "UNKNOWN")
+                    SearchState.Error(e.message())
                 }
             )
         }
@@ -321,7 +319,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 try {
                     TodayState.Success(repository.getTodayCool(page, url))
                 } catch (e: Exception) {
-                    TodayState.Error(e.localizedMessage ?: "UNKNOWN")
+                    TodayState.Error(e.message())
                 }
             )
         }
@@ -342,7 +340,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     Log.d(TAG, "loginAccount: $postAccount")
                     LoginState.Success(postAccount)
                 } catch (e: Exception) {
-                    LoginState.Error(e.localizedMessage ?: "UNKNOWN")
+                    LoginState.Error(e.message())
                 }
             )
         }
@@ -353,6 +351,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun logoutAccount() {
         configSp.edit().putBoolean("LOGIN_STATUS", false).apply()
+        _globalState.value.isLogin = false
         userInfoSp.edit().clear().apply()
         MyCookieStore().removeAll()
     }
@@ -366,9 +365,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val loginInfoModel = repository.getLoginInfo()
 
-                var loginStatus = false
-
-                Log.d(TAG, "getLoginInfo: $loginInfoModel")
+                val loginStatus: Boolean
 
                 if (loginInfoModel.error == -1) {
                     loginStatus = false
@@ -378,9 +375,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     userInfoSp.edit().putInt("UID", loginInfoModel.data.uid.toInt()).apply()
                     _loginInfoState.emit(LoginInfoState.Success(loginInfoModel))
                 }
+
+                _globalState.value.isLogin = loginStatus
                 configSp.edit().putBoolean("LOGIN_STATUS", loginStatus).apply()
             } catch (e: Exception) {
-                _loginInfoState.emit(LoginInfoState.Error(e.localizedMessage ?: "UNKNOWN"))
+                _loginInfoState.emit(LoginInfoState.Error(e.message()))
             }
         }
     }
@@ -393,7 +392,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             _profileState.emit(ProfileState.Loading)
             try {
-                if (configSp.getBoolean("LOGIN_STATUS", false)) {
+                if (globalState.value.isLogin) {
                     val profileModel = repository.getProfile(uid)
                     saveProfile(profileModel)
                     _profileState.emit(ProfileState.Success(profileModel))
@@ -401,7 +400,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _profileState.emit(ProfileState.UnLogin("UN LOGIN"))
                 }
             } catch (e: Exception) {
-                _profileState.emit(ProfileState.Error(e.localizedMessage ?: "UNKNOWN"))
+                _profileState.emit(ProfileState.Error(e.message()))
             }
         }
     }
@@ -442,7 +441,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         NotificationState.Error("UN LOGIN")
                     }
                 } catch (e: Exception) {
-                    NotificationState.Error(e.localizedMessage ?: "UNKNOWN")
+                    NotificationState.Error(e.message())
                 }
             )
         }
@@ -468,7 +467,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         ) }
                     ).flow.cachedIn(viewModelScope))
                 } catch (e: Exception) {
-                    ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
+                    ReplyState.Error(e.message())
                 }
             )
         }
@@ -490,7 +489,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                         ) }
                     ).flow.cachedIn(viewModelScope))
                 } catch (e: Exception) {
-                    ReplyState.Error(e.localizedMessage ?: "UNKNOWN")
+                    ReplyState.Error(e.message())
                 }
             )
         }
@@ -498,46 +497,62 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun getFollow(uid: Int) {
         viewModelScope.launch {
-            try {
-                val followModel = repository.getFollow(uid)
-                _followState.emit(followModel)
-            } catch (e: Exception) {
-                Log.e(TAG, "getFollow: ${e.localizedMessage}")
+            if (globalState.value.isLogin) {
+                try {
+                    val followModel = repository.getFollow(uid)
+                    _followState.emit(followModel)
+                } catch (e: Exception) {
+                    Log.e(TAG, "getFollow: ${e.message()}")
+                }
+            } else {
+                Log.e(TAG, "getFollow: UN_LOGIN")
             }
         }
     }
 
     private fun getUnFollow(uid: Int) {
         viewModelScope.launch {
-            try {
-                val followModel = repository.getUnFollow(uid)
-                _followState.emit(followModel)
-            } catch (e: Exception) {
-                Log.e(TAG, "getFollow: ${e.localizedMessage}")
+            if (globalState.value.isLogin) {
+                try {
+                    val followModel = repository.getUnFollow(uid)
+                    _followState.emit(followModel)
+                } catch (e: Exception) {
+                    Log.e(TAG, "getFollow: ${e.message()}")
+                }
+            } else {
+                Log.e(TAG, "getUnFollow: UN_LOGIN")
             }
         }
     }
 
     private fun getLike(id: Int) {
         viewModelScope.launch {
-            try {
-                val likeModel = repository.getLike(id = id)
-                val likeState = LikeState(isLike = true, likeModel = likeModel)
-                _likeState.emit(likeState)
-            } catch (e: Exception) {
-                Log.e(TAG, "getLike: ${e.localizedMessage}")
+            if (globalState.value.isLogin) {
+                try {
+                    val likeModel = repository.getLike(id = id)
+                    val likeState = LikeState(isLike = true, likeModel = likeModel)
+                    _likeState.emit(likeState)
+                } catch (e: Exception) {
+                    Log.e(TAG, "getLike: ${e.message()}")
+                }
+            } else {
+                Log.e(TAG, "getLike: UN_LOGIN")
             }
         }
     }
 
     private fun getUnlike(id: Int) {
         viewModelScope.launch {
-            try {
-                val likeModel = repository.getUnlike(id = id)
-                val likeState = LikeState(isLike = false, likeModel = likeModel)
-                _likeState.emit(likeState)
-            } catch (e: Exception) {
-                Log.e(TAG, "getUnlike: ${e.localizedMessage}")
+            if (globalState.value.isLogin) {
+                try {
+                    val likeModel = repository.getUnlike(id = id)
+                    val likeState = LikeState(isLike = false, likeModel = likeModel)
+                    _likeState.emit(likeState)
+                } catch (e: Exception) {
+                    Log.e(TAG, "getUnlike: ${e.message()}")
+                }
+            } else {
+                Log.e(TAG, "getUnlike: UN_LOGIN")
             }
         }
     }

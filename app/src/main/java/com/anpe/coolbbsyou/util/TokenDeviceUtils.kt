@@ -9,20 +9,22 @@ import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
 
 class TokenDeviceUtils {
     companion object {
-        private fun createDeviceCode(aid: String, mac: String, manufacturer: String, brand: String, model: String, display: String, isRaw: Boolean = true
-        ) = "$aid; ; ; $mac; $manufacturer; $brand; $model; $display; null".getBase64(isRaw).reversed()
+        private fun createDeviceCode(aid: String, mac: String, manufacturer: String, brand: String, model: String, display: String, str: String, isRaw: Boolean = true
+        ) = "$aid; ; ; $mac; $manufacturer; $brand; $model; $display; $str".getBase64(isRaw).reversed()
 
         fun getDeviceCode(context: Context): String {
             val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
 
-            val aid = sp.getString("AID", Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID))!!
+            var aid = sp.getString("AID", Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID))!!
+            aid = "DUZJlvIF9j-$aid"
             val mac = sp.getString("MAC", Utils.randomMacAddress())!!
             val manuFactor = Build.MANUFACTURER
             val brand = Build.BRAND
             val model = Build.MODEL
             val display = Build.DISPLAY
+            val str = "null"
 
-            return createDeviceCode(aid, mac, manuFactor, brand, model, display)
+            return createDeviceCode(aid, mac, manuFactor, brand, model, display, str)
         }
 
         fun String.getTokenV2(): String {

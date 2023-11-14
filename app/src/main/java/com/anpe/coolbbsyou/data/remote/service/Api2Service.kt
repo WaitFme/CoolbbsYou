@@ -1,6 +1,7 @@
 package com.anpe.coolbbsyou.data.remote.service
 
 import android.content.Context
+import android.os.Build
 import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.data.remote.cookie.CookieManager
 import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
@@ -30,6 +31,7 @@ interface Api2Service {
                     .callTimeout(5, TimeUnit.SECONDS)
                     .addInterceptor {
                         val request = it.request().newBuilder()
+                            .addHeader(Constants.USER_AGENT_KEY, "${System.getProperty("http.agent")} (#Build; ${Build.BRAND}; ${Build.MODEL}; ${Build.DISPLAY}; ${Build.VERSION.RELEASE}) +CoolMarket/13.3.6-2310232-universal")
                             .addHeader(Constants.DEVICE_CODE_KEY, deviceCode)
                             .addHeader(Constants.DEVICE_TOKEN_KEY, deviceCode.getTokenV2())
                             .addHeader(Constants.REQUEST_WIDTH_KEY, Constants.REQUEST_WIDTH_VALUE)
