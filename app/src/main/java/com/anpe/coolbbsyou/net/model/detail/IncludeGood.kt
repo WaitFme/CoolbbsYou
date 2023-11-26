@@ -1,0 +1,95 @@
+package com.anpe.coolbbsyou.net.model.detail
+
+
+import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
+data class IncludeGood(
+    @Json(name = "buttonTitle")
+    val buttonTitle: String = "",
+    @Json(name = "buy_count")
+    val buyCount: Int = 0,
+    @Json(name = "category_id")
+    val categoryId: Int = 0,
+    @Json(name = "category_name")
+    val categoryName: String = "",
+    @Json(name = "category_status")
+    val categoryStatus: Int = 0,
+    @Json(name = "click_num")
+    val clickNum: Int = 0,
+    @Json(name = "cover")
+    val cover: String = "",
+    @Json(name = "create_time")
+    val createTime: Int = 0,
+    @Json(name = "create_uid")
+    val createUid: Int = 0,
+    @Json(name = "description")
+    val description: String = "",
+    @Json(name = "entityId")
+    val entityId: Int = 0,
+    @Json(name = "entityType")
+    val entityType: String = "",
+    @Json(name = "extra_click_num")
+    val extraClickNum: Int = 0,
+    @Json(name = "fromApi")
+    val fromApi: Int = 0,
+    @Json(name = "goods_feed_relation")
+    val goodsFeedRelation: String = "",
+    @Json(name = "id")
+    val id: Int = 0,
+    @Json(name = "keywords")
+    val keywords: String = "",
+    @Json(name = "keywords_status")
+    val keywordsStatus: Int = 0,
+    @Json(name = "label")
+    val label: String = "",
+    @Json(name = "last_add_time")
+    val lastAddTime: Int = 0,
+    @Json(name = "lock_price_status")
+    val lockPriceStatus: Int = 0,
+    @Json(name = "lock_title_status")
+    val lockTitleStatus: Int = 0,
+    @Json(name = "mall_name")
+    val mallName: String = "",
+    @Json(name = "mall_shop")
+    val mallShop: String = "",
+    @Json(name = "mall_sku")
+    val mallSku: String = "",
+    @Json(name = "original_price")
+    val originalPrice: String = "",
+    @Json(name = "price")
+    val price: String = "",
+    @Json(name = "recommend_content")
+    val recommendContent: String = "",
+    @Json(name = "recommend_status")
+    val recommendStatus: Int = 0,
+    @Json(name = "relation_min_score")
+    val relationMinScore: Int = 0,
+    @Json(name = "sell_time")
+    val sellTime: Int = 0,
+    @Json(name = "sell_url")
+    val sellUrl: String = "",
+    @Json(name = "shop_level")
+    val shopLevel: String = "",
+    @Json(name = "shop_name")
+    val shopName: String = "",
+    @Json(name = "sku_id")
+    val skuId: String = "",
+    @Json(name = "sku_status")
+    val skuStatus: Int = 0,
+    @Json(name = "status")
+    val status: Int = 0,
+    @Json(name = "title")
+    val title: String = "",
+    @Json(name = "update_time")
+    val updateTime: Int = 0,
+    @Json(name = "update_uid")
+    val updateUid: Int = 0,
+    @Json(name = "url")
+    val url: String = "",
+    @Json(name = "wish_buy_count")
+    val wishBuyCount: Int = 0,
+    @Json(name = "wish_count")
+    val wishCount: Int = 0
+)

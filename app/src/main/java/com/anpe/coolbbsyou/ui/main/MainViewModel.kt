@@ -9,17 +9,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.anpe.coolbbsyou.constant.Constants
-import com.anpe.coolbbsyou.data.page.IndexSource
-import com.anpe.coolbbsyou.data.page.NotificationSource
-import com.anpe.coolbbsyou.data.page.ReplySource
-import com.anpe.coolbbsyou.data.page.SearchPaging
-import com.anpe.coolbbsyou.data.remote.cookie.MyCookieStore
-import com.anpe.coolbbsyou.data.remote.domain.createFeed.CreateFeedModel
-import com.anpe.coolbbsyou.data.remote.domain.follow.FollowModel
-import com.anpe.coolbbsyou.data.remote.domain.profile.ProfileModel
-import com.anpe.coolbbsyou.data.remote.repository.RemoteRepository
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.IndexImageState
@@ -38,16 +30,30 @@ import com.anpe.coolbbsyou.intent.state.global.GlobalState
 import com.anpe.coolbbsyou.intent.state.global.ImageArray
 import com.anpe.coolbbsyou.intent.state.space.SpaceState
 import com.anpe.coolbbsyou.intent.state.topic.TopicState
+import com.anpe.coolbbsyou.net.cookie.MyCookieStore
+import com.anpe.coolbbsyou.net.model.createFeed.CreateFeedModel
+import com.anpe.coolbbsyou.net.model.follow.FollowModel
+import com.anpe.coolbbsyou.net.model.index.Data
+import com.anpe.coolbbsyou.net.model.profile.ProfileModel
+import com.anpe.coolbbsyou.net.repository.RemoteRepository
+import com.anpe.coolbbsyou.page.IndexSource
+import com.anpe.coolbbsyou.page.NotificationSource
+import com.anpe.coolbbsyou.page.ReplySource
+import com.anpe.coolbbsyou.page.SearchSource
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.util.LoginUtils.Companion.getRequestHash
+import com.anpe.coolbbsyou.util.TokenDeviceUtils
+import com.anpe.coolbbsyou.util.TokenDeviceUtils.Companion.getTokenV2
 import com.anpe.coolbbsyou.util.Utils
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
@@ -126,7 +132,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _globalState = MutableStateFlow(GlobalState())
     val globalState = _globalState.asStateFlow()
 
+    var indexPagingDataFlow: Flow<PagingData<Data>>? = null
+
+    var replyPagingDataFlow: Flow<PagingData<com.anpe.coolbbsyou.net.model.reply.Data>>? = null
+
+    var replyDetailPagingDataFlow: Flow<PagingData<com.anpe.coolbbsyou.net.model.reply.Data>>? = null
+
     init {
+        val deviceCode = TokenDeviceUtils.getDeviceCode(application)
+        println(deviceCode)
+        println(deviceCode.getTokenV2())
+
         channelHandler(channel)
     }
 
@@ -214,17 +230,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun getIndexState() {
         viewModelScope.launch {
-            _indexState.emit(IndexState.Loading)
+            val pagingDataFlow = Pager(
+                config = PagingConfig(pageSize = 18, prefetchDistance = 6), //10 1
+                pagingSourceFactory = { IndexSource(repository) }
+            ).flow.cachedIn(viewModelScope)
 
-            try {
-                val pagingDataFlow = Pager(
-                    config = PagingConfig(pageSize = 10, prefetchDistance = 1),
-                    pagingSourceFactory = { IndexSource(repository) }
-                ).flow.cachedIn(viewModelScope)
-                _indexState.emit(IndexState.Success(pagingDataFlow))
-            } catch (e: Exception) {
-                _indexState.emit(IndexState.Error(e.message()))
-            }
+            indexPagingDataFlow = pagingDataFlow
         }
     }
 
@@ -296,7 +307,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                                 prefetchDistance = 10
                             ),
                             pagingSourceFactory = {
-                                SearchPaging(repository, keyword)
+                                SearchSource(repository, keyword)
                             }
                         )
                     }.await())
@@ -453,45 +464,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private fun getReply(id: Int) {
         viewModelScope.launch {
-            _replyState.emit(ReplyState.Idle)
-            _replyState.emit(
-                try {
-                    ReplyState.Success(Pager(
-                        PagingConfig(pageSize = 20, prefetchDistance = 5),
-                        pagingSourceFactory = { ReplySource(
-                            repository = repository,
-                            id = id,
-                            listType = "lastupdate_desc",
-                            discussMode = 1,
-                            feedType = "feed"
-                        ) }
-                    ).flow.cachedIn(viewModelScope))
-                } catch (e: Exception) {
-                    ReplyState.Error(e.message())
+            val pagingDataFlow = Pager(
+                PagingConfig(pageSize = 20, prefetchDistance = 5),
+                pagingSourceFactory = {
+                    ReplySource(
+                        repository = repository,
+                        id = id,
+                        listType = "lastupdate_desc",
+                        discussMode = 1,
+                        feedType = "feed"
+                    )
                 }
-            )
+            ).flow.cachedIn(viewModelScope)
+
+            replyPagingDataFlow = pagingDataFlow
         }
     }
 
     private fun getReplyDetail(id: Int) {
         viewModelScope.launch {
-            _replyDetailState.emit(ReplyState.Idle)
-            _replyDetailState.emit(
-                try {
-                    ReplyState.Success(Pager(
-                        PagingConfig(pageSize = 20, prefetchDistance = 5),
-                        pagingSourceFactory = { ReplySource(
-                            repository = repository,
-                            id = id,
-                            listType = "",
-                            discussMode = 0,
-                            feedType = "feed_reply"
-                        ) }
-                    ).flow.cachedIn(viewModelScope))
-                } catch (e: Exception) {
-                    ReplyState.Error(e.message())
+            val pagingDataFlow = Pager(
+                PagingConfig(pageSize = 20, prefetchDistance = 5),
+                pagingSourceFactory = {
+                    ReplySource(
+                        repository = repository,
+                        id = id,
+                        listType = "",
+                        discussMode = 0,
+                        feedType = "feed_reply"
+                    )
                 }
-            )
+            ).flow.cachedIn(viewModelScope)
+
+            replyDetailPagingDataFlow = pagingDataFlow
         }
     }
 
@@ -563,6 +568,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "AID",
                 Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
             ).apply()
+        }
+        if (configSp.getString("UUID", null) == null) {
+            configSp.edit().putString("UUID", UUID.randomUUID().toString()).apply()
         }
 
         if (configSp.getString("MAC", null) == null) {

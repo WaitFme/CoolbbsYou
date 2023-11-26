@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.anpe.coolbbsyou.constant.Constants
-import com.anpe.coolbbsyou.data.local.entity.device.DeviceEntity
+import com.anpe.coolbbsyou.data.entity.device.DeviceEntity
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import kotlinx.coroutines.launch

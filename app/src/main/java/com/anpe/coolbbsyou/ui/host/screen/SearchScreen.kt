@@ -78,15 +78,16 @@ import coil.request.ImageRequest
 import com.anpe.bilibiliandyou.ui.view.TextDirection
 import com.anpe.bilibiliandyou.ui.view.TextIcon
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.remote.domain.search.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.SearchState
 import com.anpe.coolbbsyou.intent.state.SuggestState
-import com.anpe.coolbbsyou.ui.view.DetailPager
+import com.anpe.coolbbsyou.net.model.search.Data
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.view.DialogImage
+import com.anpe.coolbbsyou.ui.view.FeedView
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.NineImageGrid
 import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
@@ -215,7 +216,7 @@ private fun ListBlock(
                                 (searchState as SearchState.Success).data.flow.collectAsLazyPagingItems()
 
                             LazyColumn(content = {
-                                items(pagingItems) {
+                                items(pagingItems, { it.entityId }) {
                                     when (it?.entityId) {
                                         "card-user" -> {
                                             Card(
@@ -325,7 +326,7 @@ private fun ListBlock(
 
                                         val likeStatus = likeState.isLike
 
-                                        FeedItem(
+                                        /*FeedItem(
                                             modifier = Modifier.padding(15.dp, 5.dp, 15.dp, 5.dp),
                                             data = it,
                                             isNineGrid = false,
@@ -333,19 +334,42 @@ private fun ListBlock(
                                             likeStatus = likeStatus,
                                             onClick = {
                                                 scope.launch {
-                                                    viewModel.channel.send(MainEvent.GetDetails(it.id))
-                                                    viewModel.channel.send(MainEvent.GetReply(it.id))
+                                                    viewModel.channel.send(MainEvent.GetDetails(it.id.toInt()))
+                                                    viewModel.channel.send(MainEvent.GetReply(it.id.toInt()))
                                                     setIsDetailOpen(true)
                                                 }
                                             },
                                             onLike = {
                                                 scope.launch {
                                                     viewModel.channel.send(
-                                                        if (likeStatus) MainEvent.Unlike(it.id) else MainEvent.Like(
-                                                            it.id
+                                                        if (likeStatus) MainEvent.Unlike(it.id.toInt()) else MainEvent.Like(
+                                                            it.id.toInt()
                                                         )
                                                     )
                                                 }
+                                            }
+                                        )*/
+                                        FeedView(
+                                            modifier = Modifier.padding(15.dp, 5.dp, 15.dp, 5.dp),
+                                            data = it,
+                                            isNineGrid = false,
+//                                            likeNum = likeNum,
+                                            likeStatus = likeStatus,
+                                            onClick = {
+                                                scope.launch {
+                                                    viewModel.channel.send(MainEvent.GetDetails(it.id.toInt()))
+                                                    viewModel.channel.send(MainEvent.GetReply(it.id.toInt()))
+                                                    setIsDetailOpen(true)
+                                                }
+                                            },
+                                            onAvatar = {
+
+                                            },
+                                            onClickPic = {
+
+                                            },
+                                            onTopic = {},
+                                            onLike = {
                                             }
                                         )
                                     }
@@ -696,9 +720,9 @@ private fun FeedItem(
     modifier: Modifier = Modifier,
     data: Data,
     isNineGrid: Boolean,
-    likeNum: Int = data.likenum,
+    likeNum: Int = data.likenum.toInt(),
     likeStatus: Boolean = false,
-    replyNum: Int = data.replynum,
+    replyNum: Int = data.replynum.toInt(),
 //    shareNum: Int = data.shareNum.toInt(),
     shareNum: Int = 0,
     onClick: () -> Unit,

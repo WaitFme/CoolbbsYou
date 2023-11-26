@@ -29,7 +29,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -64,14 +63,14 @@ import androidx.window.layout.DisplayFeature
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.remote.domain.space.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.feedList.FeedListState
 import com.anpe.coolbbsyou.intent.state.space.SpaceState
-import com.anpe.coolbbsyou.ui.view.DetailPager
+import com.anpe.coolbbsyou.net.model.space.Data
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.CustomProgressRect
+import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.view.FeedView
 import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
 import com.anpe.coolbbsyou.ui.view.toFeedData
@@ -666,7 +665,7 @@ private fun ContentTest(
 
             items(dataList) {
                 FeedView(
-                    modifier = Modifier.padding(15.dp, 10.dp, 15.dp, 10.dp),
+                    modifier = Modifier.padding(10.dp, 5.dp, 10.dp, 5.dp),
                     data = it.toFeedData(),
                     isNineGrid = false,
                     likeStatus = false,
@@ -686,8 +685,6 @@ private fun ContentTest(
             }
         }
     }
-
-    MediumTopAppBar(title = { Text(text = "sdsds") })
 }
 
 @Composable

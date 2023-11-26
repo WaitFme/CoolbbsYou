@@ -6,17 +6,34 @@ import android.provider.Settings
 import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.util.Utils.Companion.getBase64
 import com.anpe.coolbbsyou.util.Utils.Companion.getMD5
+import java.util.UUID
 
 class TokenDeviceUtils {
     companion object {
-        private fun createDeviceCode(aid: String, mac: String, manufacturer: String, brand: String, model: String, display: String, str: String, isRaw: Boolean = true
-        ) = "$aid; ; ; $mac; $manufacturer; $brand; $model; $display; $str".getBase64(isRaw).reversed()
+        private fun createDeviceCode(
+            id: String,
+            mac: String,
+            manufacturer: String,
+            brand: String,
+            model: String,
+            display: String,
+            str: String,
+            isRaw: Boolean = true
+        ) = "$id; ; ; $mac; $manufacturer; $brand; $model; $display; $str".getBase64(isRaw)
+            .reversed()
 
         fun getDeviceCode(context: Context): String {
             val sp = context.getSharedPreferences(Constants.CONFIG_PREFS, Context.MODE_PRIVATE)
 
-            var aid = sp.getString("AID", Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID))!!
-            aid = "DUZJlvIF9j-$aid"
+            var aid = sp.getString(
+                "AID",
+                Settings.System.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+            )!!
+
+            val uuid = sp.getString("UUID", UUID.randomUUID().toString())!!
+            val uuids = uuid.split("-")
+            val id = "ca${uuids[0]}_${uuids[1]}${uuids[2]}${uuids[3]}${uuids[4]}"
+
             val mac = sp.getString("MAC", Utils.randomMacAddress())!!
             val manuFactor = Build.MANUFACTURER
             val brand = Build.BRAND
@@ -24,7 +41,7 @@ class TokenDeviceUtils {
             val display = Build.DISPLAY
             val str = "null"
 
-            return createDeviceCode(aid, mac, manuFactor, brand, model, display, str)
+            return createDeviceCode(id, mac, manuFactor, brand, model, display, str)
         }
 
         fun String.getTokenV2(): String {

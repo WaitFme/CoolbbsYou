@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state.feedList
 
-import com.anpe.coolbbsyou.data.remote.domain.feedList.FeedListModel
+import com.anpe.coolbbsyou.net.model.feedList.FeedListModel
 
 sealed class FeedListState {
     data object Idle: FeedListState()

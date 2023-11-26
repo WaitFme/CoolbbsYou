@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state
 
-import com.anpe.coolbbsyou.data.remote.domain.profile.ProfileModel
+import com.anpe.coolbbsyou.net.model.profile.ProfileModel
 
 sealed class ProfileState {
     data object Idle: ProfileState()

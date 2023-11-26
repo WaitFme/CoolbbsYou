@@ -52,12 +52,12 @@ import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.remote.domain.topic.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.topic.TopicState
-import com.anpe.coolbbsyou.ui.view.DetailPager
+import com.anpe.coolbbsyou.net.model.topic.Data
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
 
 @Composable

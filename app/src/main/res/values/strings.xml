@@ -10,13 +10,13 @@
     <string name="setting_screen">设置页</string>
     <string name="space_screen">用户主页</string>
     <string name="topic_screen">话题页</string>
-    <string name="news_screen">每日宽页</string>
+    <string name="news_screen">每日药闻</string>
     <string name="search_screen">搜索</string>
 
     <!--PAGER-->
     <string name="home_pager">主页</string>
     <string name="message_pager">消息</string>
-    <string name="settings_pager">设置</string>
+    <string name="my_pager">个人</string>
 
     <string name="follow">关注</string>
     <string name="fans">粉丝</string>

@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state
 
-import com.anpe.coolbbsyou.data.remote.domain.login.LoginModel
+import com.anpe.coolbbsyou.net.model.login.LoginModel
 
 sealed class LoginState {
     object Idle: LoginState()

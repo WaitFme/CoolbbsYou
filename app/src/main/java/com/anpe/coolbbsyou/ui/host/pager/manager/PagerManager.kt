@@ -8,5 +8,5 @@ sealed class PagerManager(val route: String, @StringRes val resourceId: Int) {
 
     data object MessagePager: PagerManager("MessagePager", R.string.message_pager)
 
-    data object MyPager: PagerManager("MyPager", R.string.settings_pager)
+    data object MyPager: PagerManager("MyPager", R.string.my_pager)
 }

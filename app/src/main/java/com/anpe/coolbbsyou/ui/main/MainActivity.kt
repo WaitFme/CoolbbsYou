@@ -4,12 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,6 +34,8 @@ class MainActivity : ComponentActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        window.setBackgroundDrawable(null)
+
         setContent {
             CoolbbsYouTheme {
                 rememberSystemUiController().setSystemBarsColor(
@@ -49,91 +47,91 @@ class MainActivity : ComponentActivity() {
                 val windowSizeClass = calculateWindowSizeClass(activity = this)
                 val displayFeatures = calculateDisplayFeatures(activity = this)
 
-                Surface(
+                /*Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+//                    color = MaterialTheme.colorScheme.background
                 ) {
-                    val navControllerScreen = rememberNavController()
+                }*/
+                val navControllerScreen = rememberNavController()
 
-                    val viewModel: MainViewModel = viewModel()
+                val viewModel: MainViewModel = viewModel()
 
-                    NavHost(
-                        navController = navControllerScreen,
-                        startDestination = ScreenManager.SplashScreen.route,
-                        builder = {
-                            composable(route = ScreenManager.SplashScreen.route) {
-                                SplashScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.MainScreen.route) {
-                                MainScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    windowSizeClass = windowSizeClass,
-                                    displayFeatures = displayFeatures,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.LoginScreen.route) {
-                                LoginScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.ImageScreen.route) {
-                                ImageScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.PostScreen.route) {
-                                PostScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.SettingScreen.route) {
-                                SettingScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.SpaceScreen.route) {
-                                SpaceScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    windowSizeClass = windowSizeClass,
-                                    displayFeatures = displayFeatures,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.TopicScreen.route) {
-                                TopicScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    windowSizeClass = windowSizeClass,
-                                    displayFeatures = displayFeatures,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.TopicScreen.route) {
-                                NewsScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    windowSizeClass = windowSizeClass,
-                                    displayFeatures = displayFeatures,
-                                    viewModel = viewModel
-                                )
-                            }
-                            composable(route = ScreenManager.TopicScreen.route) {
-                                SearchScreen(
-                                    navControllerScreen = navControllerScreen,
-                                    windowSizeClass = windowSizeClass,
-                                    displayFeatures = displayFeatures,
-                                    viewModel = viewModel
-                                )
-                            }
+                NavHost(
+                    navController = navControllerScreen,
+                    startDestination = ScreenManager.SplashScreen.route,
+                    builder = {
+                        composable(route = ScreenManager.SplashScreen.route) {
+                            SplashScreen(
+                                navControllerScreen = navControllerScreen,
+                                viewModel = viewModel
+                            )
                         }
-                    )
-                }
+                        composable(route = ScreenManager.MainScreen.route) {
+                            MainScreen(
+                                navControllerScreen = navControllerScreen,
+                                windowSizeClass = windowSizeClass,
+                                displayFeatures = displayFeatures,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.LoginScreen.route) {
+                            LoginScreen(
+                                navControllerScreen = navControllerScreen,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.ImageScreen.route) {
+                            ImageScreen(
+                                navControllerScreen = navControllerScreen,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.PostScreen.route) {
+                            PostScreen(
+                                navControllerScreen = navControllerScreen,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.SettingScreen.route) {
+                            SettingScreen(
+                                navControllerScreen = navControllerScreen,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.SpaceScreen.route) {
+                            SpaceScreen(
+                                navControllerScreen = navControllerScreen,
+                                windowSizeClass = windowSizeClass,
+                                displayFeatures = displayFeatures,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.TopicScreen.route) {
+                            TopicScreen(
+                                navControllerScreen = navControllerScreen,
+                                windowSizeClass = windowSizeClass,
+                                displayFeatures = displayFeatures,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.NewsScreen.route) {
+                            NewsScreen(
+                                navControllerScreen = navControllerScreen,
+                                windowSizeClass = windowSizeClass,
+                                displayFeatures = displayFeatures,
+                                viewModel = viewModel
+                            )
+                        }
+                        composable(route = ScreenManager.SearchScreen.route) {
+                            SearchScreen(
+                                navControllerScreen = navControllerScreen,
+                                windowSizeClass = windowSizeClass,
+                                displayFeatures = displayFeatures,
+                                viewModel = viewModel
+                            )
+                        }
+                    }
+                )
             }
         }
     }

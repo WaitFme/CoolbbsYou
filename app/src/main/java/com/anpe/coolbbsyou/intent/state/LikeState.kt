@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state
 
-import com.anpe.coolbbsyou.data.remote.domain.like.LikeModel
+import com.anpe.coolbbsyou.net.model.like.LikeModel
 
 data class LikeState(
     val isLike: Boolean = false,

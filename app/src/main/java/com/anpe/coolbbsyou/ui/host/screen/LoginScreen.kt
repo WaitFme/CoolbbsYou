@@ -263,8 +263,8 @@ fun LoginScreen(navControllerScreen: NavHostController, viewModel: MainViewModel
                         is LoginState.Success -> {
                             if (it.loginModel.status == 1) {
                                 configSp.edit().putBoolean("LOGIN_STATUS", true).apply()
-                                viewModel.channel.send(MainEvent.GetProfile(it.loginModel.sESSION.uid))
-//                                navControllerScreen.popBackStack()
+                                viewModel.channel.send(MainEvent.GetProfile(it.loginModel.session.uid))
+                                navControllerScreen.popBackStack()
                                 context.showToast("登陆成功！")
                             } else {
                                 context.showToast("账号或密码错误！${it.loginModel.status}")

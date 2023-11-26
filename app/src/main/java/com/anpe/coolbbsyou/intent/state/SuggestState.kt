@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state
 
-import com.anpe.coolbbsyou.data.remote.domain.suggest.SuggestSearchModel
+import com.anpe.coolbbsyou.net.model.suggest.SuggestSearchModel
 
 sealed class SuggestState {
     object Idle: SuggestState()

@@ -84,33 +84,27 @@ fun TwoPaneResponsiveLayout(
     /**
      * True if the detail is currently open. This is the primary control for "navigation".
      */
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            if (railBar != null && widthSizeClass == WindowWidthSizeClass.Expanded) {
-                railBar()
-            }
-
-            val configuration = LocalConfiguration.current
-
-            val listWidth = (configuration.screenWidthDp / 3).coerceAtLeast(375).coerceAtMost(425)
-
-            ListDetail(
-                modifier = modifier,
-                isDetailOpen = isDetailOpen,
-                setIsDetailOpen = setIsDetailOpen,
-                showListAndDetail = widthSizeClass == WindowWidthSizeClass.Expanded,
-                detailKey = selectedWordIndex,
-                list = list,
-                detail = detail,
-                twoPaneStrategy = HorizontalTwoPaneStrategy(
-                    splitOffset = listWidth.dp,
-                ),
-                displayFeatures = displayFeatures
-            )
+    Row(modifier = Modifier.fillMaxSize()) {
+        if (railBar != null && widthSizeClass == WindowWidthSizeClass.Expanded) {
+            railBar()
         }
+
+        val configuration = LocalConfiguration.current
+
+        val listWidth = (configuration.screenWidthDp / 3).coerceAtLeast(375).coerceAtMost(425)
+
+        ListDetail(
+            modifier = modifier,
+            isDetailOpen = isDetailOpen,
+            setIsDetailOpen = setIsDetailOpen,
+            showListAndDetail = widthSizeClass == WindowWidthSizeClass.Expanded,
+            detailKey = selectedWordIndex,
+            list = list,
+            detail = detail,
+            twoPaneStrategy = HorizontalTwoPaneStrategy(
+                splitOffset = listWidth.dp,
+            ),
+            displayFeatures = displayFeatures
+        )
     }
 }

@@ -1,7 +1,7 @@
 package com.anpe.coolbbsyou.intent.state
 
 import androidx.paging.PagingData
-import com.anpe.coolbbsyou.data.remote.domain.index.Data
+import com.anpe.coolbbsyou.net.model.index.Data
 import kotlinx.coroutines.flow.Flow
 
 sealed class IndexPagingState {

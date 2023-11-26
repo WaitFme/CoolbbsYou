@@ -1,7 +1,7 @@
 package com.anpe.coolbbsyou.intent.state
 
 import androidx.paging.Pager
-import com.anpe.coolbbsyou.data.remote.domain.search.Data
+import com.anpe.coolbbsyou.net.model.search.Data
 
 sealed class SearchState {
     object Idle: SearchState()

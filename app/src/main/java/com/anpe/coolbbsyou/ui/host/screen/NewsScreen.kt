@@ -3,7 +3,6 @@ package com.anpe.coolbbsyou.ui.host.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -57,7 +55,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -65,13 +62,14 @@ import androidx.window.layout.DisplayFeature
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.anpe.coolbbsyou.R
-import com.anpe.coolbbsyou.data.remote.domain.today.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
 import com.anpe.coolbbsyou.intent.state.TodayState
-import com.anpe.coolbbsyou.ui.view.DetailPager
+import com.anpe.coolbbsyou.net.model.today.Data
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
+import com.anpe.coolbbsyou.ui.view.ArticleView
+import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.view.HtmlText
 import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
 import com.anpe.coolbbsyou.util.Utils.Companion.clickableNoRipple
@@ -209,13 +207,13 @@ private fun ListBlock(
                 modifier = Modifier
                     .pullRefresh(refreshState)
                     .fillMaxHeight(),
-                contentPadding = PaddingValues(15.dp, 0.dp, 15.dp, 10.dp),
+                contentPadding = PaddingValues(0.dp, 10.dp, 0.dp, 10.dp),
                 content = {
                     items(items = dataList) {
                         when (it.entityType) {
                             "feed" -> {
                                 FeedItem(
-                                    modifier = Modifier.padding(top = 5.dp, bottom = 5.dp),
+                                    modifier = Modifier.padding(10.dp, 5.dp, 10.dp, 5.dp),
                                     data = it,
                                     onClick = {
                                         scope.launch {
@@ -227,13 +225,9 @@ private fun ListBlock(
                             }
 
                             "imageTextGridCard" -> {
-                                ImageTextItem(
-                                    modifier = Modifier.padding(
-                                        top = 5.dp,
-                                        bottom = 5.dp
-                                    ), data = it, onClick = {
-
-                                    }
+                                ArticleView(
+                                    modifier = Modifier.padding(bottom = 10.dp),
+                                    data = it
                                 )
                             }
                         }
@@ -273,6 +267,8 @@ private fun FeedItem(
             modifier = Modifier
                 .padding(start = 10.dp, top = 10.dp, end = 10.dp),
             htmlText = data.message,
+            fontSize = 15.sp,
+            lineHeight = 21.sp,
             openLink = {}
         )
 
@@ -315,51 +311,6 @@ private fun FeedItem(
             }",
             fontSize = 13.sp
         )
-    }
-}
-
-@Composable
-private fun ImageTextItem(modifier: Modifier = Modifier, data: Data, onClick: () -> Unit) {
-    val context = LocalContext.current
-
-    Column(modifier = modifier) {
-        LazyRow(content = {
-            items(data.entities) {
-                Column(
-                    modifier = Modifier
-                        .width(180.dp)
-                        .padding(
-                            end = 10.dp
-                        )
-                        .clip(RoundedCornerShape(15.dp))
-                        .clickableNoRipple {
-                            onClick()
-                        }
-                ) {
-                    AsyncImage(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(2f),
-                        model = ImageRequest.Builder(context)
-                            .data(it.pic)
-                            .build(),
-                        contentScale = ContentScale.Crop,
-                        contentDescription = "image"
-                    )
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                            .padding(5.dp),
-                        text = it.title,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 2,
-                        minLines = 2,
-                        fontSize = 15.sp
-                    )
-                }
-            }
-        })
     }
 }
 

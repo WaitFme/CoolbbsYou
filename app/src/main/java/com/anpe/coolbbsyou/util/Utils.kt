@@ -1,6 +1,7 @@
 package com.anpe.coolbbsyou.util
 
 import android.content.res.Configuration
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.ColorScheme
@@ -264,6 +265,14 @@ class Utils {
                 val format = "%.2f".format(this / 1000000f)
                 "${format}M"
             }
+        }
+
+        fun getUserAgent(version: String = "13.3.6", versionCode: String = "2310232"): String {
+            val baseAgent = System.getProperty("http.agent")
+            val buildInfo = "(#Build; ${Build.BRAND}; ${Build.MODEL}; ${Build.DISPLAY}; ${Build.VERSION.RELEASE})"
+            val versionInfo = "+CoolMarket/$version-$versionCode-universal"
+
+            return "$baseAgent $buildInfo $versionInfo"
         }
     }
 }

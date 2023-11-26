@@ -2,6 +2,8 @@ package com.anpe.coolbbsyou.ui.host.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
@@ -20,9 +22,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -39,6 +45,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
@@ -70,6 +77,11 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -92,8 +104,8 @@ import com.anpe.coolbbsyou.R
 import com.anpe.coolbbsyou.constant.Constants
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.DetailsState
+import com.anpe.coolbbsyou.intent.state.LoginState
 import com.anpe.coolbbsyou.intent.state.SuggestState
-import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.host.pager.HomePager
 import com.anpe.coolbbsyou.ui.host.pager.MessagePager
 import com.anpe.coolbbsyou.ui.host.pager.MyPager
@@ -101,8 +113,8 @@ import com.anpe.coolbbsyou.ui.host.pager.manager.PagerManager
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.ui.view.CustomProgress
+import com.anpe.coolbbsyou.ui.view.DetailPager
 import com.anpe.coolbbsyou.ui.view.TwoPaneResponsiveLayout
-import com.anpe.coolbbsyou.util.MyApplication
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getBoolean
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getInt
 import com.anpe.coolbbsyou.util.SharedPreferencesUtils.Companion.getString
@@ -121,6 +133,8 @@ fun MainScreen(
 
     val navControllerPager = rememberNavController()
 
+    val globalState by viewModel.globalState.collectAsState()
+
     val homeItem = NavigationItem(
         title = stringResource(id = PagerManager.HomePager.resourceId),
         icon = painterResource(id = R.drawable.baseline_home_24),
@@ -133,7 +147,7 @@ fun MainScreen(
     )
     val settingItem = NavigationItem(
         title = stringResource(id = PagerManager.MyPager.resourceId),
-        icon = painterResource(id = R.drawable.baseline_settings_24),
+        icon = painterResource(id = R.drawable.baseline_person_24),
         route = PagerManager.MyPager.route,
     )
 
@@ -165,7 +179,9 @@ fun MainScreen(
                             viewModel.channel.send(MainEvent.GetProfile(uid))
                         }
                     }
-                    dialog = !dialog
+                    if (!globalState.isLogin) {
+                        dialog = !dialog
+                    }
                 },
                 onNavigate = {
                     index = it
@@ -189,7 +205,11 @@ fun MainScreen(
                 navControllerPager = navControllerPager,
                 items = items,
                 windowSizeClass = windowSizeClass,
-                showDialog = { dialog = it },
+                showDialog = {
+                    if (!globalState.isLogin) {
+                        dialog = it
+                    }
+                },
                 setIsDetailOpen = { isDetailOpen = it },
                 viewModel = viewModel
             )
@@ -208,7 +228,7 @@ fun MainScreen(
         BackHandler {
             dialog = false
         }
-        CustomDialog(
+        /*CustomDialog(
             onDismissRequest = { dialog = false },
             onLogout = {
                 scope.launch {
@@ -218,13 +238,67 @@ fun MainScreen(
                 }
             },
             onLogin = {
-                if (!getBoolean(name = Constants.CONFIG_PREFS, key = "LOGIN_STATUS")) {
+                if (!globalState.isLogin) {
                     dialog = false
                     navControllerScreen.navigate(ScreenManager.LoginScreen.route)
                 }
             },
             viewModel = viewModel
+        )*/
+
+        val context = LocalContext.current
+
+        SignInDialog(
+            onDismissRequest = { dialog = false },
+            onSignIn = { account, passwd ->
+                scope.launch {
+                    if (account.isEmpty() || passwd.isEmpty()) {
+                        context.showToast("请输入完整账号密码！")
+                        return@launch
+                    }
+
+                    val requestHash = globalState.requestHash
+
+                    if (requestHash.isNotEmpty()) {
+                        viewModel.channel.send(
+                            MainEvent.LoginAccount(
+                                account = account,
+                                passwd = passwd,
+                                requestHash = requestHash,
+                                captcha = ""
+                            )
+                        )
+                    }
+                }
+            },
         )
+
+        LaunchedEffect(key1 = Unit, block = {
+            viewModel.loginState.collect {
+                when (it) {
+                    is LoginState.Idle -> {
+                        viewModel.getRequestHash()
+                    }
+
+                    is LoginState.LoggingIn -> {
+                        context.showToast("登陆中，请稍后...")
+                    }
+
+                    is LoginState.Success -> {
+                        if (it.loginModel.status == 1) {
+                            viewModel.channel.send(MainEvent.GetProfile(it.loginModel.session.uid))
+                            context.showToast("登陆成功！")
+                        } else {
+                            context.showToast("账号或密码错误！${it.loginModel.status}")
+                        }
+                    }
+
+                    is LoginState.Error -> {
+                        context.showToast("登陆失败: ${it.error}")
+                    }
+                }
+            }
+        })
     }
 }
 
@@ -327,33 +401,34 @@ private fun ListBlock(
                 else -> {}
             }
         },
-    ) {
-        NavHost(
-            modifier = Modifier.padding(it),
-            navController = navControllerPager,
-            startDestination = PagerManager.HomePager.route,
-            builder = {
-                composable(route = PagerManager.HomePager.route) {
-                    HomePager(
-                        navControllerScreen = navControllerScreen,
-                        navControllerPager = navControllerPager,
-                        setIsDetailOpen = setIsDetailOpen,
-                        viewModel = viewModel
-                    )
+        content = { pv->
+            NavHost(
+                modifier = Modifier.padding(pv),
+                navController = navControllerPager,
+                startDestination = PagerManager.HomePager.route,
+                builder = {
+                    composable(route = PagerManager.HomePager.route) {
+                        HomePager(
+                            navControllerScreen = navControllerScreen,
+                            navControllerPager = navControllerPager,
+                            setIsDetailOpen = setIsDetailOpen,
+                            viewModel = viewModel
+                        )
+                    }
+                    composable(route = PagerManager.MessagePager.route) {
+                        MessagePager(viewModel = viewModel)
+                    }
+                    composable(route = PagerManager.MyPager.route) {
+                        MyPager(
+                            navControllerScreen = navControllerScreen,
+                            navControllerPager = navControllerPager,
+                            viewModel = viewModel
+                        )
+                    }
                 }
-                composable(route = PagerManager.MessagePager.route) {
-                    MessagePager(viewModel = viewModel)
-                }
-                composable(route = PagerManager.MyPager.route) {
-                    MyPager(
-                        navControllerScreen = navControllerScreen,
-                        navControllerPager = navControllerPager,
-                        viewModel = viewModel
-                    )
-                }
-            }
-        )
-    }
+            )
+        }
+    )
 }
 
 @Composable
@@ -453,7 +528,7 @@ private fun TopBar(
         SearchBar(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 15.dp, end = 15.dp, bottom = 10.dp),
+                .padding(start = 10.dp, end = 10.dp, bottom = 10.dp),
             query = query,
             onQueryChange = {
                 query = it
@@ -640,7 +715,7 @@ private fun RailBar(
     selectedItemIndex: Int,
     avatarClick: () -> Unit,
     onNavigate: (Int) -> Unit,
-    onSetting: () -> Unit ={}
+    onSetting: () -> Unit = {}
 ) {
     NavigationRail(
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -762,6 +837,121 @@ private fun BottomBar(
                 label = { Text(text = item.title, fontSize = 14.sp) },
                 alwaysShowLabel = false,
                 onClick = { onNavigate(index) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SignInDialog(
+    onDismissRequest: () -> Unit,
+    onSignIn: (acc: String, pass: String) -> Unit,
+) {
+    Dialog(onDismissRequest = { onDismissRequest() }) {
+        Column(
+            modifier = Modifier
+                .width(350.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(100.dp))
+                .padding(15.dp),
+        ) {
+            var account by remember {
+                mutableStateOf(TextFieldValue())
+            }
+            var passwd by remember {
+                mutableStateOf(TextFieldValue())
+            }
+            var showPasswd by remember {
+                mutableStateOf(false)
+            }
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(5.dp)
+            ) {
+                Text(
+                    modifier = Modifier.align(Alignment.CenterStart),
+                    text = "SignIn",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 25.sp
+                )
+
+                Button(
+                    modifier = Modifier.align(Alignment.CenterEnd),
+                    shape = RoundedCornerShape(10.dp),
+                    onClick = { onSignIn(account.text, passwd.text) }
+                ) {
+                    Text(text = "登陆")
+                }
+            }
+
+            OutlinedTextField(
+                modifier = Modifier
+                    .width(500.dp)
+                    .padding(5.dp),
+                label = { Text(text = stringResource(id = R.string.account_label)) },
+                value = account,
+                onValueChange = { account = it },
+                maxLines = 1,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                trailingIcon = {
+                    AnimatedVisibility(
+                        visible = account.text.isNotEmpty(),
+                        enter = fadeIn(),
+                        exit = fadeOut()
+                    ) {
+                        IconButton(onClick = { account = TextFieldValue(text = "") }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "clear"
+                            )
+                        }
+                    }
+                }
+            )
+
+            OutlinedTextField(
+                modifier = Modifier
+                    .width(500.dp)
+                    .padding(5.dp),
+                label = { Text(text = stringResource(id = R.string.passwd_label)) },
+                value = passwd,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                visualTransformation = if (showPasswd) VisualTransformation.None else
+                    PasswordVisualTransformation('・'),
+                singleLine = true,
+                trailingIcon = {
+                    Row {
+                        AnimatedVisibility(
+                            visible = passwd.text.isNotEmpty(),
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            IconButton(onClick = { passwd = TextFieldValue(text = "") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "clear"
+                                )
+                            }
+                        }
+
+                        IconButton(onClick = { showPasswd = !showPasswd }) {
+                            Icon(
+                                imageVector = if (showPasswd) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "clear"
+                            )
+                        }
+                    }
+                },
+                onValueChange = { passwd = it },
+                keyboardActions = KeyboardActions(onDone = { onSignIn(account.text, passwd.text) })
             )
         }
     }
@@ -931,19 +1121,37 @@ private fun CustomDialog(
                 ) {
                     val follow = buildAnnotatedString {
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(getInt(name = Constants.USER_INFO_PREFS, key = "FOLLOW", defValue = -1).toString())
+                            append(
+                                getInt(
+                                    name = Constants.USER_INFO_PREFS,
+                                    key = "FOLLOW",
+                                    defValue = -1
+                                ).toString()
+                            )
                         }
                         append("\n${stringResource(id = R.string.follow)}")
                     }
                     val fans = buildAnnotatedString {
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(getInt(name = Constants.USER_INFO_PREFS, key = "FANS", defValue = -1).toString())
+                            append(
+                                getInt(
+                                    name = Constants.USER_INFO_PREFS,
+                                    key = "FANS",
+                                    defValue = -1
+                                ).toString()
+                            )
                         }
                         append("\n${stringResource(id = R.string.fans)}")
                     }
                     val feed = buildAnnotatedString {
                         withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-                            append(getInt(name = Constants.USER_INFO_PREFS, key = "FEED", defValue = -1).toString())
+                            append(
+                                getInt(
+                                    name = Constants.USER_INFO_PREFS,
+                                    key = "FEED",
+                                    defValue = -1
+                                ).toString()
+                            )
                         }
                         append("\n${stringResource(id = R.string.feed)}")
                     }

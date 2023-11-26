@@ -1,8 +1,8 @@
 package com.anpe.coolbbsyou.util
 
 import android.util.Log
-import com.anpe.coolbbsyou.data.local.entity.cookie.CookieEntity
-import com.anpe.coolbbsyou.data.remote.cookie.OkHttpCookies
+import com.anpe.coolbbsyou.data.entity.cookie.CookieEntity
+import com.anpe.coolbbsyou.net.cookie.OkHttpCookies
 import com.anpe.coolbbsyou.util.Utils.Companion.byteArrayToHexString
 import com.anpe.coolbbsyou.util.Utils.Companion.hexStringToByteArray
 import okhttp3.Cookie

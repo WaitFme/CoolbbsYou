@@ -1,8 +1,8 @@
 package com.anpe.coolbbsyou.intent.state.replyDetail
 
-import com.anpe.coolbbsyou.data.remote.domain.reply.ReplyModel
+import com.anpe.coolbbsyou.net.model.reply.ReplyModel
 
-sealed class ReplyDetailState {
+sealed class ReplyDetailState() {
     data object Idle: ReplyDetailState()
 
     data object Loading: ReplyDetailState()

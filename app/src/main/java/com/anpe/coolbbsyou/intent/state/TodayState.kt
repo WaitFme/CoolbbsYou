@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state
 
-import com.anpe.coolbbsyou.data.remote.domain.today.TodayCoolModel
+import com.anpe.coolbbsyou.net.model.today.TodayCoolModel
 
 sealed class TodayState {
     object Idle: TodayState()

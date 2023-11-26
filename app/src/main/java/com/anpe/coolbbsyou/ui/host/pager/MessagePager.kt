@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,69 +31,82 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
-import com.anpe.coolbbsyou.data.remote.domain.nofitication.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
 import com.anpe.coolbbsyou.intent.state.NotificationState
+import com.anpe.coolbbsyou.net.model.nofitication.Data
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.Utils.Companion.richToString
 import com.anpe.coolbbsyou.util.Utils.Companion.timeStampInterval
 
 @Composable
 fun MessagePager(viewModel: MainViewModel) {
-    val notificationState by viewModel.notificationState.collectAsState()
+    val globalState by viewModel.globalState.collectAsState()
 
-    val timeMillis = System.currentTimeMillis()
+    if (globalState.isLogin) {
+        val notificationState by viewModel.notificationState.collectAsState()
 
-    LaunchedEffect(key1 = true, block = {
-        viewModel.channel.send(MainEvent.GetNotification)
-    })
+        val timeMillis = System.currentTimeMillis()
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        var dataList by remember {
-            mutableStateOf<LazyPagingItems<Data>?>(null)
-        }
+        LaunchedEffect(key1 = true, block = {
+            viewModel.channel.send(MainEvent.GetNotification)
+        })
 
-        when (notificationState) {
-            is NotificationState.Error -> {
-                Text(modifier = Modifier.align(Alignment.Center), text = (notificationState as NotificationState.Error).e)
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            var dataList by remember {
+                mutableStateOf<LazyPagingItems<Data>?>(null)
             }
-            NotificationState.Idle -> {
-                Text(modifier = Modifier.align(Alignment.Center), text = "加载失败！")
-            }
-            NotificationState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
-            is NotificationState.Success -> {
-                dataList = (notificationState as NotificationState.Success).pager.collectAsLazyPagingItems()
-            }
-        }
 
-        LazyColumn(content = {
-            item {
-                Column {
-                    BlockItem(title = "我的动态")
-                    BlockItem(title = "我的评论")
-                    BlockItem(title = "我收到的赞")
-                    BlockItem(title = "好友关注")
-                    BlockItem(title = "私信")
+            when (notificationState) {
+                is NotificationState.Error -> {
+                    Text(modifier = Modifier.align(Alignment.Center), text = (notificationState as NotificationState.Error).e)
+                }
+                NotificationState.Idle -> {
+                    Text(modifier = Modifier.align(Alignment.Center), text = "加载失败！")
+                }
+                NotificationState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is NotificationState.Success -> {
+                    dataList = (notificationState as NotificationState.Success).pager.collectAsLazyPagingItems()
                 }
             }
 
-            dataList?.apply {
-                items(this) {
-                    it?.apply {
-                        NotificationItem(
-                            fromUserAvatar,
-                            fromusername,
-                            note,
-                            (dateline.toLong() * 1000).timeStampInterval(timeMillis)
-                        )
+            LazyColumn(content = {
+                item {
+                    Column {
+                        BlockItem(title = "我的动态")
+                        BlockItem(title = "我的评论")
+                        BlockItem(title = "我收到的赞")
+                        BlockItem(title = "好友关注")
+                        BlockItem(title = "私信")
                     }
                 }
+
+                dataList?.apply {
+                    items(this) {
+                        it?.apply {
+                            NotificationItem(
+                                fromUserAvatar,
+                                fromusername,
+                                note,
+                                (dateline.toLong() * 1000).timeStampInterval(timeMillis)
+                            )
+                        }
+                    }
+                }
+            })
+        }
+    } else {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Button(
+                modifier = Modifier.align(Alignment.Center),
+                onClick = {  }
+            ) {
+                Text(text = "点击登陆")
             }
-        })
+        }
     }
 }
 
@@ -105,8 +119,8 @@ private fun BlockItem(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(15.dp)
-            .height(30.dp)
+            .padding(10.dp)
+            .height(40.dp)
     ) {
         Column(modifier = Modifier.align(Alignment.CenterStart)) {
             Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -122,7 +136,7 @@ private fun NotificationItem(userAvatar: String, username: String, node: String,
     ConstraintLayout(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(15.dp, 10.dp, 15.dp, 10.dp)
+            .padding(10.dp)
     ) {
         val (avatarRef, nameRef, messageRef, timeRef) = createRefs()
 

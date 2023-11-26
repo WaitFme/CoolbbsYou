@@ -1,12 +1,10 @@
 package com.anpe.coolbbsyou.ui.view
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,18 +25,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.windowsizeclass.WindowSizeClass
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,7 +49,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -63,16 +61,15 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.anpe.coolbbsyou.data.remote.domain.details.DetailsModel
-import com.anpe.coolbbsyou.data.remote.domain.reply.Data
 import com.anpe.coolbbsyou.intent.event.MainEvent
-import com.anpe.coolbbsyou.intent.state.ReplyState
-import com.anpe.coolbbsyou.intent.state.replyDetail.ReplyDetailState
+import com.anpe.coolbbsyou.net.model.detail.DetailModel
+import com.anpe.coolbbsyou.net.model.reply.Data
 import com.anpe.coolbbsyou.ui.host.screen.manager.ScreenManager
 import com.anpe.coolbbsyou.ui.main.MainViewModel
 import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToast
@@ -85,199 +82,99 @@ import kotlinx.coroutines.launch
 fun DetailPager(
     modifier: Modifier = Modifier,
     navControllerScreen: NavHostController,
-    detailsModel: DetailsModel,
+    detailsModel: DetailModel,
     windowSizeClass: WindowSizeClass,
     setIsDetailOpen: (Boolean) -> Unit,
     viewModel: MainViewModel
 ) {
-    Surface(modifier = Modifier.offset(1.dp)) {
-        val scope = rememberCoroutineScope()
+    val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
 
-        val configuration = LocalConfiguration.current
+    val offset = if (widthSizeClass == WindowWidthSizeClass.Compact) 0.dp else 1.dp
 
-        val replyState by viewModel.replyState.collectAsState()
+    val scope = rememberCoroutineScope()
 
-        val replyDetailState by viewModel.replyDetailState.collectAsState()
+    val configuration = LocalConfiguration.current
 
-        val followModel by viewModel.followState.collectAsState()
+    val replyPagingItems = viewModel.replyPagingDataFlow?.collectAsLazyPagingItems()
 
-        val likeState by viewModel.likeState.collectAsState()
+    val replyDetailPagingItems = viewModel.replyDetailPagingDataFlow?.collectAsLazyPagingItems()
 
-        val widthSizeClass by rememberUpdatedState(newValue = windowSizeClass.widthSizeClass)
+    val followModel by viewModel.followState.collectAsState()
 
-        val followStatus = detailsModel.data.userAction.follow or followModel.data == 1
+    val likeState by viewModel.likeState.collectAsState()
 
-        var visible by remember {
-            mutableStateOf(false)
-        }
+    val followStatus = detailsModel.data.userAction.follow or followModel.data == 1
 
-        val context = LocalContext.current
+    var visible by remember {
+        mutableStateOf(false)
+    }
 
-        Box {
-            MyScaffold(
-                topBar = {
-                    TopBar(
-                        userAvatar = detailsModel.data.userAvatar,
-                        username = detailsModel.data.username,
-                        deviceTitle = detailsModel.data.deviceTitle,
-                        followStatus = followStatus,
-                        likeStatus = detailsModel.data.userAction.like == 1 || likeState.isLike,
-                        setIsDetailOpen = setIsDetailOpen,
-                        onFollow = {
-                            scope.launch {
-                                viewModel.channel.send(
-                                    if (followStatus) MainEvent.Unfollow(detailsModel.data.uid) else MainEvent.Follow(
-                                        detailsModel.data.uid
-                                    )
+    Box(modifier = Modifier.offset(offset)) {
+        MyScaffold(
+            topBar = {
+                TopBar(
+                    userAvatar = detailsModel.data.userAvatar,
+                    username = detailsModel.data.username,
+                    deviceTitle = detailsModel.data.deviceTitle,
+                    followStatus = followStatus,
+                    likeStatus = detailsModel.data.userAction.like == 1 || likeState.isLike,
+                    setIsDetailOpen = setIsDetailOpen,
+                    onFollow = {
+                        scope.launch {
+                            viewModel.channel.send(
+                                if (followStatus) MainEvent.Unfollow(detailsModel.data.uid) else MainEvent.Follow(
+                                    detailsModel.data.uid
                                 )
-                            }
-                        },
-                        onLike = {
-                            scope.launch {
-                                viewModel.channel.send(
-                                    if (it) MainEvent.Unlike(detailsModel.data.id) else MainEvent.Like(
-                                        detailsModel.data.id
-                                    )
-                                )
-                            }
-                        },
-                        onClickUser = {
-                            scope.launch {
-                                viewModel.channel.send(MainEvent.GetSpace(detailsModel.data.uid))
-                                navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
-                            }
+                            )
                         }
-                    )
-                },
-                content = { paddingValues ->
-                    Column(
-                        modifier = modifier
-                            .padding(top = paddingValues.calculateTopPadding())
-                    ) {
-                        if (configuration.screenWidthDp > 1125) {
-                            Row {
-                                ContentBlock(
-                                    modifier = Modifier
-                                        .weight(1.4f)
-                                        .verticalScroll(rememberScrollState()),
-                                    detailsModel = detailsModel,
-                                    onClickPic = {
-                                        viewModel.showImage(
-                                            it,
-                                            detailsModel.data.picArr,
-                                            navControllerScreen
-                                        )
-                                    }
+                    },
+                    onLike = {
+                        scope.launch {
+                            viewModel.channel.send(
+                                if (it) MainEvent.Unlike(detailsModel.data.id) else MainEvent.Like(
+                                    detailsModel.data.id
                                 )
-
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-//                                            .weight(1f)
-                                            .background(MaterialTheme.colorScheme.surface)
-                                            .fillMaxHeight()
-                                    ) {
-                                        if (replyState is ReplyState.Success) {
-                                            val lazyPagingItems =
-                                                (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
-
-                                            LazyColumn(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                contentPadding = PaddingValues(bottom = 15.dp),
-                                                content = {
-                                                    items(lazyPagingItems) { data ->
-                                                        if (data != null) {
-                                                            ReplyItem(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                data = data,
-                                                                itemPadding = PaddingValues(
-                                                                    15.dp,
-                                                                    7.dp,
-                                                                    15.dp,
-                                                                    15.dp
-                                                                ),
-                                                                onClickUser = {
-                                                                    scope.launch {
-                                                                        viewModel.channel.send(
-                                                                            MainEvent.GetSpace(
-                                                                                it
-                                                                            )
-                                                                        )
-                                                                        navControllerScreen.navigate(
-                                                                            ScreenManager.SpaceScreen.route
-                                                                        )
-                                                                    }
-                                                                },
-                                                                onClickPic = {
-                                                                    viewModel.showImage(
-                                                                        it,
-                                                                        data.picArr,
-                                                                        navControllerScreen
-                                                                    )
-                                                                },
-                                                                onClickReply = {
-                                                                    scope.launch {
-                                                                        viewModel.channel.send(
-                                                                            MainEvent.GetReplyDetail(
-                                                                                it
-                                                                            )
-                                                                        )
-                                                                    }
-                                                                    visible = true
-                                                                }
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            )
-                                        }
-                                    }
-
-                                    BottomSheetDialog(
-                                        modifier = Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .fillMaxSize(),
-                                        visible = visible,
-                                        onDismissRequest = { visible = false },
-                                        content = {
-                                            BottomSheetContent(replyDetailState)
-                                        }
+                            )
+                        }
+                    },
+                    onClickUser = {
+                        scope.launch {
+                            viewModel.channel.send(MainEvent.GetSpace(detailsModel.data.uid))
+                            navControllerScreen.navigate(ScreenManager.SpaceScreen.route)
+                        }
+                    }
+                )
+            },
+            content = { paddingValues ->
+                Column(
+                    modifier = modifier.padding(top = paddingValues.calculateTopPadding())
+                ) {
+                    if (configuration.screenWidthDp > 1125 && replyPagingItems != null) {
+                        Row {
+                            ContentBlock(
+                                modifier = Modifier
+                                    .weight(1.4f)
+                                    .verticalScroll(rememberScrollState()),
+                                detailsModel = detailsModel,
+                                onClickPic = {
+                                    viewModel.showImage(
+                                        it,
+                                        detailsModel.data.picArr,
+                                        navControllerScreen
                                     )
                                 }
-                            }
-                        } else {
-                            var lazyPagingItems by remember {
-                                mutableStateOf<LazyPagingItems<Data>?>(null)
-                            }
+                            )
 
-                            if (replyState is ReplyState.Success) {
-                                lazyPagingItems =
-                                    (replyState as ReplyState.Success).pager.collectAsLazyPagingItems()
-                            }
+                            Box(modifier = Modifier.fillMaxHeight().weight(1f)) {
+                                if (replyPagingItems.loadState.source.refresh is LoadState.Loading) {
+                                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                                }
 
-                            LazyColumn(
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = PaddingValues(bottom = 15.dp),
-                                content = {
-                                    item {
-                                        ContentBlock(
-                                            modifier = Modifier,
-                                            detailsModel = detailsModel,
-                                            onClickPic = {
-                                                viewModel.showImage(
-                                                    it,
-                                                    detailsModel.data.picArr,
-                                                    navControllerScreen
-                                                )
-                                            }
-                                        )
-                                    }
-
-                                    if (lazyPagingItems != null) {
-                                        items(lazyPagingItems!!) { data ->
+                                LazyColumn(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentPadding = PaddingValues(bottom = 15.dp),
+                                    content = {
+                                        items(replyPagingItems, key = { it.id }) { data ->
                                             if (data != null) {
                                                 ReplyItem(
                                                     modifier = Modifier.fillMaxWidth(),
@@ -288,6 +185,18 @@ fun DetailPager(
                                                         15.dp,
                                                         15.dp
                                                     ),
+                                                    onClickUser = {
+                                                        scope.launch {
+                                                            viewModel.channel.send(
+                                                                MainEvent.GetSpace(
+                                                                    it
+                                                                )
+                                                            )
+                                                            navControllerScreen.navigate(
+                                                                ScreenManager.SpaceScreen.route
+                                                            )
+                                                        }
+                                                    },
                                                     onClickPic = {
                                                         viewModel.showImage(
                                                             it,
@@ -309,33 +218,103 @@ fun DetailPager(
                                             }
                                         }
                                     }
+                                )
+                            }
+                        }
+                    } else {
+                        if (replyPagingItems != null) {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentPadding = PaddingValues(bottom = 15.dp),
+                                content = {
+                                    item {
+                                        ContentBlock(
+                                            modifier = Modifier,
+                                            detailsModel = detailsModel,
+                                            onClickPic = {
+                                                viewModel.showImage(
+                                                    it,
+                                                    detailsModel.data.picArr,
+                                                    navControllerScreen
+                                                )
+                                            }
+                                        )
+                                    }
+
+                                    if (replyPagingItems.loadState.refresh is LoadState.Loading) {
+                                        item {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(50.dp)
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.align(
+                                                        Alignment.Center
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    items(replyPagingItems, key = { it.id }) { data ->
+                                        if (data != null) {
+                                            ReplyItem(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                data = data,
+                                                itemPadding = PaddingValues(
+                                                    15.dp,
+                                                    7.dp,
+                                                    15.dp,
+                                                    15.dp
+                                                ),
+                                                onClickPic = {
+                                                    viewModel.showImage(
+                                                        it,
+                                                        data.picArr,
+                                                        navControllerScreen
+                                                    )
+                                                },
+                                                onClickReply = {
+                                                    scope.launch {
+                                                        viewModel.channel.send(
+                                                            MainEvent.GetReplyDetail(
+                                                                it
+                                                            )
+                                                        )
+                                                    }
+                                                    visible = true
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
                             )
                         }
                     }
-                },
-            )
+                }
+            },
+        )
 
-            if (configuration.screenWidthDp <= 1125) {
-                BottomSheetDialog(
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxSize(),
-                    visible = visible,
-                    onDismissRequest = { visible = false },
-                    content = {
-                        BottomSheetContent(replyDetailState)
-                    }
-                )
+        BottomSheetDialog(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxSize(),
+            visible = visible,
+            onDismissRequest = { visible = false },
+            content = {
+                if (replyDetailPagingItems != null) {
+                    BottomSheetContent(replyDetailPagingItems)
+                }
             }
-        }
+        )
     }
 }
 
 @Composable
 private fun ContentBlock(
     modifier: Modifier = Modifier,
-    detailsModel: DetailsModel,
+    detailsModel: DetailModel,
     onClickPic: (Int) -> Unit = {}
 ) {
     Column(modifier = modifier) {
@@ -349,8 +328,8 @@ private fun ContentBlock(
 
         HtmlText(
             modifier = Modifier
-                .padding(15.dp, 10.dp, 15.dp, 0.dp),
-            fontSize = 14.sp,
+                .padding(15.dp, 10.dp, 15.dp),
+            fontSize = 15.sp,
             htmlText = detailsModel.data.message, openLink = {
                 println(it)
             }
@@ -359,7 +338,7 @@ private fun ContentBlock(
         if (detailsModel.data.picArr.isNotEmpty()) {
             NineImageGrid(
                 modifier = Modifier
-                    .padding(13.dp, 10.dp, 13.dp, 0.dp)
+                    .padding(13.dp, 10.dp, 8.dp)
                     .width(500.dp),
                 list = detailsModel.data.picArr,
                 itemPadding = PaddingValues(2.dp),
@@ -456,7 +435,7 @@ private fun ReplyItem(
             },
         )
 
-        if (data.pic.isNotEmpty()) {
+        if (data.picArr.isNotEmpty()) {
             LazyRow(
                 modifier = Modifier
                     .height(150.dp)
@@ -468,17 +447,17 @@ private fun ReplyItem(
                         width = Dimension.preferredWrapContent
                     },
             ) {
-                items(data.picArr.size) {
+                itemsIndexed(data.picArr, key = { index, _ -> index }) {index, item ->
                     AsyncImage(
                         modifier = Modifier
                             .padding(end = 5.dp)
                             .clip(RoundedCornerShape(10.dp))
                             .height(150.dp)
                             .clickableNoRipple {
-                                onClickPic(it)
+                                onClickPic(index)
                             },
                         model = ImageRequest.Builder(context)
-                            .data(data.pic)
+                            .data(item)
                             .crossfade(true)
                             .build(),
                         contentDescription = "reply pic"
@@ -562,7 +541,7 @@ private fun ReplyItem(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
+//                    .background(MaterialTheme.colorScheme.surface)
                     .constrainAs(replyRowsRef) {
                         start.linkTo(avatarRef.end, 10.dp)
                         top.linkTo(timeRef.bottom, 10.dp)
@@ -655,7 +634,6 @@ private fun TopBar(
     }
 
     TopAppBar(
-        modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
         navigationIcon = {
             if (!configuration.isTable()) {
                 IconButton(onClick = { setIsDetailOpen(false) }) {
@@ -702,9 +680,6 @@ private fun TopBar(
             }
         },
         actions = {
-            /*IconButton(onClick = { *//*TODO*//* }) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "add")
-            }*/
             IconButton(onClick = {
                 onLike(likeStatusInner)
                 likeStatusInner = !likeStatusInner
@@ -715,12 +690,6 @@ private fun TopBar(
                     tint = if (likeStatusInner) MaterialTheme.colorScheme.primary else LocalContentColor.current
                 )
             }
-            /*IconButton(onClick = { *//*TODO*//* }) {
-                Icon(imageVector = Icons.Default.FavoriteBorder, contentDescription = "add")
-            }*/
-            /*IconButton(onClick = { *//*TODO*//* }) {
-                Icon(imageVector = Icons.Default.Send, contentDescription = "add")
-            }*/
 
             TextButton(
                 modifier = Modifier
@@ -736,43 +705,24 @@ private fun TopBar(
 }
 
 @Composable
-private fun BottomSheetContent(
-    replyDetailState: ReplyState
-) {
+private fun BottomSheetContent(replyDetailPagingItems: LazyPagingItems<Data>) {
     val context = LocalContext.current
 
     Card(
         modifier = Modifier
             .fillMaxHeight(0.7f)
-            .fillMaxWidth(),
+            .width(450.dp),
         shape = RoundedCornerShape(15.dp, 15.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .height(30.dp)
-                .fillMaxWidth()
-        ) {
-            Spacer(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(70.dp, 8.dp)
-                    .background(Color.White, CircleShape)
-            )
-        }
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (replyDetailPagingItems.loadState.source.refresh is LoadState.Loading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
 
-        if (replyDetailState is ReplyState.Success) {
-            val pagingItems = replyDetailState.pager.collectAsLazyPagingItems()
-
-            LazyColumn(
-                modifier = Modifier
-                    .padding(15.dp)
-            ) {
-                items(pagingItems) { data ->
+            LazyColumn(modifier = Modifier.padding(15.dp)) {
+                items(replyDetailPagingItems, key = { it.id }) { data ->
                     if (data != null) {
-                        Row(
-                            modifier = Modifier
-                                .padding(bottom = 10.dp)
-                        ) {
+                        Row(modifier = Modifier.padding(bottom = 10.dp)) {
                             AsyncImage(
                                 modifier = Modifier
                                     .size(40.dp)

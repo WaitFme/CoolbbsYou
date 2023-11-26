@@ -1,6 +1,6 @@
 package com.anpe.coolbbsyou.intent.state.space
 
-import com.anpe.coolbbsyou.data.remote.domain.space.SpaceModel
+import com.anpe.coolbbsyou.net.model.space.SpaceModel
 
 sealed class SpaceState {
     data object Idle: SpaceState()
