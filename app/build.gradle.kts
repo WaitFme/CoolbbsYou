@@ -2,18 +2,19 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.anpe.coolbbsyou"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.anpe.coolbbsyou"
         minSdk = 26
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
-        versionName = "0.23.0726"
+        versionName = "0.23.11141"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -37,11 +38,14 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+    kotlin {
+        jvmToolchain(8)
+    }
     buildFeatures {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
+        kotlinCompilerExtensionVersion = "1.5.1" // previous version 1.4.3
     }
     packaging {
         resources {
@@ -59,6 +63,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
+    implementation(libs.windowsSizeClass)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -72,14 +77,22 @@ dependencies {
     implementation(libs.navigation.compose)
     implementation(libs.accompanist.swiperefresh)
     implementation(libs.accompanist.systemuicontroller)
+    implementation(libs.accompanist.adaptive)
     implementation(libs.gson)
     implementation(libs.coil.compose)
+    implementation(libs.coil.gif)
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
-    implementation(libs.richtext.ui.material3)
+    implementation(libs.converter.moshi)
     implementation(libs.material)
     implementation(libs.paging.runtime)
     implementation(libs.paging.compose)
     implementation(libs.jbcrypt)
     implementation(libs.jsoup)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.moshi.kotlin)
+
+    ksp(libs.room.compiler)
+    ksp(libs.moshi.kotlin.codegen)
 }

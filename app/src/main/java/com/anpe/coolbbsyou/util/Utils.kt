@@ -1,11 +1,14 @@
 package com.anpe.coolbbsyou.util
 
 import android.content.res.Configuration
+import android.os.Build
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.graphics.Color
 import androidx.core.text.HtmlCompat
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -174,14 +177,52 @@ class Utils {
             val minuteOld = calendarOld.get(Calendar.MINUTE)
             val minuteNow = calendarNow.get(Calendar.MINUTE)
 
+            val secondOld = calendarOld.get(Calendar.SECOND)
+            val secondNow = calendarNow.get(Calendar.SECOND)
+
+            val x = currentTime - this
+            if (x < 60000) {
+
+            } else if (x < 60000 * 60) {
+
+            } else if (x < 60000 * 60 * 24) {
+
+            } else {
+
+            }
+
             return if (dayOld == dayNow) {
                 if (hourOld == hourNow) {
-                    "${minuteNow - minuteOld}分钟前"
+                    if (minuteOld == minuteNow) {
+                        "${secondNow - secondOld}秒前"
+                    } else {
+                        "${minuteNow - minuteOld}分钟前"
+                    }
                 } else {
                     "${hourNow - hourOld}小时前"
                 }
             } else {
                 "${dayNow - dayOld}天前"
+            }
+        }
+
+        /**
+         * 计算时间差
+         *
+         * @receiver old timestamp
+         * @param currentTime current timestamp
+         */
+        fun Int.timeStampInterval(currentTime: Long): String {
+            val intervalSecon = (currentTime / 1000) - this
+
+            return if (intervalSecon < 60) {
+                "${intervalSecon}秒前"
+            } else if (intervalSecon < 3600) {
+                "${intervalSecon / 60}分钟前"
+            } else if (intervalSecon < 86400) {
+                "${intervalSecon / 3600}小时前"
+            } else {
+                "${intervalSecon / 86400}天前"
             }
         }
 
@@ -193,5 +234,45 @@ class Utils {
          */
         fun String.richToString(htmlCompat: Int = HtmlCompat.FROM_HTML_MODE_LEGACY) =
             HtmlCompat.fromHtml(this, htmlCompat).toString()
+
+        /**
+         * 用户群组
+         */
+        fun ColorScheme.verifyColor(verifyStatus: Int, verifyTitle: String): Color {
+            return if (verifyStatus == 1) {
+                if (verifyTitle == "酷安认证: 酷安员工") {
+                    Color.Green
+                } else {
+                    Color.Yellow
+                }
+            } else {
+                this.primary
+            }
+        }
+
+        /**
+         * 数据简写
+         *
+         * @receiver 源数据
+         */
+        fun Int.numberAbbreviations(): String {
+            return if (this <= 2000) {
+                "$this"
+            } else if (this <= 10000000) {
+                val format = "%.2f".format(this / 1000f)
+                "${format}K"
+            } else {
+                val format = "%.2f".format(this / 1000000f)
+                "${format}M"
+            }
+        }
+
+        fun getUserAgent(version: String = "13.3.6", versionCode: String = "2310232"): String {
+            val baseAgent = System.getProperty("http.agent")
+            val buildInfo = "(#Build; ${Build.BRAND}; ${Build.MODEL}; ${Build.DISPLAY}; ${Build.VERSION.RELEASE})"
+            val versionInfo = "+CoolMarket/$version-$versionCode-universal"
+
+            return "$baseAgent $buildInfo $versionInfo"
+        }
     }
 }

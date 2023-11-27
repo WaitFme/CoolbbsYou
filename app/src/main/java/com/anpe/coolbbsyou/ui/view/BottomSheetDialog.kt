@@ -1,4 +1,4 @@
-package com.anpe.bilibiliandyou.ui.view
+package com.anpe.coolbbsyou.ui.view
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility

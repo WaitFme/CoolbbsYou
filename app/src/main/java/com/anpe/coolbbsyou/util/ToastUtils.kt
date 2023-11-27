@@ -1,44 +1,22 @@
 package com.anpe.coolbbsyou.util
 
+import android.app.Application
 import android.content.Context
 import android.widget.Toast
+import com.anpe.coolbbsyou.util.ToastUtils.Companion.showToastBase
 
 class ToastUtils {
     companion object {
-        private fun String.showToastBase(
-            context: Context,
-            duration: Int
-        ) = Toast.makeText(context, this, duration).show()
+        private fun Context.showToastBase(
+            content: String
+        ) = Toast.makeText(this, content, Toast.LENGTH_SHORT).show()
 
-        fun String.showToast(
-            context: Context = MyApplication.context,
-            duration: Int = Toast.LENGTH_SHORT
-        ) = this.showToastBase(context, duration)
+        fun Application.showToast(
+            content: String
+        ) = Toast.makeText(this, content, Toast.LENGTH_SHORT).show()
 
-        fun Int.showToast(
-            context: Context = MyApplication.context,
-            duration: Int = Toast.LENGTH_SHORT
-        ) = this.toString().showToastBase(context, duration)
-
-        fun Boolean.showToast(
-            context: Context = MyApplication.context,
-            duration: Int = Toast.LENGTH_SHORT
-        ) = this.toString().showToastBase(context, duration)
-
-        fun Float.showToast(
-            context: Context = MyApplication.context,
-            duration: Int = Toast.LENGTH_SHORT
-        ) = this.toString().showToastBase(context, duration)
-
-        fun Double.showToast(
-            context: Context = MyApplication.context,
-            duration: Int = Toast.LENGTH_SHORT
-        ) = this.toString().showToastBase(context, duration)
-
-        fun showToastString(
-            text: String,
-            context: Context = MyApplication.context,
-            duration: Int = Toast.LENGTH_SHORT
-        ) = text.showToastBase(context, duration)
+        fun Context.showToast(
+            content: String
+        ) = Toast.makeText(this, content, Toast.LENGTH_SHORT).show()
     }
 }
